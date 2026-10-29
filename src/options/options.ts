@@ -25,6 +25,10 @@ import { AnkiService } from './anki/ankiService';
 import { AnkiExportModal } from './anki/AnkiExportModal';
 import { VocabExportItem } from './anki/ankiTypes';
 import { VocabCurationService } from './application/VocabCurationService';
+import {
+    VocabCurationSession,
+    CuratedVocabWord,
+} from './application/VocabCurationSession';
 import { VocabPreviewEditorModal } from './presentation/VocabPreviewEditorModal';
 
 const logger = new Logger('options');
@@ -1154,20 +1158,47 @@ document.addEventListener('DOMContentLoaded', () => {
                         : `movie_${v.movieId || 'unknown'}`;
                     return g === gid;
                 });
-                if (matchingEps.length > 0) {
-                    const showTitle = matchingEps[0].showTitle || 'show';
-                    const cleanTitle = showTitle
-                        .replace(
-                            /[^\w\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af-]/g,
-                            '',
-                        )
-                        .trim()
-                        .replace(/\s+/g, '_');
-                    exportMergedVocabCsv(
-                        matchingEps,
-                        `${cleanTitle}_full_show_vocab.csv`,
-                    );
+                const totalWords = matchingEps.reduce(
+                    (acc, ep) => acc + ep.words.length,
+                    0,
+                );
+                if (matchingEps.length === 0 || totalWords === 0) {
+                    showToast('No vocabulary found for this show.');
+                    return;
                 }
+                const showTitle = matchingEps[0].showTitle || 'show';
+                const cleanTitle = showTitle
+                    .replace(
+                        /[^\w\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af-]/g,
+                        '',
+                    )
+                    .trim()
+                    .replace(/\s+/g, '_');
+                const filename = `${cleanTitle}_full_show_vocab.csv`;
+
+                const session = VocabCurationSession.fromMultipleEpisodes(
+                    matchingEps,
+                    {
+                        title: `${showTitle} · 全剧词汇导出确认 (${matchingEps.length} 集)`,
+                        intent: 'csv',
+                        onUpdate: () => loadVocabBank(),
+                        onExportCsv: (curatedWords) => {
+                            exportMergedVocabCsv(
+                                matchingEps,
+                                filename,
+                                curatedWords,
+                            );
+                        },
+                        onExportAnki: (curatedWords) => {
+                            const items = collectCuratedAnkiItems(
+                                curatedWords,
+                                showTitle,
+                            );
+                            ankiModal.show(items, getVocabLanguage());
+                        },
+                    },
+                );
+                vocabEditorModal.open(session);
             }
             return;
         }
@@ -1186,10 +1217,47 @@ document.addEventListener('DOMContentLoaded', () => {
                         : `movie_${v.movieId || 'unknown'}`;
                     return g === gid;
                 });
-                if (matchingEps.length > 0) {
-                    const items = collectVocabExportItems(matchingEps);
-                    ankiModal.show(items, getVocabLanguage());
+                const totalWords = matchingEps.reduce(
+                    (acc, ep) => acc + ep.words.length,
+                    0,
+                );
+                if (matchingEps.length === 0 || totalWords === 0) {
+                    showToast('No vocabulary found for this show.');
+                    return;
                 }
+                const showTitle = matchingEps[0].showTitle || 'show';
+                const cleanTitle = showTitle
+                    .replace(
+                        /[^\w\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af-]/g,
+                        '',
+                    )
+                    .trim()
+                    .replace(/\s+/g, '_');
+                const filename = `${cleanTitle}_full_show_vocab.csv`;
+
+                const session = VocabCurationSession.fromMultipleEpisodes(
+                    matchingEps,
+                    {
+                        title: `${showTitle} · 全剧 Anki 导出确认 (${matchingEps.length} 集)`,
+                        intent: 'anki',
+                        onUpdate: () => loadVocabBank(),
+                        onExportCsv: (curatedWords) => {
+                            exportMergedVocabCsv(
+                                matchingEps,
+                                filename,
+                                curatedWords,
+                            );
+                        },
+                        onExportAnki: (curatedWords) => {
+                            const items = collectCuratedAnkiItems(
+                                curatedWords,
+                                showTitle,
+                            );
+                            ankiModal.show(items, getVocabLanguage());
+                        },
+                    },
+                );
+                vocabEditorModal.open(session);
             }
             return;
         }
@@ -1202,7 +1270,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const mid = exportSingleBtn.dataset.id;
             const found = cachedVocabList.find((v) => v.movieId === mid);
             if (found) {
-                exportVocabCsv(found);
+                if (found.words.length === 0) {
+                    showToast('No vocabulary items in this episode to export.');
+                    return;
+                }
+                const session = VocabCurationSession.fromSingleEpisode(found, {
+                    intent: 'csv',
+                    onUpdate: () => loadVocabBank(),
+                    onExportCsv: (curatedWords) => {
+                        exportVocabCsv(found, curatedWords);
+                    },
+                    onExportAnki: (curatedWords) => {
+                        const items = collectCuratedAnkiItems(
+                            curatedWords,
+                            found.showTitle,
+                            found.movieId,
+                        );
+                        ankiModal.show(items, getVocabLanguage());
+                    },
+                });
+                vocabEditorModal.open(session);
             }
             return;
         }
@@ -1215,13 +1302,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const mid = ankiSingleBtn.dataset.id;
             const found = cachedVocabList.find((v) => v.movieId === mid);
             if (found) {
-                const items = collectVocabExportItems([found]);
-                ankiModal.show(items, getVocabLanguage());
+                if (found.words.length === 0) {
+                    showToast('No vocabulary items in this episode to export.');
+                    return;
+                }
+                const session = VocabCurationSession.fromSingleEpisode(found, {
+                    intent: 'anki',
+                    onUpdate: () => loadVocabBank(),
+                    onExportCsv: (curatedWords) => {
+                        exportVocabCsv(found, curatedWords);
+                    },
+                    onExportAnki: (curatedWords) => {
+                        const items = collectCuratedAnkiItems(
+                            curatedWords,
+                            found.showTitle,
+                            found.movieId,
+                        );
+                        ankiModal.show(items, getVocabLanguage());
+                    },
+                });
+                vocabEditorModal.open(session);
             }
             return;
         }
 
-        // Preview Vocab Modal
+        // Preview Vocab Modal (Review & in-place curation editor)
         const viewBtn = target?.closest(
             '.btn-preview-vocab',
         ) as HTMLButtonElement | null;
@@ -1287,8 +1392,35 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please select at least one episode to export.');
             return;
         }
+        const totalWords = selectedEpisodes.reduce(
+            (acc, ep) => acc + ep.words.length,
+            0,
+        );
+        if (totalWords === 0) {
+            showToast('No vocabulary items found in selected episodes.');
+            return;
+        }
         const filename = `cowatcher_selected_vocab_${selectedEpisodes.length}_episodes.csv`;
-        exportMergedVocabCsv(selectedEpisodes, filename);
+        const session = VocabCurationSession.fromMultipleEpisodes(
+            selectedEpisodes,
+            {
+                title: `批量导出确认 · ${selectedEpisodes.length} 个剧集`,
+                intent: 'csv',
+                onUpdate: () => loadVocabBank(),
+                onExportCsv: (curatedWords) => {
+                    exportMergedVocabCsv(
+                        selectedEpisodes,
+                        filename,
+                        curatedWords,
+                    );
+                },
+                onExportAnki: (curatedWords) => {
+                    const items = collectCuratedAnkiItems(curatedWords);
+                    ankiModal.show(items, getVocabLanguage());
+                },
+            },
+        );
+        vocabEditorModal.open(session);
     });
 
     // Export Selected to Anki Handler
@@ -1300,12 +1432,57 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please select at least one episode to export to Anki.');
             return;
         }
-        const items = collectVocabExportItems(selectedEpisodes);
-        ankiModal.show(items, getVocabLanguage());
+        const totalWords = selectedEpisodes.reduce(
+            (acc, ep) => acc + ep.words.length,
+            0,
+        );
+        if (totalWords === 0) {
+            showToast('No vocabulary items found in selected episodes.');
+            return;
+        }
+        const filename = `cowatcher_selected_vocab_${selectedEpisodes.length}_episodes.csv`;
+        const session = VocabCurationSession.fromMultipleEpisodes(
+            selectedEpisodes,
+            {
+                title: `批量导出到 Anki 确认 · ${selectedEpisodes.length} 个剧集`,
+                intent: 'anki',
+                onUpdate: () => loadVocabBank(),
+                onExportCsv: (curatedWords) => {
+                    exportMergedVocabCsv(
+                        selectedEpisodes,
+                        filename,
+                        curatedWords,
+                    );
+                },
+                onExportAnki: (curatedWords) => {
+                    const items = collectCuratedAnkiItems(curatedWords);
+                    ankiModal.show(items, getVocabLanguage());
+                },
+            },
+        );
+        vocabEditorModal.open(session);
     });
 
     btnExportUserVocab?.addEventListener('click', () => {
-        exportUserMarkedVocabCsv(cachedVocabList);
+        const userWordsExist = cachedVocabList.some((ep) =>
+            ep.words.some((w) => w.source === 'user'),
+        );
+        if (!userWordsExist) {
+            showToast('No user-marked vocabulary found to export.');
+            return;
+        }
+        const session = VocabCurationSession.fromUserMarked(cachedVocabList, {
+            intent: 'csv',
+            onUpdate: () => loadVocabBank(),
+            onExportCsv: (curatedWords) => {
+                exportUserMarkedVocabCsv(cachedVocabList, curatedWords);
+            },
+            onExportAnki: (curatedWords) => {
+                const items = collectCuratedAnkiItems(curatedWords);
+                ankiModal.show(items, getVocabLanguage());
+            },
+        });
+        vocabEditorModal.open(session);
     });
 
     vocabSourceFilter?.addEventListener('change', () => {
@@ -1332,7 +1509,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Vocab Modal Preview & Curation Editor
     function openVocabPreviewModal(data: EpisodeVocabData): void {
-        vocabEditorModal.open(data, () => loadVocabBank());
+        const session = VocabCurationSession.fromSingleEpisode(data, {
+            intent: 'review',
+            onUpdate: () => loadVocabBank(),
+            onExportCsv: (curatedWords) => {
+                exportVocabCsv(data, curatedWords);
+            },
+            onExportAnki: (curatedWords) => {
+                const items = collectCuratedAnkiItems(
+                    curatedWords,
+                    data.showTitle,
+                    data.movieId,
+                );
+                ankiModal.show(items, getVocabLanguage());
+            },
+        });
+        vocabEditorModal.open(session);
     }
 
     function getVocabLanguage(): string {
@@ -1344,25 +1536,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'ja_JP';
     }
 
-    function collectVocabExportItems(
-        episodes: EpisodeVocabData[],
+    function collectCuratedAnkiItems(
+        words: CuratedVocabWord[],
+        defaultShowTitle?: string,
+        defaultMovieId?: string,
     ): VocabExportItem[] {
-        const items: VocabExportItem[] = [];
-        episodes.forEach((ep) => {
-            ep.words.forEach((w) => {
-                items.push({
-                    word: w,
-                    episodeInfo: {
-                        showTitle: ep.showTitle,
-                        movieId: ep.movieId,
-                    },
-                });
-            });
-        });
-        return items;
+        return words.map((w) => ({
+            word: w,
+            episodeInfo: {
+                showTitle: w.originShowTitle || defaultShowTitle,
+                movieId: w.originEpisodeId || defaultMovieId,
+            },
+        }));
     }
 
-    function exportUserMarkedVocabCsv(episodes: EpisodeVocabData[]): void {
+    function exportUserMarkedVocabCsv(
+        episodes: EpisodeVocabData[],
+        wordsOverride?: CuratedVocabWord[],
+    ): void {
         if (!episodes || episodes.length === 0) {
             showToast('No vocabulary data available to export.');
             return;
@@ -1387,33 +1578,57 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const rows: string[][] = [];
-        episodes.forEach((ep) => {
-            const epTitle = ep.showTitle || '';
-            const epMid = ep.movieId || '';
-            ep.words.forEach((w) => {
-                if (w.source === 'user') {
-                    const dateStr = w.createdAt
-                        ? new Date(w.createdAt).toLocaleString()
-                        : '';
-                    rows.push([
-                        escapeCsv(w.word || ''),
-                        escapeCsv(w.pos || ''),
-                        escapeCsv(w.phonetic || ''),
-                        escapeCsv(w.meaning || ''),
-                        escapeCsv(w.sentence || ''),
-                        escapeCsv(w.sentenceTranslation || ''),
-                        escapeCsv(
-                            typeof w.timestamp === 'number'
-                                ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
-                                : '',
-                        ),
-                        escapeCsv(epMid),
-                        escapeCsv(epTitle),
-                        escapeCsv(dateStr),
-                    ]);
-                }
+        if (wordsOverride) {
+            wordsOverride.forEach((w) => {
+                const dateStr = w.createdAt
+                    ? new Date(w.createdAt).toLocaleString()
+                    : '';
+                rows.push([
+                    escapeCsv(w.word || ''),
+                    escapeCsv(w.pos || ''),
+                    escapeCsv(w.phonetic || ''),
+                    escapeCsv(w.meaning || ''),
+                    escapeCsv(w.sentence || ''),
+                    escapeCsv(w.sentenceTranslation || ''),
+                    escapeCsv(
+                        typeof w.timestamp === 'number'
+                            ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                            : '',
+                    ),
+                    escapeCsv(w.originEpisodeId || ''),
+                    escapeCsv(w.originShowTitle || ''),
+                    escapeCsv(dateStr),
+                ]);
             });
-        });
+        } else {
+            episodes.forEach((ep) => {
+                const epTitle = ep.showTitle || '';
+                const epMid = ep.movieId || '';
+                ep.words.forEach((w) => {
+                    if (w.source === 'user') {
+                        const dateStr = w.createdAt
+                            ? new Date(w.createdAt).toLocaleString()
+                            : '';
+                        rows.push([
+                            escapeCsv(w.word || ''),
+                            escapeCsv(w.pos || ''),
+                            escapeCsv(w.phonetic || ''),
+                            escapeCsv(w.meaning || ''),
+                            escapeCsv(w.sentence || ''),
+                            escapeCsv(w.sentenceTranslation || ''),
+                            escapeCsv(
+                                typeof w.timestamp === 'number'
+                                    ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                                    : '',
+                            ),
+                            escapeCsv(epMid),
+                            escapeCsv(epTitle),
+                            escapeCsv(dateStr),
+                        ]);
+                    }
+                });
+            });
+        }
 
         if (rows.length === 0) {
             showToast('No user-marked vocabulary found to export.');
@@ -1447,6 +1662,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function exportMergedVocabCsv(
         episodes: EpisodeVocabData[],
         filename: string,
+        wordsOverride?: CuratedVocabWord[],
     ): void {
         if (!episodes || episodes.length === 0) return;
         const headers = [
@@ -1469,10 +1685,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const rows: string[][] = [];
-        episodes.forEach((ep) => {
-            const epTitle = ep.showTitle || '';
-            const epMid = ep.movieId || '';
-            ep.words.forEach((w) => {
+        if (wordsOverride) {
+            wordsOverride.forEach((w) => {
                 rows.push([
                     escapeCsv(w.word || ''),
                     escapeCsv(
@@ -1489,11 +1703,37 @@ document.addEventListener('DOMContentLoaded', () => {
                             : '',
                     ),
                     escapeCsv(w.frequency || 1),
-                    escapeCsv(epMid),
-                    escapeCsv(epTitle),
+                    escapeCsv(w.originEpisodeId || ''),
+                    escapeCsv(w.originShowTitle || ''),
                 ]);
             });
-        });
+        } else {
+            episodes.forEach((ep) => {
+                const epTitle = ep.showTitle || '';
+                const epMid = ep.movieId || '';
+                ep.words.forEach((w) => {
+                    rows.push([
+                        escapeCsv(w.word || ''),
+                        escapeCsv(
+                            w.source === 'user' ? 'User Marked' : 'AI Extracted',
+                        ),
+                        escapeCsv(w.pos || ''),
+                        escapeCsv(w.phonetic || ''),
+                        escapeCsv(w.meaning || ''),
+                        escapeCsv(w.sentence || ''),
+                        escapeCsv(w.sentenceTranslation || ''),
+                        escapeCsv(
+                            typeof w.timestamp === 'number'
+                                ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                                : '',
+                        ),
+                        escapeCsv(w.frequency || 1),
+                        escapeCsv(epMid),
+                        escapeCsv(epTitle),
+                    ]);
+                });
+            });
+        }
 
         const csvContent =
             '\uFEFF' +

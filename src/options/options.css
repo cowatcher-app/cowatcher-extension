@@ -1157,3 +1157,57 @@ button {
 .history-session-date {
     color: var(--text-dim);
 }
+
+/* Curation Column Lock & Field Styles */
+.btn-field-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    border: 1px solid transparent;
+}
+
+.btn-field-lock.unlocked {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+}
+
+.btn-field-lock.unlocked:hover {
+    background: rgba(56, 189, 248, 0.22);
+}
+
+.btn-field-lock.locked {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+.btn-field-lock.locked:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.curation-field-label {
+    font-size: 11px;
+    color: #888;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.curation-field-lock-tag {
+    font-size: 10px;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.15);
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
