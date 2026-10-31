@@ -35,8 +35,19 @@ export class LlmService {
     private supervisorModel: string = DEFAULT_SETTINGS.supervisorModel;
     private enableSupervisor: boolean = DEFAULT_SETTINGS.enableSupervisor;
 
+    private vocabProvider: LLMProvider = 'openrouter';
+    private vocabModel: string = DEFAULT_SETTINGS.vocabExtractorModel;
+
+    private openrouterApiKey: string = DEFAULT_SETTINGS.openrouterApiKey || '';
+    private ollamaHost: string =
+        DEFAULT_SETTINGS.ollamaHost || 'http://localhost:11434';
+    private ollamaAliveCache: { alive: boolean; timestamp: number } | null =
+        null;
+    private static readonly OLLAMA_CACHE_TTL_MS = 15000;
+
     private translatorClient: ILlmClient | null = null;
     private supervisorClient: ILlmClient | null = null;
+    private vocabClient: ILlmClient | null = null;
 
     private initialized: boolean = false;
 
@@ -73,6 +84,28 @@ export class LlmService {
 
     private resolveProvider(rawProvider?: string): LLMProvider {
         return rawProvider === 'openrouter' ? 'openrouter' : 'ollama';
+    }
+
+    private resolveVocabProvider(rawProvider?: string): LLMProvider {
+        return rawProvider === 'ollama' ? 'ollama' : 'openrouter';
+    }
+
+    private resolveVocabModel(
+        provider: LLMProvider,
+        settings: Partial<ExtensionSettings>,
+    ): string {
+        if (provider === 'ollama') {
+            return (
+                settings.vocabExtractorOllamaModel?.trim() ||
+                DEFAULT_SETTINGS.vocabExtractorOllamaModel ||
+                'qwen2.5:7b'
+            );
+        }
+        return (
+            settings.vocabExtractorModel?.trim() ||
+            DEFAULT_SETTINGS.vocabExtractorModel ||
+            'deepseek/deepseek-chat'
+        );
     }
 
     private resolveModels(
@@ -118,10 +151,25 @@ export class LlmService {
                 ? settings.enableSupervisor
                 : this.enableSupervisor;
 
+        const vocabProvider = this.resolveVocabProvider(
+            settings.vocabExtractorProvider,
+        );
+        const vocabModel = this.resolveVocabModel(vocabProvider, settings);
+
+        if (settings.openrouterApiKey !== undefined) {
+            this.openrouterApiKey = settings.openrouterApiKey;
+        }
+        if (settings.ollamaHost !== undefined) {
+            this.ollamaHost = settings.ollamaHost;
+        }
+
         this.activeProvider = provider;
         this.translatorModel = translatorModel;
         this.supervisorModel = supervisorModel;
         this.enableSupervisor = enableSupervisor;
+
+        this.vocabProvider = vocabProvider;
+        this.vocabModel = vocabModel;
 
         this.translatorClient = await LlmClientFactory.getOrCreateClient(
             this.activeProvider,
@@ -132,6 +180,11 @@ export class LlmService {
             this.activeProvider,
             'supervisor',
             this.supervisorModel,
+        );
+        this.vocabClient = await LlmClientFactory.getOrCreateClient(
+            this.vocabProvider,
+            'vocab',
+            this.vocabModel,
         );
     }
 
@@ -159,14 +212,38 @@ export class LlmService {
                 ? settings.enableSupervisor
                 : this.enableSupervisor;
 
+        const newVocabProvider = this.resolveVocabProvider(
+            settings.vocabExtractorProvider,
+        );
+        const newVocabModel = this.resolveVocabModel(
+            newVocabProvider,
+            settings,
+        );
+
+        if (settings.openrouterApiKey !== undefined) {
+            this.openrouterApiKey = settings.openrouterApiKey;
+        }
+        if (settings.ollamaHost !== undefined) {
+            if (settings.ollamaHost !== this.ollamaHost) {
+                this.ollamaAliveCache = null;
+            }
+            this.ollamaHost = settings.ollamaHost;
+        }
+
         const providerChanged = newProvider !== this.activeProvider;
         const transModelChanged = newTransModel !== this.translatorModel;
         const supModelChanged = newSupModel !== this.supervisorModel;
+
+        const vocabProviderChanged = newVocabProvider !== this.vocabProvider;
+        const vocabModelChanged = newVocabModel !== this.vocabModel;
 
         this.activeProvider = newProvider;
         this.translatorModel = newTransModel;
         this.supervisorModel = newSupModel;
         this.enableSupervisor = newEnableSupervisor;
+
+        this.vocabProvider = newVocabProvider;
+        this.vocabModel = newVocabModel;
 
         if (providerChanged || transModelChanged || !this.translatorClient) {
             this.translatorClient = await LlmClientFactory.getOrCreateClient(
@@ -183,6 +260,14 @@ export class LlmService {
                 this.supervisorModel,
             );
         }
+
+        if (vocabProviderChanged || vocabModelChanged || !this.vocabClient) {
+            this.vocabClient = await LlmClientFactory.getOrCreateClient(
+                this.vocabProvider,
+                'vocab',
+                this.vocabModel,
+            );
+        }
     }
 
     getActiveProvider(): LLMProvider {
@@ -190,6 +275,17 @@ export class LlmService {
     }
 
     async getClient(role: LlmRole): Promise<ILlmClient> {
+        if (role === 'vocab') {
+            if (!this.vocabClient) {
+                this.vocabClient = await LlmClientFactory.getOrCreateClient(
+                    this.vocabProvider,
+                    'vocab',
+                    this.vocabModel,
+                );
+            }
+            return this.vocabClient;
+        }
+
         if (role === 'supervisor') {
             if (!this.supervisorClient) {
                 this.supervisorClient =
@@ -212,6 +308,62 @@ export class LlmService {
         return this.translatorClient;
     }
 
+    getVocabProvider(): LLMProvider {
+        return this.vocabProvider;
+    }
+
+    getVocabModel(): string {
+        return this.vocabModel;
+    }
+
+    async pingOllama(timeoutMs = 600): Promise<boolean> {
+        const now = Date.now();
+        if (
+            this.ollamaAliveCache &&
+            now - this.ollamaAliveCache.timestamp < LlmService.OLLAMA_CACHE_TTL_MS
+        ) {
+            return this.ollamaAliveCache.alive;
+        }
+
+        try {
+            const host = (this.ollamaHost || 'http://localhost:11434').replace(
+                /\/+$/,
+                '',
+            );
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+            const res = await fetch(`${host}/api/tags`, {
+                method: 'GET',
+                signal: controller.signal,
+            });
+            clearTimeout(timer);
+
+            const alive = res.ok;
+            this.ollamaAliveCache = { alive, timestamp: now };
+            return alive;
+        } catch {
+            this.ollamaAliveCache = { alive: false, timestamp: now };
+            return false;
+        }
+    }
+
+    async isVocabActive(): Promise<boolean> {
+        if (!this.vocabModel) return false;
+
+        if (this.vocabProvider === 'openrouter') {
+            return Boolean(
+                this.openrouterApiKey && this.openrouterApiKey.trim().length > 0,
+            );
+        }
+
+        if (this.vocabProvider === 'ollama') {
+            return await this.pingOllama();
+        }
+
+        return false;
+    }
+
     async callChat(role: LlmRole, params: LlmRoleChatParams): Promise<string> {
         const client = await this.getClient(role);
         return await client.chat({
@@ -222,8 +374,36 @@ export class LlmService {
         });
     }
 
-    isSupervisorActive(): boolean {
-        return this.enableSupervisor;
+    async isSupervisorActive(): Promise<boolean> {
+        if (!this.enableSupervisor || !this.supervisorModel) return false;
+
+        if (this.activeProvider === 'openrouter') {
+            return Boolean(
+                this.openrouterApiKey && this.openrouterApiKey.trim().length > 0,
+            );
+        }
+
+        if (this.activeProvider === 'ollama') {
+            return await this.pingOllama();
+        }
+
+        return false;
+    }
+
+    async isTranslatorActive(): Promise<boolean> {
+        if (!this.translatorModel) return false;
+
+        if (this.activeProvider === 'openrouter') {
+            return Boolean(
+                this.openrouterApiKey && this.openrouterApiKey.trim().length > 0,
+            );
+        }
+
+        if (this.activeProvider === 'ollama') {
+            return await this.pingOllama();
+        }
+
+        return false;
     }
 
     async getAiCapability(role?: LlmRole): Promise<AiCapability> {

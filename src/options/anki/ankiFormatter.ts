@@ -74,32 +74,47 @@ export function formatWordToCard(
 ): AnkiCard {
     const rawWord = word.word.trim();
     const pho = (word.phonetic || '').trim();
-    const meaning = escapeHtml(word.meaning || '');
+    const dictM = (word.dictMeaning || '').trim();
+    const ctxM = (word.meaning || '').trim();
+    let combinedMeaningHtml = escapeHtml(ctxM || dictM);
+    if (dictM && ctxM && dictM !== ctxM) {
+        combinedMeaningHtml = `<div>📖 ${escapeHtml(dictM)}</div><div style="font-size: 13.5px; color: #94a3b8; margin-top: 3px;">💡 ${escapeHtml(ctxM)}</div>`;
+    }
+    const meaning = combinedMeaningHtml;
     const sentence = word.sentence || '';
     const trans = word.sentenceTranslation || '';
     const pos = word.pos ? `<i>(${escapeHtml(word.pos)})</i>` : '';
+    const placement = options.readingPlacement || 'front';
 
-    // 1. Furigana / Ruby Reading
-    let readingHtml: string;
-    if (pho) {
+    // 1. Reading HTML calculation based on placement ('front' | 'back' | 'none')
+    let frontWordHtml: string;
+    let backReadingHtml = '';
+
+    if (pho && placement === 'front') {
         if (options.formatFurigana !== false) {
-            readingHtml = `<ruby>${escapeHtml(rawWord)}<rt>${escapeHtml(pho)}</rt></ruby>`;
+            frontWordHtml = `<ruby>${escapeHtml(rawWord)}<rt>${escapeHtml(pho)}</rt></ruby>`;
         } else {
-            readingHtml = `${escapeHtml(rawWord)} [${escapeHtml(pho)}]`;
+            frontWordHtml = `${escapeHtml(rawWord)} [${escapeHtml(pho)}]`;
         }
     } else {
-        readingHtml = escapeHtml(rawWord);
+        frontWordHtml = escapeHtml(rawWord);
+        if (pho && placement === 'back') {
+            backReadingHtml = `<div class="ncw-anki-reading" style="font-size: 14.5px; font-weight: 500; color: #38bdf8; margin-bottom: 6px;">[${escapeHtml(pho)}]</div>`;
+        }
     }
 
     // 2. Front Field (Word + Optional Native TTS tag)
     const voiceLang = options.voiceLang || 'ja_JP';
-    let front = readingHtml;
+    let front = frontWordHtml;
     if (options.enableTts !== false) {
         front += ` [tts:${voiceLang}]${rawWord}[/tts]`;
     }
 
-    // 3. Back Field (Meaning, POS, Example sentence with highlight & translation)
+    // 3. Back Field (Reading if placed on back, POS, Meaning, Example sentence with highlight & translation)
     const backParts: string[] = [];
+    if (backReadingHtml) {
+        backParts.push(backReadingHtml);
+    }
     if (pos) {
         backParts.push(`<div style="margin-bottom: 4px; color: #888;">${pos}</div>`);
     }
@@ -146,7 +161,7 @@ export function formatWordToCard(
         fields: {
             Front: front,
             Back: backParts.join(''),
-            Reading: pho ? escapeHtml(pho) : '',
+            Reading: placement !== 'none' && pho ? escapeHtml(pho) : '',
             Sentence: sentence ? highlightKeyword(sentence, rawWord) : '',
             SentenceTranslation: escapeHtml(trans),
             Meaning: meaning,

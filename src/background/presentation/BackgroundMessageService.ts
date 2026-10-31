@@ -28,6 +28,9 @@ import { LLMHelperService } from '../application/services/LLMHelperService';
 import { WatchHistoryService } from '../application/services/WatchHistoryService';
 import { Context } from '@shared/domain/entities/Context';
 import { Logger } from '@shared/utils/logger';
+import { PhoneticAdapterFactory } from '@shared/infrastructure/phonetic/PhoneticAdapterFactory';
+import { ChinesePhoneticAdapter } from '@shared/infrastructure/phonetic/adapters/ChinesePhoneticAdapter';
+import { KoreanPhoneticAdapter } from '@shared/infrastructure/phonetic/adapters/KoreanPhoneticAdapter';
 
 export class BackgroundMessageService {
     private static instance: BackgroundMessageService | null = null;
@@ -65,7 +68,39 @@ export class BackgroundMessageService {
                 const updated = changes[NCW_STORAGE_KEYS.SETTINGS]
                     .newValue as ExtensionSettings;
                 this.llmService.updateFromSettings(updated);
+                if (updated.chinesePhoneticSystem) {
+                    const zhAdapter = PhoneticAdapterFactory.getAdapter(
+                        'zh',
+                    ) as ChinesePhoneticAdapter | undefined;
+                    if (
+                        zhAdapter &&
+                        typeof zhAdapter.setPhoneticSystem === 'function'
+                    ) {
+                        zhAdapter.setPhoneticSystem(
+                            updated.chinesePhoneticSystem,
+                        );
+                    }
+                }
+                if (updated.koreanPhoneticSystem) {
+                    const koAdapter = PhoneticAdapterFactory.getAdapter(
+                        'ko',
+                    ) as KoreanPhoneticAdapter | undefined;
+                    if (
+                        koAdapter &&
+                        typeof koAdapter.setPhoneticSystem === 'function'
+                    ) {
+                        koAdapter.setPhoneticSystem(
+                            updated.koreanPhoneticSystem,
+                        );
+                    }
+                }
                 ContentBackgroundBus.send(
+                    NCW_MESSAGE_TYPES.PUSH_SETTINGS_CHANGED,
+                    {
+                        settings: updated,
+                    },
+                ).catch(() => {});
+                ContentBackgroundBus.broadcastToTabs(
                     NCW_MESSAGE_TYPES.PUSH_SETTINGS_CHANGED,
                     {
                         settings: updated,
@@ -88,9 +123,35 @@ export class BackgroundMessageService {
             const res = await this.storage.get<Record<string, unknown>>([
                 NCW_CONSTANTS.STORAGE_KEYS.SETTINGS,
             ]);
-            const settings = res?.[NCW_CONSTANTS.STORAGE_KEYS.SETTINGS] as {
-                cacheRetention?: '1w' | '1m' | '1y';
-            } | undefined;
+            const settings = res?.[NCW_CONSTANTS.STORAGE_KEYS.SETTINGS] as
+                | unknown as ExtensionSettings
+                | undefined;
+            if (settings?.chinesePhoneticSystem) {
+                const zhAdapter = PhoneticAdapterFactory.getAdapter(
+                    'zh',
+                ) as ChinesePhoneticAdapter | undefined;
+                if (
+                    zhAdapter &&
+                    typeof zhAdapter.setPhoneticSystem === 'function'
+                ) {
+                    zhAdapter.setPhoneticSystem(
+                        settings.chinesePhoneticSystem,
+                    );
+                }
+            }
+            if (settings?.koreanPhoneticSystem) {
+                const koAdapter = PhoneticAdapterFactory.getAdapter(
+                    'ko',
+                ) as KoreanPhoneticAdapter | undefined;
+                if (
+                    koAdapter &&
+                    typeof koAdapter.setPhoneticSystem === 'function'
+                ) {
+                    koAdapter.setPhoneticSystem(
+                        settings.koreanPhoneticSystem,
+                    );
+                }
+            }
             const retention = settings?.cacheRetention || '1m';
             await this.cacheRepository.cleanExpiredRecords(retention);
         } catch (_e) {}
@@ -707,6 +768,82 @@ export class BackgroundMessageService {
                         return true;
                     }
 
+                    case NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING: {
+                        const adapter = PhoneticAdapterFactory.getAdapter(
+                            message.lang,
+                        );
+                        if (!adapter) {
+                            sendResponse({
+                                success: false,
+                                reading: '',
+                            } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING]['response']);
+                            return true;
+                        }
+                        adapter
+                            .getWordReading(message.word, {
+                                system: message.system,
+                            })
+                            .then((reading) => {
+                                sendResponse({
+                                    success: true,
+                                    reading,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING]['response']);
+                            })
+                            .catch((err) => {
+                                sendResponse({
+                                    success: false,
+                                    reading: '',
+                                    error: String(err),
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH: {
+                        const adapter = PhoneticAdapterFactory.getAdapter(
+                            message.lang,
+                        );
+                        if (!adapter) {
+                            sendResponse({
+                                success: false,
+                                readings: {},
+                            } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH]['response']);
+                            return true;
+                        }
+                        const readings: Record<string, string> = {};
+                        const words: string[] = Array.isArray(message.words)
+                            ? message.words
+                            : [];
+                        Promise.all(
+                            words.map(async (w: string) => {
+                                try {
+                                    const r = await adapter.getWordReading(w, {
+                                        system: message.system,
+                                    });
+                                    if (r && r !== w) {
+                                        readings[w] = r;
+                                    }
+                                } catch {
+                                    // Ignore single token errors
+                                }
+                            }),
+                        )
+                            .then(() => {
+                                sendResponse({
+                                    success: true,
+                                    readings,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH]['response']);
+                            })
+                            .catch((err) => {
+                                sendResponse({
+                                    success: false,
+                                    readings,
+                                    error: String(err),
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH]['response']);
+                            });
+                        return true;
+                    }
+
                     // --- Watch History & Analytics ---
                     case NCW_CONSTANTS.MESSAGE_TYPES.RECORD_WATCH_SESSION: {
                         this.watchHistoryService
@@ -846,6 +983,12 @@ export class BackgroundMessageService {
                                 });
                                 this.llmService.updateFromSettings(updated);
                                 ContentBackgroundBus.send(
+                                    NCW_MESSAGE_TYPES.PUSH_SETTINGS_CHANGED,
+                                    {
+                                        settings: updated,
+                                    },
+                                ).catch(() => {});
+                                ContentBackgroundBus.broadcastToTabs(
                                     NCW_MESSAGE_TYPES.PUSH_SETTINGS_CHANGED,
                                     {
                                         settings: updated,

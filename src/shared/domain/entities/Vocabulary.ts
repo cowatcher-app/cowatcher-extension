@@ -3,6 +3,8 @@
  */
 export interface VocabWordItem {
     word: string;
+    lemma?: string;
+    dictMeaning?: string;
     pos: string;
     phonetic: string;
     meaning: string;

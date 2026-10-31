@@ -136,6 +136,17 @@ export class AnkiExportModal {
             customDeckInput.style.display = 'none';
         }
 
+        // Restore saved reading placement preference
+        const placementSelect = document.getElementById(
+            'anki-reading-placement-select',
+        ) as HTMLSelectElement | null;
+        if (placementSelect) {
+            const savedPlacement = localStorage.getItem('ncw_anki_reading_placement');
+            if (savedPlacement) {
+                placementSelect.value = savedPlacement;
+            }
+        }
+
         this.modalEl.style.display = 'flex';
 
         // Check AnkiConnect connectivity & load decks
@@ -219,10 +230,20 @@ export class AnkiExportModal {
         const furiganaCheck = document.getElementById(
             'anki-furigana-check',
         ) as HTMLInputElement | null;
+        const placementSelect = document.getElementById(
+            'anki-reading-placement-select',
+        ) as HTMLSelectElement | null;
 
         let deckName = deckSelect?.value || 'CoWatcher';
         if (deckName === '__custom__') {
             deckName = (customDeckInput?.value || '').trim() || 'CoWatcher';
+        }
+
+        const readingPlacement = (placementSelect?.value as 'front' | 'back' | 'none') || 'front';
+        try {
+            localStorage.setItem('ncw_anki_reading_placement', readingPlacement);
+        } catch {
+            // ignore
         }
 
         return {
@@ -230,6 +251,7 @@ export class AnkiExportModal {
             voiceLang: voiceSelect?.value || 'ja_JP',
             enableTts: ttsCheck?.checked !== false,
             formatFurigana: furiganaCheck?.checked !== false,
+            readingPlacement,
             tags: ['CoWatcher'],
         };
     }

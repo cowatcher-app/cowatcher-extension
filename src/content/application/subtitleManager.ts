@@ -328,7 +328,10 @@ export class SubtitleManager {
         language?: string,
     ): void {
         if (!cues || cues.length === 0) return;
-        if (language) this.currentRawLanguage = language;
+        if (language) {
+            this.currentRawLanguage = language;
+            this.learningManager?.setSourceLanguage(language);
+        }
 
         const incomingMovieId = movieId ? String(movieId) : null;
         const currentMovieId = this.contextManager.currentMovieId;
@@ -566,10 +569,10 @@ export class SubtitleManager {
         const oldPreferNative = this.settings.preferNativeSubtitles !== false;
 
         this.settings = { ...this.settings, ...newSettings };
-        this.overlay.updateSettings(this.settings);
         this.learningManager?.updateSettings(
             this.settings as ExtensionSettings,
         );
+        this.overlay.updateSettings(this.settings);
         this.applySettingsOffsetChanges(newSettings);
 
         const oldLang = Language.resolve(oldTargetLanguage).code;

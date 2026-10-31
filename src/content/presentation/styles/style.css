@@ -379,6 +379,23 @@ body.ncw-hide-native-subs .caption-window {
     color: #ffd700;
 }
 
+/* Ruby Furigana & Phonetic Annotation */
+.ncw-token-ruby {
+    ruby-position: over;
+    ruby-align: center;
+}
+
+.ncw-token-phonetic {
+    font-size: 0.52em;
+    font-weight: 500;
+    color: #93c5fd;
+    line-height: 1;
+    letter-spacing: 0;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    pointer-events: none !important;
+}
+
 /* Subtitle Learning Popover Backdrop (absorbs dismiss click to prevent video pause) */
 .ncw-popover-backdrop {
     position: absolute;
@@ -451,6 +468,16 @@ body.ncw-hide-native-subs .caption-window {
     color: #ffd700;
 }
 
+.ncw-pop-lemma {
+    font-size: 11.5px;
+    padding: 1px 6px;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 4px;
+    color: #38bdf8;
+    font-weight: 500;
+}
+
 .ncw-pop-phonetic {
     font-size: 13px;
     color: #a0a0b0;
@@ -502,6 +529,13 @@ body.ncw-hide-native-subs .caption-window {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.ncw-pop-dict-meaning {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #46d369;
+    line-height: 1.45;
 }
 
 .ncw-pop-meaning {

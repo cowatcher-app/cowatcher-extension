@@ -14,6 +14,7 @@ import {
 import { ITrackCacheRepository } from '@shared/domain/repositories/ITrackCacheRepository';
 import { TrackCacheRepositoryFactory } from '../../infrastructure/cache/TrackCacheRepositoryFactory';
 import { LlmService } from './LlmService';
+import { LlmRole } from '../../domain/llm/LlmRole';
 import { ExtensionSettings, NCW_CONSTANTS } from '@shared/utils/constants';
 import { IBrowserStorage } from '@shared/infrastructure/storage/IBrowserStorage';
 import { BrowserStorageFactory } from '@shared/infrastructure/storage/BrowserStorageFactory';
@@ -22,6 +23,7 @@ import { NCW_STORAGE_KEYS } from '@shared/domain/constants/StorageKeys';
 import { Language, LanguageInfo } from '@shared/domain/value-objects/Language';
 import { Logger } from '@shared/utils/logger';
 import { LLMProvider } from '@shared/domain/entities/PipelineTypes';
+import { PhoneticAdapterFactory } from '@shared/infrastructure/phonetic/PhoneticAdapterFactory';
 
 interface VocabTaskItem {
     taskFn: () => Promise<unknown>;
@@ -84,6 +86,7 @@ export interface VocabServiceConfig {
     customPrompt: string;
     provider: LLMProvider;
     model: string;
+    recordVocabAsLemma?: boolean;
 }
 
 export class VocabService {
@@ -161,10 +164,9 @@ export class VocabService {
         if (!settings) return;
         const rawProvider =
             settings.vocabExtractorProvider ||
-            settings.aiProvider ||
             this.config.provider;
         const provider: LLMProvider =
-            rawProvider === 'openrouter' ? 'openrouter' : 'ollama';
+            rawProvider === 'ollama' ? 'ollama' : 'openrouter';
         const model =
             provider === 'openrouter'
                 ? settings.vocabExtractorModel || 'deepseek/deepseek-chat'
@@ -188,6 +190,10 @@ export class VocabService {
                     : this.config.customPrompt,
             provider,
             model,
+            recordVocabAsLemma:
+                settings.recordVocabAsLemma !== undefined
+                    ? Boolean(settings.recordVocabAsLemma)
+                    : this.config.recordVocabAsLemma !== false,
         };
     }
 
@@ -233,8 +239,45 @@ export class VocabService {
             return { success: false };
         }
 
+        const rawWord = wordItem.word.trim();
+        const srcLangStr =
+            wordItem.sourceLang ||
+            (typeof this.config.sourceLanguage === 'object' &&
+            this.config.sourceLanguage !== null
+                ? this.config.sourceLanguage.code
+                : this.config.sourceLanguage || 'auto');
+
+        const adapter = PhoneticAdapterFactory.getAdapter(srcLangStr);
+        let resolvedLemma = (wordItem.lemma || '').trim();
+        if (!resolvedLemma && adapter) {
+            try {
+                resolvedLemma = await adapter.getLemma(rawWord);
+            } catch {
+                // ignore
+            }
+        }
+        if (!resolvedLemma) {
+            resolvedLemma = rawWord;
+        }
+
+        const recordAsLemma = this.config.recordVocabAsLemma !== false;
+        const targetHeadword = recordAsLemma ? (resolvedLemma || rawWord) : rawWord;
+
+        let phonetic = wordItem.phonetic;
+        if (!phonetic && adapter) {
+            try {
+                phonetic = await adapter.getWordReading(resolvedLemma || targetHeadword);
+            } catch {
+                // ignore
+            }
+        }
+
         const item: VocabWordItem = {
             ...wordItem,
+            word: targetHeadword,
+            lemma: resolvedLemma,
+            dictMeaning: wordItem.dictMeaning || undefined,
+            phonetic: phonetic || wordItem.phonetic || '',
             source: 'user',
             createdAt: wordItem.createdAt || Date.now(),
             timestamp: wordItem.timestamp || Date.now(),
@@ -304,77 +347,206 @@ export class VocabService {
         } = req;
         if (!word) return { success: false, error: 'Word is required' };
 
-        try {
-            // Determine LLM role: prefer supervisor if enabled, fallback to translator
-            const role =
-                preferredRole === 'supervisor' &&
-                this.llmService.isSupervisorActive()
-                    ? 'supervisor'
-                    : 'translator';
-
-            const customInstruction = customPrompt?.trim()
-                ? `\nCustom Instructions from User:\n${customPrompt.trim()}\n`
+        const adapter = PhoneticAdapterFactory.getAdapter(sourceLang);
+        let detectedLemma = word;
+        if (adapter) {
+            try {
+                detectedLemma = await adapter.getLemma(word);
+            } catch {
+                // ignore
+            }
+        }
+        const primaryLemma =
+            detectedLemma &&
+            detectedLemma.toLowerCase() !== word.toLowerCase()
+                ? detectedLemma
                 : '';
 
-            const prompt = `You are an expert bilingual dictionary and language tutor.
+        // 1. Check if corresponding language dict adapter provides getMeaning
+        let dictMeaning: string | null = null;
+        if (adapter && typeof adapter.getMeaning === 'function') {
+            try {
+                dictMeaning = await adapter.getMeaning(
+                    primaryLemma || word,
+                    targetLang,
+                    { sourceLang },
+                );
+                if (!dictMeaning && primaryLemma) {
+                    dictMeaning = await adapter.getMeaning(
+                        word,
+                        targetLang,
+                        { sourceLang },
+                    );
+                }
+            } catch {
+                dictMeaning = null;
+            }
+        }
+
+        // 2. Check if LLM is active/available for Vocabulary lookup
+        // Priority:
+        // 1) Dedicated 'vocab' role if active (default and preferred for all vocabulary lookups)
+        // 2) 'supervisor' if explicitly preferred or as fallback if supervisor is active
+        // 3) 'translator' as fallback if active
+        let role: LlmRole | null = null;
+        if (await this.llmService.isVocabActive()) {
+            role = 'vocab';
+        } else if (
+            preferredRole === 'supervisor' &&
+            (await this.llmService.isSupervisorActive())
+        ) {
+            role = 'supervisor';
+        } else if (await this.llmService.isSupervisorActive()) {
+            role = 'supervisor';
+        } else if (await this.llmService.isTranslatorActive()) {
+            role = 'translator';
+        }
+
+        if (role) {
+            try {
+
+                const customInstruction = customPrompt?.trim()
+                    ? `\nCustom Instructions from User:\n${customPrompt.trim()}\n`
+                    : '';
+
+                const lemmaInstruction = primaryLemma
+                    ? `\nNote on Morphology: The contextual word "${word}" has root dictionary lemma "${primaryLemma}". In your explanation, please explain the meaning and grammatical role of "${word}" in the context sentence, and also provide the base dictionary definition for the root lemma "${primaryLemma}".`
+                    : '';
+
+                const prompt = `You are an expert bilingual dictionary and language tutor.
 Given the word or phrase "${word}" used in the context sentence:
 "${contextSentence}"${contextTranslation ? ` (Translation: "${contextTranslation}")` : ''}
 
 Language: ${sourceLang} -> ${targetLang}
+${lemmaInstruction}
 ${customInstruction}
 Provide a concise, accurate JSON response with the following schema:
 {
   "word": "${word}",
-  "lemma": "dictionary / base lemma form",
+  "lemma": "${primaryLemma || 'dictionary / base lemma form'}",
   "reading": "phonetic transcription / furigana / pinyin / IPA",
   "pos": "part of speech (noun, verb, phrase, etc.)",
   "meaning": "clear definition in ${targetLang} suited for this context",
-  "grammarNotes": "brief 1-sentence note on conjugation, tense, nuance, or custom requested info if applicable",
+  "grammarNotes": "brief 1-sentence note on conjugation, tense, nuance, inflection from root lemma, or custom requested info if applicable",
   "exampleSentence": "a simple, natural example sentence using this word",
   "exampleTranslation": "translation of the example sentence in ${targetLang}"
 }
 Only output the valid JSON object, no other commentary.`;
 
-            const raw = await this.llmService.callChat(role, {
-                messages: [{ role: 'user', content: prompt }],
-                jsonMode: true,
-                temperature: 0.2,
-            });
+                const raw = await this.llmService.callChat(role, {
+                    messages: [{ role: 'user', content: prompt }],
+                    jsonMode: true,
+                    temperature: 0.2,
+                });
 
-            const clean = (raw || '')
-                .replace(/<think[\s\S]*?<\/think>/gi, '')
-                .replace(/<thought[\s\S]*?<\/thought>/gi, '')
-                .trim();
-            const parsed = JSON.parse(clean);
-            return {
-                success: true,
-                data: {
-                    word: parsed.word || word,
-                    lemma: parsed.lemma || word,
-                    reading: parsed.reading || '',
-                    pos: parsed.pos || '',
-                    meaning: parsed.meaning || '',
-                    grammarNotes: parsed.grammarNotes || '',
-                    exampleSentence: parsed.exampleSentence || contextSentence,
-                    exampleTranslation:
-                        parsed.exampleTranslation || contextTranslation,
-                },
-            };
-        } catch {
-            // Graceful fallback response when LLM is unavailable or in Google mode
-            return {
-                success: true,
-                data: {
-                    word,
-                    lemma: word,
-                    reading: '',
-                    pos: '',
-                    meaning: 'Tap to lookup or right-click to save',
-                    exampleSentence: contextSentence,
-                    exampleTranslation: contextTranslation,
-                },
-            };
+                const clean = (raw || '')
+                    .replace(/<think[\s\S]*?<\/think>/gi, '')
+                    .replace(/<thought[\s\S]*?<\/thought>/gi, '')
+                    .trim();
+                const parsed = JSON.parse(clean);
+
+                const resolvedLemma = parsed.lemma || primaryLemma || word;
+                let reading = parsed.reading || '';
+                if (adapter) {
+                    try {
+                        // Query phonetic reading via lemma first to maximize dictionary accuracy
+                        const deterministic = await adapter.getWordReading(
+                            primaryLemma || resolvedLemma || word,
+                        );
+                        if (deterministic) {
+                            reading = deterministic;
+                        }
+                    } catch {
+                        // Fall back to parsed.reading
+                    }
+                }
+
+                return {
+                    success: true,
+                    data: {
+                        word: parsed.word || word,
+                        lemma: resolvedLemma,
+                        reading,
+                        pos: parsed.pos || '',
+                        dictMeaning: dictMeaning || undefined,
+                        meaning: parsed.meaning || '',
+                        grammarNotes: parsed.grammarNotes || '',
+                        exampleSentence:
+                            parsed.exampleSentence || contextSentence,
+                        exampleTranslation:
+                            parsed.exampleTranslation || contextTranslation,
+                    },
+                };
+            } catch (llmErr) {
+                this.logger.warn(
+                    'Lookup',
+                    'LLM lookup failed, falling back to general adapter:',
+                    llmErr,
+                );
+            }
         }
+
+        // Fallback / Google mode (No LLM active or LLM failed):
+        // Use GeneralDictionaryAdapter only if specialized dictionary meaning was not found
+        let generalMeaning: string | null = null;
+        if (!dictMeaning) {
+            try {
+                const generalAdapter =
+                    PhoneticAdapterFactory.getAdapter('general');
+                if (
+                    generalAdapter &&
+                    typeof generalAdapter.getMeaning === 'function'
+                ) {
+                    generalMeaning = await generalAdapter.getMeaning(
+                        primaryLemma || word,
+                        targetLang,
+                        { sourceLang },
+                    );
+                    // If lookup using primaryLemma yielded nothing, try raw word
+                    if (!generalMeaning && primaryLemma) {
+                        generalMeaning = await generalAdapter.getMeaning(
+                            word,
+                            targetLang,
+                            { sourceLang },
+                        );
+                    }
+                }
+            } catch {
+                generalMeaning = null;
+            }
+        }
+
+        let reading = '';
+        if (adapter) {
+            try {
+                reading = await adapter.getWordReading(
+                    primaryLemma || detectedLemma || word,
+                );
+            } catch {
+                // ignore
+            }
+        }
+
+        const fallbackMeaning =
+            dictMeaning ||
+            generalMeaning ||
+            (primaryLemma
+                ? `Base form: ${primaryLemma}`
+                : 'Tap to lookup or right-click to save');
+
+        return {
+            success: true,
+            data: {
+                word,
+                lemma: primaryLemma || detectedLemma || word,
+                reading,
+                pos: '',
+                dictMeaning: dictMeaning || undefined,
+                meaning: fallbackMeaning,
+                exampleSentence: contextSentence,
+                exampleTranslation: contextTranslation,
+            },
+        };
     }
 
     async feedVocabCues(params: {
@@ -511,6 +683,15 @@ Only output the valid JSON object, no other commentary.`;
 
         if (!cuesBatch || cuesBatch.length === 0) return { vocab: [] };
 
+        const isVocabActive = await this.llmService.isVocabActive();
+        if (!isVocabActive) {
+            this.logger.warn(
+                'Vocabulary',
+                'Vocab LLM is not active or reachable, skipping extraction batch.',
+            );
+            return { vocab: [] };
+        }
+
         const resolvedTargetLang = Language.resolve(targetLanguage).promptName;
         const resolvedSourceLang =
             sourceLanguage && sourceLanguage !== 'auto'
@@ -546,7 +727,7 @@ Dialogue excerpt:
 ${dialoguesText}`;
 
         try {
-            const raw = await this.llmService.callChat('translator', {
+            const raw = await this.llmService.callChat('vocab', {
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.2,
                 jsonMode: true,
@@ -569,16 +750,48 @@ ${dialoguesText}`;
                     ? targetLanguage.code
                     : String(targetLanguage || 'en');
 
+            const adapter = PhoneticAdapterFactory.getAdapter(resolvedSrcStr);
+            const recordAsLemma = this.config.recordVocabAsLemma !== false;
             for (const item of rawList) {
                 if (
                     item &&
                     typeof item.word === 'string' &&
                     item.word.trim().length > 0
                 ) {
+                    const rawWord = item.word.trim();
+                    let lemma =
+                        typeof item.lemma === 'string' && item.lemma.trim()
+                            ? item.lemma.trim()
+                            : '';
+                    if (!lemma && adapter) {
+                        try {
+                            lemma = await adapter.getLemma(rawWord);
+                        } catch {
+                            // ignore
+                        }
+                    }
+                    if (!lemma) lemma = rawWord;
+
+                    const headword = recordAsLemma ? lemma : rawWord;
+                    let phonetic = String(item.phonetic || '');
+                    if (adapter) {
+                        try {
+                            const deterministic = await adapter.getWordReading(
+                                lemma || headword,
+                            );
+                            if (deterministic) {
+                                phonetic = deterministic;
+                            }
+                        } catch {
+                            // Fallback to item.phonetic
+                        }
+                    }
+
                     validList.push({
-                        word: item.word.trim(),
+                        word: headword,
+                        lemma,
                         pos: String(item.pos || ''),
-                        phonetic: String(item.phonetic || ''),
+                        phonetic,
                         meaning: String(item.meaning || ''),
                         sentence: String(item.sentence || ''),
                         sentenceTranslation: String(
@@ -654,6 +867,8 @@ ${dialoguesText}`;
                     w.source === 'user' || old.source === 'user';
                 wordsMap.set(key, {
                     ...old,
+                    lemma: w.lemma || old.lemma,
+                    dictMeaning: w.dictMeaning || old.dictMeaning,
                     meaning: w.meaning || old.meaning,
                     sentence: w.sentence || old.sentence,
                     sentenceTranslation:

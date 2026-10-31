@@ -59,12 +59,16 @@ module.exports = (env = {}) => {
           { from: 'src/popup/popup.html', to: 'popup/popup.html' },
           { from: 'src/popup/popup.css', to: 'popup/popup.css' },
           { from: 'src/editor/editor.html', to: 'editor/editor.html' },
-          { from: 'src/editor/editor.css', to: 'editor/editor.css' }
+          { from: 'src/editor/editor.css', to: 'editor/editor.css' },
+          { from: 'node_modules/kuromoji/dict', to: 'dict' }
         ]
       })
     ],
     resolve: {
       extensions: ['.ts', '.js'],
+      fallback: {
+        path: require.resolve('path-browserify')
+      },
       alias: {
         '@shared': path.resolve(__dirname, 'src/shared'),
         '@background': path.resolve(__dirname, 'src/background'),

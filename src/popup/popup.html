@@ -52,34 +52,20 @@
         <span class="tab-icon">📚</span>
         <span data-i18n="tabVocab">Vocabulary</span>
       </button>
+      <button class="tab-btn" id="tab-btn-ai" data-tab="tab-ai">
+        <span class="tab-icon">🤖</span>
+        <span data-i18n="tabAi">AI Services</span>
+      </button>
     </div>
 
     <!-- Tab 1: Subtitle Translation & Settings -->
     <div id="tab-subtitles" class="tab-content active">
-      <!-- Ollama Connection Status Card -->
-      <div class="status-card" id="status-card">
-        <div class="status-indicator" id="status-dot"></div>
-        <div class="status-info">
-          <div class="status-title" id="status-title" data-i18n="checkingConn">
-            Checking Ollama connection...
-          </div>
-          <div class="status-desc" id="status-desc">http://localhost:11434</div>
-        </div>
-        <button
-          class="btn-icon"
-          id="btn-refresh-models"
-          title="Refresh model list"
-          data-i18n-title="refreshModels"
-        >
-          🔄
-        </button>
-      </div>
-
       <div class="section">
         <div class="form-group">
-          <label for="ai-provider" data-i18n="aiProvider"
-            >🤖 AI Service Provider</label
-          >
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="ai-provider" data-i18n="aiProvider" style="margin-bottom: 0;">🤖 AI Service Provider</label>
+            <span class="provider-status-badge status-ready" id="subtitles-provider-status" title="Click to view AI Services">🟢 Ready</span>
+          </div>
           <select id="ai-provider">
             <option value="google" data-i18n="providerGoogle" selected>
               Google Translate (Free / Out of the Box)
@@ -95,23 +81,6 @@
 
         <!-- 1. Ollama Provider Settings -->
         <div id="ollama-settings-group">
-          <div class="form-group">
-            <label for="ollama-host" data-i18n="ollamaApiUrl"
-              >🔗 Ollama API URL</label
-            >
-            <div class="api-url-row">
-              <input
-                type="text"
-                id="ollama-host"
-                placeholder="http://localhost:11434"
-                spellcheck="false"
-              />
-              <button id="btn-save-host" class="btn-sm" data-i18n="btnConnect">
-                Connect
-              </button>
-            </div>
-          </div>
-
           <div class="form-group">
             <label for="translation-model" data-i18n="translationModel"
               >🚀 Translation Model (50-cue batch ahead)</label
@@ -137,63 +106,6 @@
 
         <!-- 2. OpenRouter Provider Settings -->
         <div id="openrouter-settings-group" style="display: none">
-          <div class="form-group">
-            <label for="openrouter-api-key" data-i18n="openrouterApiKey"
-              >🔑 OpenRouter API Key</label
-            >
-            <div class="api-url-row">
-              <div style="position: relative; flex: 1">
-                <input
-                  type="password"
-                  id="openrouter-api-key"
-                  placeholder="sk-or-v1-..."
-                  data-i18n-placeholder="openrouterKeyPlaceholder"
-                  spellcheck="false"
-                  style="
-                    width: 100%;
-                    box-sizing: border-box;
-                    padding-right: 30px;
-                  "
-                />
-                <button
-                  type="button"
-                  id="btn-toggle-key"
-                  style="
-                    position: absolute;
-                    right: 6px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #888;
-                    font-size: 13px;
-                    padding: 2px;
-                  "
-                  title="Show/Hide Key"
-                >
-                  👁️
-                </button>
-              </div>
-              <button
-                id="btn-test-openrouter"
-                class="btn-sm"
-                data-i18n="btnConnect"
-              >
-                Connect
-              </button>
-            </div>
-            <div class="field-hint" data-i18n="openrouterApiKeyHint">
-              Stored locally in browser. Get key at
-              <a
-                href="https://openrouter.ai/keys"
-                target="_blank"
-                style="color: #e50914; text-decoration: none"
-                >openrouter.ai/keys</a
-              >
-            </div>
-          </div>
-
           <div class="form-group">
             <label
               for="openrouter-translation-model"
@@ -846,9 +758,10 @@
       <div class="section">
         <!-- 1. Dedicated Vocab Model Selection -->
         <div class="form-group">
-          <label for="vocab-provider" data-i18n="vocabProvider"
-            >🤖 AI Service Provider</label
-          >
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="vocab-provider" data-i18n="vocabProvider" style="margin-bottom: 0;">🤖 AI Service Provider</label>
+            <span class="provider-status-badge status-ready" id="vocab-provider-status" title="Click to view AI Services">🟢 Ready</span>
+          </div>
           <select id="vocab-provider">
             <option value="openrouter" data-i18n="providerOpenRouter">
               OpenRouter (Cloud / Multi-model)
@@ -986,6 +899,105 @@
       </div>
     </div>
     <!-- /tab-vocab -->
+
+    <!-- Tab 3: Global AI Services & Credentials -->
+    <div id="tab-ai" class="tab-content">
+      <!-- 1. Ollama (Local) Configuration -->
+      <div class="vocab-header-card" style="margin-bottom: 8px;">
+        <div class="vocab-header-left">
+          <div class="vocab-header-title">🖥️ Ollama (Local LLM)</div>
+          <div class="field-hint">Local server host connection & model availability</div>
+        </div>
+        <span class="provider-status-badge status-checking" id="ai-tab-ollama-status">Checking...</span>
+      </div>
+
+      <div class="status-card" id="status-card" style="margin-bottom: 10px;">
+        <div class="status-indicator" id="status-dot"></div>
+        <div class="status-info">
+          <div class="status-title" id="status-title" data-i18n="checkingConn">
+            Checking Ollama connection...
+          </div>
+          <div class="status-desc" id="status-desc">http://localhost:11434</div>
+        </div>
+        <button
+          class="btn-icon"
+          id="btn-refresh-models"
+          title="Refresh model list"
+          data-i18n-title="refreshModels"
+        >
+          🔄
+        </button>
+      </div>
+
+      <div class="section" style="margin-bottom: 14px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="ollama-host" data-i18n="ollamaApiUrl">🔗 Ollama Server URL</label>
+          <div class="api-url-row">
+            <input
+              type="text"
+              id="ollama-host"
+              placeholder="http://localhost:11434"
+              spellcheck="false"
+            />
+            <button id="btn-save-host" class="btn-sm" data-i18n="btnConnect">
+              Connect
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. OpenRouter (Cloud) Configuration -->
+      <div class="vocab-header-card" style="margin-bottom: 8px;">
+        <div class="vocab-header-left">
+          <div class="vocab-header-title">☁️ OpenRouter (Cloud Multi-Model)</div>
+          <div class="field-hint">Unified API key for cloud models (DeepSeek, Gemini, etc.)</div>
+        </div>
+        <span class="provider-status-badge status-checking" id="ai-tab-openrouter-status">Checking...</span>
+      </div>
+
+      <div class="section">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="openrouter-api-key" data-i18n="openrouterApiKey">🔑 OpenRouter API Key</label>
+          <div class="api-url-row">
+            <div style="position: relative; flex: 1">
+              <input
+                type="password"
+                id="openrouter-api-key"
+                placeholder="sk-or-v1-..."
+                data-i18n-placeholder="openrouterKeyPlaceholder"
+                spellcheck="false"
+                style="width: 100%; box-sizing: border-box; padding-right: 30px;"
+              />
+              <button
+                type="button"
+                id="btn-toggle-key"
+                style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #888; font-size: 13px; padding: 2px;"
+                title="Show/Hide Key"
+              >
+                👁️
+              </button>
+            </div>
+            <button
+              id="btn-test-openrouter"
+              class="btn-sm"
+              data-i18n="btnConnect"
+            >
+              Connect
+            </button>
+          </div>
+          <div class="field-hint" data-i18n="openrouterApiKeyHint">
+            Stored locally in browser. Get key at
+            <a
+              href="https://openrouter.ai/keys"
+              target="_blank"
+              style="color: #e50914; text-decoration: none"
+              >openrouter.ai/keys</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /tab-ai -->
 
     <div class="donation-section">
       <a

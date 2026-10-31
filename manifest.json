@@ -79,8 +79,11 @@
       ],
       "matches": [
         "*://*.netflix.com/*",
+        "*://netflix.com/*",
         "*://*.tver.jp/*",
-        "*://*.youtube.com/*"
+        "*://tver.jp/*",
+        "*://*.youtube.com/*",
+        "*://youtube.com/*"
       ]
     }
   ]

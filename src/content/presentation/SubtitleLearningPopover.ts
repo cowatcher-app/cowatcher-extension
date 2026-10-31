@@ -42,6 +42,11 @@ export class SubtitleLearningPopover {
         wordEl.textContent = params.word;
         titleArea.appendChild(wordEl);
 
+        const lemmaEl = document.createElement('span');
+        lemmaEl.className = 'ncw-pop-lemma';
+        lemmaEl.style.display = 'none';
+        titleArea.appendChild(lemmaEl);
+
         const phoneticEl = document.createElement('span');
         phoneticEl.className = 'ncw-pop-phonetic';
         phoneticEl.textContent = '...';
@@ -104,6 +109,11 @@ export class SubtitleLearningPopover {
         // Meaning & Grammar Body
         const body = document.createElement('div');
         body.className = 'ncw-pop-body';
+
+        const dictMeaningEl = document.createElement('div');
+        dictMeaningEl.className = 'ncw-pop-dict-meaning';
+        dictMeaningEl.style.display = 'none';
+        body.appendChild(dictMeaningEl);
 
         const meaningEl = document.createElement('div');
         meaningEl.className = 'ncw-pop-meaning';
@@ -187,6 +197,23 @@ export class SubtitleLearningPopover {
     updateDefinition(result: WordLookupResult): void {
         if (!this.element) return;
 
+        const lemmaEl = this.element.querySelector(
+            '.ncw-pop-lemma',
+        ) as HTMLElement | null;
+        if (lemmaEl) {
+            if (
+                result.lemma &&
+                result.lemma.trim().toLowerCase() !==
+                    result.word.trim().toLowerCase()
+            ) {
+                lemmaEl.textContent = `(原: ${result.lemma.trim()})`;
+                lemmaEl.title = `Root lemma: ${result.lemma.trim()}`;
+                lemmaEl.style.display = 'inline-block';
+            } else {
+                lemmaEl.style.display = 'none';
+            }
+        }
+
         if (result.reading) {
             const phoneticEl = this.element.querySelector('.ncw-pop-phonetic');
             if (phoneticEl) {
@@ -207,9 +234,34 @@ export class SubtitleLearningPopover {
             }
         }
 
-        const meaningEl = this.element.querySelector('.ncw-pop-meaning');
+        const dictMeaningEl = this.element.querySelector(
+            '.ncw-pop-dict-meaning',
+        ) as HTMLElement | null;
+        const meaningEl = this.element.querySelector(
+            '.ncw-pop-meaning',
+        ) as HTMLElement | null;
+
+        if (dictMeaningEl) {
+            if (result.dictMeaning) {
+                dictMeaningEl.textContent = `📖 词典: ${result.dictMeaning}`;
+                dictMeaningEl.style.display = 'block';
+            } else {
+                dictMeaningEl.style.display = 'none';
+            }
+        }
+
         if (meaningEl) {
-            meaningEl.textContent = result.meaning;
+            if (
+                result.dictMeaning &&
+                result.meaning &&
+                result.meaning !== result.dictMeaning
+            ) {
+                meaningEl.textContent = `💡 语境: ${result.meaning}`;
+                meaningEl.style.display = 'block';
+            } else {
+                meaningEl.textContent = result.meaning;
+                meaningEl.style.display = 'block';
+            }
         }
 
         if (result.grammarNotes) {

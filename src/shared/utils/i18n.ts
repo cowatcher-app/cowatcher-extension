@@ -61,6 +61,22 @@ const NCW_I18N = {
                 'Interactive Subtitle Learning (Click Word)',
             enableSubtitleLearningHint:
                 'Click words to pause video & view definitions; right-click to quick-save to vocabulary bank',
+            chinesePhoneticSystem: 'Phonetic System (Pinyin / Zhuyin)',
+            chinesePhoneticSystemHint:
+                'Select whether to annotate subtitles with Pinyin or Zhuyin (Bopomofo)',
+            chinesePhoneticPinyin: 'Pinyin (e.g. kàn le)',
+            chinesePhoneticZhuyin:
+                'Zhuyin / Bopomofo (e.g. ㄎㄢˋ ˙ㄌㄜ)',
+            koreanPhoneticSystem: 'Korean Phonetic System',
+            koreanPhoneticSystemHint:
+                'Select whether to format Korean Romanization continuously or with syllable hyphens',
+            koreanPhoneticDefault:
+                'Standard / Continuous (e.g. beoreojyeotseumnida)',
+            koreanPhoneticHyphenated:
+                'Syllable Hyphenated (e.g. beo-reo-jyeot-seum-ni-da)',
+            recordVocabAsLemma: 'Record Vocabulary as Base Form (Lemma)',
+            recordVocabAsLemmaHint:
+                'If checked, records base dictionary form (e.g. schedule); if unchecked, preserves original word with lemma attached',
             preferNativeSubtitles: 'Prefer Official Subtitles (0-Latency)',
             preferNativeSubtitlesHint:
                 'Use platform official target track if available; fall back to AI translation if missing',
@@ -186,6 +202,7 @@ const NCW_I18N = {
             btnDonate: 'Buy me a coffee on Ko-fi',
             tabSubtitles: 'Subtitles',
             tabVocab: 'Vocabulary',
+            tabAi: 'AI Services',
             vocabCardTitle: '📚 Episode Vocabulary Collector',
             vocabEnabled: 'Enable Vocab Collector',
             vocabEnabledHint:
@@ -259,6 +276,22 @@ const NCW_I18N = {
             enableSubtitleLearning: '字幕分词与交互学习（点击查词）',
             enableSubtitleLearningHint:
                 '鼠标左键点击单词暂停并查词/发音，右键快速加入生词本（保留上下文例句）',
+            chinesePhoneticSystem: '拼音 / 注音标注系统',
+            chinesePhoneticSystemHint:
+                '选择字幕注音使用汉语拼音还是注音符号（ㄅㄆㄇㄈ）',
+            chinesePhoneticPinyin: '汉语拼音（Pinyin，如 kàn le）',
+            chinesePhoneticZhuyin:
+                '注音符号（Bopomofo，如 ㄎㄢˋ ˙ㄌㄜ）',
+            koreanPhoneticSystem: '韩文注音系统',
+            koreanPhoneticSystemHint:
+                '选择韩文罗马字注音采用标准连续书写还是音节短横线辅助',
+            koreanPhoneticDefault:
+                '标准连写（如 beoreojyeotseumnida）',
+            koreanPhoneticHyphenated:
+                '音节短横线辅助（如 beo-reo-jyeot-seum-ni-da）',
+            recordVocabAsLemma: '生词记录为原型',
+            recordVocabAsLemmaHint:
+                '勾选时词汇字段直接使用原型记录（如 schedule）；未勾选则保留原句中的变体形式，在原型字段记录原型并通过原型查询音标',
             preferNativeSubtitles: '优先使用平台官方双语字幕 (零延迟)',
             preferNativeSubtitlesHint:
                 '若剧集包含目标语言官方字幕则直接对齐采用；无官方字幕时自动回退为 AI 翻译',
@@ -377,6 +410,7 @@ const NCW_I18N = {
             btnDonate: '请作者喝杯咖啡 (Ko-fi)',
             tabSubtitles: '字幕翻译',
             tabVocab: '剧集生词本',
+            tabAi: 'AI 服务',
             vocabCardTitle: '📚 剧集生词与例句收集器',
             vocabEnabled: '启用生词本提取',
             vocabEnabledHint:
@@ -451,6 +485,22 @@ const NCW_I18N = {
             enableSubtitleLearning: '字幕の単語分割・学習（クリック辞書）',
             enableSubtitleLearningHint:
                 '左クリックで動画を一時停止して単語を辞書検索、右クリックで単語帳に登録（例文付き）',
+            chinesePhoneticSystem: '発音表記システム（ピンイン / 注音）',
+            chinesePhoneticSystemHint:
+                '字幕のルビ表記にピンインまたは注音符号（ボポモフォ）を選択します',
+            chinesePhoneticPinyin: 'ピンイン（Pinyin、例: kàn le）',
+            chinesePhoneticZhuyin:
+                '注音符号（Bopomofo、例: ㄎㄢˋ ˙ㄌㄜ）',
+            koreanPhoneticSystem: '韓国語発音表記システム',
+            koreanPhoneticSystemHint:
+                '韓国語ローマ字表記で連続表記か音節ハイフン区切りかを選択します',
+            koreanPhoneticDefault:
+                '標準連続表記（例: beoreojyeotseumnida）',
+            koreanPhoneticHyphenated:
+                '音節ハイフン区切り（例: beo-reo-jyeot-seum-ni-da）',
+            recordVocabAsLemma: '単語を辞書形（原形）で登録',
+            recordVocabAsLemmaHint:
+                '有効にすると活用形（例: scheduled）を辞書原形（例: schedule）に変換して登録します。無効の場合は原文のまま保存し原形フィールドに記録します',
             preferNativeSubtitles: '公式字幕を優先 (ゼロ遅延)',
             preferNativeSubtitlesHint:
                 '配信元の公式字幕が存在する場合は優先して時間同期採用し、ない場合は AI 翻訳へ自動フォールバック',
@@ -569,6 +619,7 @@ const NCW_I18N = {
             btnDonate: 'Ko-fi で応援する',
             tabSubtitles: '字幕翻訳',
             tabVocab: '単語帳',
+            tabAi: 'AI サービス',
             vocabCardTitle: '📚 エピソード単語帳コレクター',
             vocabEnabled: '単語帳の自動抽出を有効化',
             vocabEnabledHint:
@@ -643,6 +694,22 @@ const NCW_I18N = {
             enableSubtitleLearning: '자막 단어 분절 및 학습 (단어 클릭)',
             enableSubtitleLearningHint:
                 '단어를 클릭하여 영상 일시정지 및 사전 검색, 우클릭으로 단어장에 빠른 저장 (예문 포함)',
+            chinesePhoneticSystem: '발음 표기 체계 (병음 / 주음)',
+            chinesePhoneticSystemHint:
+                '자막의 발음 표기에 한어병음 또는 주음부호(보포모포)를 선택합니다',
+            chinesePhoneticPinyin: '한어병음 (Pinyin, 예: kàn le)',
+            chinesePhoneticZhuyin:
+                '주음부호 (Bopomofo, 예: ㄎㄢˋ ˙ㄌㄜ)',
+            koreanPhoneticSystem: '한국어 발음 표기 체계',
+            koreanPhoneticSystemHint:
+                '한국어 로마자 표기 시 표준 연속 표기 또는 음절 붙임표(-) 구분을 선택합니다',
+            koreanPhoneticDefault:
+                '표준 연속 표기 (예: beoreojyeotseumnida)',
+            koreanPhoneticHyphenated:
+                '음절 붙임표 구분 (예: beo-reo-jyeot-seum-ni-da)',
+            recordVocabAsLemma: '단어를 사전 원형(기본형)으로 기록',
+            recordVocabAsLemmaHint:
+                '선택 시 활용형(예: scheduled)을 원형(예: schedule)으로 기록합니다. 미선택 시 원문 표기를 유지하고 원형 필드에 별도 기록합니다',
             preferNativeSubtitles: '플랫폼 공식 자막 우선 (0 지연)',
             preferNativeSubtitlesHint:
                 '타겟 언어의 공식 자막이 있을 경우 우선 적용하며, 없을 시 AI 번역으로 자동 폴백',
@@ -762,6 +829,7 @@ const NCW_I18N = {
             btnDonate: 'Ko-fi로 커피 한 잔 후원하기',
             tabSubtitles: '자막 번역',
             tabVocab: '단어장',
+            tabAi: 'AI 서비스',
             vocabCardTitle: '📚 에피소드 단어장 수집기',
             vocabEnabled: '단어장 자동 수집 활성화',
             vocabEnabledHint:

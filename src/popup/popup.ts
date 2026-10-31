@@ -88,10 +88,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabBtnVocab = document.getElementById(
         'tab-btn-vocab',
     ) as HTMLButtonElement;
+    const tabBtnAi = document.getElementById(
+        'tab-btn-ai',
+    ) as HTMLButtonElement;
     const tabSubtitles = document.getElementById(
         'tab-subtitles',
     ) as HTMLElement;
     const tabVocab = document.getElementById('tab-vocab') as HTMLElement;
+    const tabAi = document.getElementById('tab-ai') as HTMLElement;
+
+    // Provider status badges
+    const subtitlesProviderStatus = document.getElementById(
+        'subtitles-provider-status',
+    ) as HTMLElement;
+    const vocabProviderStatus = document.getElementById(
+        'vocab-provider-status',
+    ) as HTMLElement;
+    const aiTabOllamaStatus = document.getElementById(
+        'ai-tab-ollama-status',
+    ) as HTMLElement;
+    const aiTabOpenRouterStatus = document.getElementById(
+        'ai-tab-openrouter-status',
+    ) as HTMLElement;
 
     // Vocab Collector elements
     const vocabEnabledToggle = document.getElementById(
@@ -1169,6 +1187,140 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Provider connectivity tracking & status badges
+    let isOllamaConnected: boolean | null = null;
+    let isOpenRouterConnected: boolean | null = null;
+
+    function updateProviderStatusBadges(): void {
+        // 1. Subtitles Provider Status
+        const subProvider = currentSettings.aiProvider || 'google';
+        if (subtitlesProviderStatus) {
+            if (subProvider === 'google') {
+                subtitlesProviderStatus.className =
+                    'provider-status-badge status-ready';
+                subtitlesProviderStatus.textContent = '🟢 Free / Ready';
+                subtitlesProviderStatus.title =
+                    'Google Translate (Ready, click to open AI Services)';
+            } else if (subProvider === 'ollama') {
+                if (isOllamaConnected === true) {
+                    subtitlesProviderStatus.className =
+                        'provider-status-badge status-ready';
+                    subtitlesProviderStatus.textContent = '🟢 Connected';
+                    subtitlesProviderStatus.title =
+                        'Ollama connected (click to open AI Services)';
+                } else if (isOllamaConnected === false) {
+                    subtitlesProviderStatus.className =
+                        'provider-status-badge status-offline';
+                    subtitlesProviderStatus.textContent = '🔴 Disconnected';
+                    subtitlesProviderStatus.title =
+                        'Ollama offline (click to configure in AI Services)';
+                } else {
+                    subtitlesProviderStatus.className =
+                        'provider-status-badge status-checking';
+                    subtitlesProviderStatus.textContent = '🟡 Checking...';
+                    subtitlesProviderStatus.title = 'Checking Ollama status';
+                }
+            } else if (subProvider === 'openrouter') {
+                if (isOpenRouterConnected === true) {
+                    subtitlesProviderStatus.className =
+                        'provider-status-badge status-ready';
+                    subtitlesProviderStatus.textContent = '🟢 Connected';
+                    subtitlesProviderStatus.title =
+                        'OpenRouter connected (click to open AI Services)';
+                } else if (isOpenRouterConnected === false) {
+                    subtitlesProviderStatus.className =
+                        'provider-status-badge status-offline';
+                    subtitlesProviderStatus.textContent = '🔴 Offline / No Key';
+                    subtitlesProviderStatus.title =
+                        'OpenRouter not configured (click to configure in AI Services)';
+                } else {
+                    subtitlesProviderStatus.className =
+                        'provider-status-badge status-checking';
+                    subtitlesProviderStatus.textContent = '🟡 Checking...';
+                    subtitlesProviderStatus.title = 'Checking OpenRouter status';
+                }
+            }
+        }
+
+        // 2. Vocabulary Provider Status
+        const vocProvider =
+            currentSettings.vocabExtractorProvider || 'openrouter';
+        if (vocabProviderStatus) {
+            if (vocProvider === 'ollama') {
+                if (isOllamaConnected === true) {
+                    vocabProviderStatus.className =
+                        'provider-status-badge status-ready';
+                    vocabProviderStatus.textContent = '🟢 Connected';
+                    vocabProviderStatus.title =
+                        'Ollama connected (click to open AI Services)';
+                } else if (isOllamaConnected === false) {
+                    vocabProviderStatus.className =
+                        'provider-status-badge status-offline';
+                    vocabProviderStatus.textContent = '🔴 Disconnected';
+                    vocabProviderStatus.title =
+                        'Ollama offline (click to configure in AI Services)';
+                } else {
+                    vocabProviderStatus.className =
+                        'provider-status-badge status-checking';
+                    vocabProviderStatus.textContent = '🟡 Checking...';
+                    vocabProviderStatus.title = 'Checking Ollama status';
+                }
+            } else {
+                if (isOpenRouterConnected === true) {
+                    vocabProviderStatus.className =
+                        'provider-status-badge status-ready';
+                    vocabProviderStatus.textContent = '🟢 Connected';
+                    vocabProviderStatus.title =
+                        'OpenRouter connected (click to open AI Services)';
+                } else if (isOpenRouterConnected === false) {
+                    vocabProviderStatus.className =
+                        'provider-status-badge status-offline';
+                    vocabProviderStatus.textContent = '🔴 Offline / No Key';
+                    vocabProviderStatus.title =
+                        'OpenRouter not configured (click to configure in AI Services)';
+                } else {
+                    vocabProviderStatus.className =
+                        'provider-status-badge status-checking';
+                    vocabProviderStatus.textContent = '🟡 Checking...';
+                    vocabProviderStatus.title = 'Checking OpenRouter status';
+                }
+            }
+        }
+
+        // 3. AI Tab Badges
+        if (aiTabOllamaStatus) {
+            if (isOllamaConnected === true) {
+                aiTabOllamaStatus.className =
+                    'provider-status-badge status-ready';
+                aiTabOllamaStatus.textContent = '🟢 Connected';
+            } else if (isOllamaConnected === false) {
+                aiTabOllamaStatus.className =
+                    'provider-status-badge status-offline';
+                aiTabOllamaStatus.textContent = '🔴 Disconnected';
+            } else {
+                aiTabOllamaStatus.className =
+                    'provider-status-badge status-checking';
+                aiTabOllamaStatus.textContent = '🟡 Checking...';
+            }
+        }
+
+        if (aiTabOpenRouterStatus) {
+            if (isOpenRouterConnected === true) {
+                aiTabOpenRouterStatus.className =
+                    'provider-status-badge status-ready';
+                aiTabOpenRouterStatus.textContent = '🟢 Connected';
+            } else if (isOpenRouterConnected === false) {
+                aiTabOpenRouterStatus.className =
+                    'provider-status-badge status-offline';
+                aiTabOpenRouterStatus.textContent = '🔴 Offline / No Key';
+            } else {
+                aiTabOpenRouterStatus.className =
+                    'provider-status-badge status-checking';
+                aiTabOpenRouterStatus.textContent = '🟡 Checking...';
+            }
+        }
+    }
+
     // 3. Check Ollama status & fetch models
     async function checkOllamaStatus(targetHost?: string): Promise<void> {
         const l = currentSettings.uiLanguage || 'en';
@@ -1326,7 +1478,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveSettings({ vocabExtractorOllamaModel: selectedVocab });
                 }
             }
+            isOllamaConnected = true;
+            updateProviderStatusBadges();
         } else {
+            isOllamaConnected = false;
+            updateProviderStatusBadges();
             if (isProvider) {
                 if (statusDot)
                     statusDot.className = 'status-indicator disconnected';
@@ -1568,6 +1724,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!apiKey) {
+            isOpenRouterConnected = false;
+            updateProviderStatusBadges();
             if (isCurrentProvider) {
                 if (statusDot)
                     statusDot.className = 'status-indicator disconnected';
@@ -1603,6 +1761,8 @@ document.addEventListener('DOMContentLoaded', () => {
             (currentSettings.aiProvider || 'ollama') === 'openrouter';
 
         if (res && res.success) {
+            isOpenRouterConnected = true;
+            updateProviderStatusBadges();
             const models = res.data?.models || [];
             if (isProvider) {
                 if (statusDot)
@@ -1638,6 +1798,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             populateOpenRouterModelSelects(models);
         } else {
+            isOpenRouterConnected = false;
+            updateProviderStatusBadges();
             if (isProvider) {
                 if (statusDot)
                     statusDot.className = 'status-indicator disconnected';
@@ -2285,20 +2447,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. Navigation Tabs & Episode Vocabulary Collector
     function switchTab(targetTabId: string): void {
-        const isVocab = targetTabId === 'tab-vocab';
-        if (tabBtnSubtitles && tabBtnVocab && tabSubtitles && tabVocab) {
-            tabBtnSubtitles.classList.toggle('active', !isVocab);
-            tabBtnVocab.classList.toggle('active', isVocab);
-            tabSubtitles.classList.toggle('active', !isVocab);
-            tabVocab.classList.toggle('active', isVocab);
-            try {
-                sessionStorage.setItem('ncw_active_tab', targetTabId);
-            } catch {
-                // Ignore session storage errors
-            }
-            if (isVocab) {
-                refreshVocabData();
-            }
+        const tabs = [
+            { id: 'tab-subtitles', btn: tabBtnSubtitles, content: tabSubtitles },
+            { id: 'tab-vocab', btn: tabBtnVocab, content: tabVocab },
+            { id: 'tab-ai', btn: tabBtnAi, content: tabAi },
+        ];
+        tabs.forEach((tab) => {
+            const isActive = tab.id === targetTabId;
+            if (tab.btn) tab.btn.classList.toggle('active', isActive);
+            if (tab.content) tab.content.classList.toggle('active', isActive);
+        });
+        try {
+            sessionStorage.setItem('ncw_active_tab', targetTabId);
+        } catch {
+            // Ignore session storage errors
+        }
+        if (targetTabId === 'tab-vocab') {
+            refreshVocabData();
         }
     }
 
@@ -2309,6 +2474,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (tabBtnVocab) {
         tabBtnVocab.addEventListener('click', () => switchTab('tab-vocab'));
+    }
+    if (tabBtnAi) {
+        tabBtnAi.addEventListener('click', () => switchTab('tab-ai'));
+    }
+    if (subtitlesProviderStatus) {
+        subtitlesProviderStatus.addEventListener('click', () =>
+            switchTab('tab-ai'),
+        );
+    }
+    if (vocabProviderStatus) {
+        vocabProviderStatus.addEventListener('click', () => switchTab('tab-ai'));
     }
 
     try {
@@ -2614,6 +2790,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const provider = target.value as 'openrouter' | 'ollama';
             saveSettings({ vocabExtractorProvider: provider });
             updateVocabProviderVisibility(provider);
+            updateProviderStatusBadges();
         });
     }
 

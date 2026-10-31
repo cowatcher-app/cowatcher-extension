@@ -714,6 +714,24 @@
                 >
               </label>
             </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="cfg-chinese-phonetic-system" data-i18n="chinesePhoneticSystem">Phonetic System (Pinyin / Zhuyin)</label>
+              <select id="cfg-chinese-phonetic-system" class="form-control">
+                <option value="pinyin" data-i18n="chinesePhoneticPinyin">Pinyin (e.g. kàn le)</option>
+                <option value="zhuyin" data-i18n="chinesePhoneticZhuyin">Zhuyin / Bopomofo (e.g. ㄎㄢˋ ˙ㄌㄜ)</option>
+              </select>
+              <small class="form-text text-muted" data-i18n="chinesePhoneticSystemHint">Select whether to annotate subtitles with Pinyin or Zhuyin (Bopomofo)</small>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="cfg-korean-phonetic-system" data-i18n="koreanPhoneticSystem">Korean Phonetic System</label>
+              <select id="cfg-korean-phonetic-system" class="form-control">
+                <option value="default" data-i18n="koreanPhoneticDefault">Standard / Continuous (e.g. beoreojyeotseumnida)</option>
+                <option value="hyphenated" data-i18n="koreanPhoneticHyphenated">Syllable Hyphenated (e.g. beo-reo-jyeot-seum-ni-da)</option>
+              </select>
+              <small class="form-text text-muted" data-i18n="koreanPhoneticSystemHint">Select whether to format Korean Romanization continuously or with syllable hyphens</small>
+            </div>
           </div>
 
           <!-- Col 3: Vocabulary Collector Config -->
@@ -727,12 +745,32 @@
               </label>
             </div>
 
+            <div class="form-group checkbox-row">
+              <label>
+                <input type="checkbox" id="cfg-record-vocab-as-lemma" checked />
+                <span data-i18n="recordVocabAsLemma">Record Words in Dictionary Base Form (Lemma)</span>
+              </label>
+              <small class="form-text text-muted" data-i18n="recordVocabAsLemmaHint" style="display: block; margin-top: 3px;">
+                If checked, records base dictionary form (e.g. schedule); if unchecked, preserves original word with lemma attached.
+              </small>
+            </div>
+
             <div class="form-group">
               <label for="cfg-vocab-provider">Vocab Model Provider</label>
               <select id="cfg-vocab-provider">
                 <option value="openrouter">OpenRouter (Cloud)</option>
                 <option value="ollama">Ollama (Local)</option>
               </select>
+            </div>
+
+            <div class="form-group" id="cfg-vocab-openrouter-group">
+              <label for="cfg-vocab-openrouter-model">Vocab OpenRouter Model</label>
+              <select id="cfg-vocab-openrouter-model"></select>
+            </div>
+
+            <div class="form-group" id="cfg-vocab-ollama-group" style="display: none">
+              <label for="cfg-vocab-ollama-model">Vocab Ollama Model</label>
+              <select id="cfg-vocab-ollama-model"></select>
             </div>
 
             <div class="form-group">
@@ -844,6 +882,34 @@
             </span>
           </div>
 
+          <!-- Export Auxiliary Fields Bar -->
+          <div class="curation-export-fields-bar" style="margin-bottom: 10px; padding: 6px 12px; background: rgba(0,0,0,0.18); border-radius: 6px; border: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: #cbd5e1;">
+              <span style="font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 4px;">
+                📤 导出辅助列包含:
+              </span>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="curation-export-pho" checked />
+                <span>注音/发音 (Phonetic)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="curation-export-pos" checked />
+                <span>词性 (POS)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="curation-export-sentence" checked />
+                <span>例句 (Sentence)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="curation-export-translation" checked />
+                <span>例句翻译 (Translation)</span>
+              </label>
+            </div>
+            <span style="font-size: 11px; color: #888;">
+              勾选项将在导出到 Anki 与 CSV 时生效；取消勾选将抛弃该字段
+            </span>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08);">
             <div style="display: flex; align-items: center; gap: 10px;">
               <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; user-select: none;">
@@ -933,6 +999,20 @@
             </select>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
               Generates native Anki [tts:lang] tags so Anki automatically uses your system voice on PC & mobile without downloading large audio files.
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="anki-reading-placement-select" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+              📖 注音显示位置 (Reading Placement):
+            </label>
+            <select id="anki-reading-placement-select" class="form-control" style="width: 100%; height: 38px;">
+              <option value="front">卡片正面 Front (Ruby 注音 / 读音)</option>
+              <option value="back">卡片背面 Back (正面仅保留原词)</option>
+              <option value="none">不导出注音 None (抛弃注音字段)</option>
+            </select>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
+              选择注音在 Anki 卡片上的呈现位置：正面适合初学认读，背面适合背诵自测，抛弃适合追求极简。
             </div>
           </div>
 

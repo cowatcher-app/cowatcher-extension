@@ -11,6 +11,9 @@ import { STREAMING_PLATFORMS, StreamingPlatformId } from './StreamingPlatforms';
 
 export type CacheRetentionPeriod = '1w' | '1m' | '1y';
 
+export type ChinesePhoneticSystem = 'pinyin' | 'zhuyin';
+export type KoreanPhoneticSystem = 'default' | 'hyphenated';
+
 export interface ExtensionSettings {
     enabled: boolean;
     platformEnabled?: Partial<Record<StreamingPlatformId, boolean>>;
@@ -73,6 +76,9 @@ export interface ExtensionSettings {
 
     enableSubtitleLearning: boolean;
     autoPauseOnTokenClick: boolean;
+    chinesePhoneticSystem: ChinesePhoneticSystem;
+    koreanPhoneticSystem: KoreanPhoneticSystem;
+    recordVocabAsLemma: boolean;
     cacheRetention: CacheRetentionPeriod;
 }
 
@@ -141,6 +147,9 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 
     enableSubtitleLearning: false,
     autoPauseOnTokenClick: true,
+    chinesePhoneticSystem: 'pinyin',
+    koreanPhoneticSystem: 'default',
+    recordVocabAsLemma: true,
     cacheRetention: '1m',
 };
 

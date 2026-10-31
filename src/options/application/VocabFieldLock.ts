@@ -4,6 +4,7 @@
  */
 
 export type CurationFieldKey =
+    | 'lemma'
     | 'meaning'
     | 'phonetic'
     | 'pos'
@@ -17,6 +18,11 @@ export interface CurationFieldDefinition {
 }
 
 export const CURATION_FIELDS: readonly CurationFieldDefinition[] = [
+    {
+        key: 'lemma',
+        label: '原型 (Lemma)',
+        description: '词汇词元原型或词根形式',
+    },
     {
         key: 'meaning',
         label: '释义 (Meaning)',
@@ -53,6 +59,7 @@ export class FieldLockConfig {
 
     constructor(initialLocks?: Partial<Record<CurationFieldKey, boolean>>) {
         this.locks = {
+            lemma: !!initialLocks?.lemma,
             meaning: !!initialLocks?.meaning,
             phonetic: !!initialLocks?.phonetic,
             pos: !!initialLocks?.pos,

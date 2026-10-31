@@ -1,11 +1,14 @@
 import { VocabWordItem } from '@shared/domain/entities/Vocabulary';
 
+export type ReadingCardPlacement = 'front' | 'back' | 'none';
+
 export interface AnkiExportOptions {
     deckName: string;
     modelName?: string;
     voiceLang?: string;
     enableTts?: boolean;
     formatFurigana?: boolean;
+    readingPlacement?: ReadingCardPlacement;
     tags?: string[];
 }
 

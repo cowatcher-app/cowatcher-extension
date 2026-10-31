@@ -10,6 +10,8 @@ export interface SubtitleToken {
     pos?: string; // Part of speech (e.g., "verb", "noun")
     lemma?: string; // Base / dictionary form (e.g. "食べる")
     reading?: string; // Phonetic / kana / pinyin / furigana
+    phonetic?: string; // Dedicated phonetic reading storage (zero pollution of text)
+    rubyHtml?: string; // Clean pre-rendered ruby representation with isolated <rt>
     meaning?: string; // Quick definition
     isUserMarked?: boolean; // True if saved in user's vocabulary book
 }
@@ -28,7 +30,7 @@ export interface WordLookupRequest {
     sourceLang: string;
     targetLang: string;
     customPrompt?: string; // Optional user prompt injection / guidelines
-    preferredRole?: 'supervisor' | 'translator'; // Preferred LLM role (supervisor with fallback to translator)
+    preferredRole?: 'vocab' | 'supervisor' | 'translator'; // Preferred LLM role (vocab with fallback to supervisor/translator)
 }
 
 export interface WordLookupResult {
@@ -37,6 +39,7 @@ export interface WordLookupResult {
     reading: string; // Phonetic/furigana
     pos: string; // Part of speech
     meaning: string; // Definition in target language
+    dictMeaning?: string; // 字典解释 (from specialized dict adapter)
     grammarNotes?: string; // Grammatical usage or inflections
     exampleSentence?: string; // Context or dictionary example
     exampleTranslation?: string;

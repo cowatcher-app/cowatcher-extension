@@ -1,6 +1,6 @@
 import { ExtensionSettings } from '@shared/utils/constants';
 import { SubtitleLearningManager } from '../application/learning/SubtitleLearningManager';
-import { SubtitleToken } from '@shared/domain/entities/SubtitleLearning';
+import { SubtitleToken, LearningCueItem } from '@shared/domain/entities/SubtitleLearning';
 import { SubtitleSelectionController } from './SubtitleSelectionController';
 
 export interface OverlayCueItem {
@@ -40,6 +40,9 @@ export class SubtitleOverlay {
     setLearningManager(manager: SubtitleLearningManager): void {
         this.learningManager = manager;
         this.selectionController.setListener(manager);
+        this.learningManager.setOnPhoneticUpdateListener((cue) => {
+            this.handlePhoneticsUpdated(cue);
+        });
     }
 
     bindContainerResolver(resolver: () => HTMLElement | null): void {
@@ -54,7 +57,11 @@ export class SubtitleOverlay {
     updateSettings(settings: Partial<ExtensionSettings>): void {
         const oldSwap = Boolean(this.settings.swapSubtitleOrder);
         const oldLearning = Boolean(this.settings.enableSubtitleLearning);
+        const oldChineseSystem = this.settings.chinesePhoneticSystem || 'pinyin';
+        const oldKoreanSystem = this.settings.koreanPhoneticSystem || 'default';
         this.settings = { ...this.settings, ...settings };
+        const newChineseSystem = this.settings.chinesePhoneticSystem || 'pinyin';
+        const newKoreanSystem = this.settings.koreanPhoneticSystem || 'default';
         this.applyStyles();
         if (this.settings.enabled === false) {
             this.hide(true);
@@ -66,8 +73,10 @@ export class SubtitleOverlay {
                 this.reorderVisibleWrappers();
             }
             if (
-                settings.enableSubtitleLearning !== undefined &&
-                settings.enableSubtitleLearning !== oldLearning
+                (settings.enableSubtitleLearning !== undefined &&
+                    settings.enableSubtitleLearning !== oldLearning) ||
+                oldChineseSystem !== newChineseSystem ||
+                oldKoreanSystem !== newKoreanSystem
             ) {
                 this.resetRenderedTokens();
             }
@@ -78,10 +87,36 @@ export class SubtitleOverlay {
         if (!this.slots) return;
         Object.values(this.slots).forEach((slotEl) => {
             if (!slotEl) return;
-            const origEls = slotEl.querySelectorAll('.ncw-original-text');
-            origEls.forEach((el) => {
-                (el as HTMLElement).dataset.learningMode = '';
-                (el as HTMLElement).dataset.renderedText = '';
+            const wrappers = slotEl.querySelectorAll('.ncw-subtitle-wrapper');
+            wrappers.forEach((wrapper) => {
+                const cueId = wrapper.getAttribute('data-cue-id') || 0;
+                const origEl = wrapper.querySelector(
+                    '.ncw-original-text',
+                ) as HTMLElement | null;
+                const transEl = wrapper.querySelector(
+                    '.ncw-translated-text',
+                ) as HTMLElement | null;
+                if (origEl) {
+                    const originalText =
+                        origEl.dataset.originalRaw ||
+                        wrapper.getAttribute('data-original-text') ||
+                        origEl.dataset.renderedText ||
+                        '';
+                    const translatedText =
+                        wrapper.getAttribute('data-translated-text') ||
+                        (transEl ? transEl.textContent : null);
+                    origEl.dataset.learningMode = '';
+                    origEl.dataset.renderedText = '';
+                    origEl.innerHTML = '';
+                    if (originalText) {
+                        this.renderOriginalTextContent(
+                            origEl,
+                            cueId,
+                            originalText,
+                            translatedText,
+                        );
+                    }
+                }
             });
         });
     }
@@ -399,8 +434,65 @@ export class SubtitleOverlay {
         const span = document.createElement('span');
         span.className = `ncw-token${token.isUserMarked ? ' is-user-marked' : ''}`;
         span.setAttribute('data-token-id', token.id);
-        span.textContent = displayText;
+
+        const phonetic = token.phonetic || token.reading;
+        if (phonetic && phonetic !== displayText) {
+            const ruby = document.createElement('ruby');
+            ruby.className = 'ncw-token-ruby';
+            ruby.appendChild(document.createTextNode(displayText));
+            const rt = document.createElement('rt');
+            rt.className = 'ncw-token-phonetic';
+            rt.textContent = phonetic;
+            rt.style.userSelect = 'none';
+            rt.style.webkitUserSelect = 'none';
+            rt.style.pointerEvents = 'none';
+            ruby.appendChild(rt);
+            span.appendChild(ruby);
+        } else {
+            span.textContent = displayText;
+        }
+
         return span;
+    }
+
+    private handlePhoneticsUpdated(cue: LearningCueItem): void {
+        if (!this.container) return;
+        const wrapper = this.container.querySelector(
+            `[data-cue-id="${cue.cueId}"]`,
+        );
+        if (!wrapper) return;
+        const origEl = wrapper.querySelector('.ncw-original-text');
+        if (!origEl) return;
+
+        for (const token of cue.tokens) {
+            const phonetic = token.phonetic || token.reading;
+            if (!phonetic || phonetic === token.text) continue;
+
+            const span = origEl.querySelector(
+                `[data-token-id="${token.id}"]`,
+            ) as HTMLElement | null;
+            if (span) {
+                const existingRt = span.querySelector<HTMLElement>('.ncw-token-phonetic');
+                if (existingRt) {
+                    if (existingRt.textContent !== phonetic) {
+                        existingRt.textContent = phonetic;
+                    }
+                } else {
+                    span.innerHTML = '';
+                    const ruby = document.createElement('ruby');
+                    ruby.className = 'ncw-token-ruby';
+                    ruby.appendChild(document.createTextNode(token.text));
+                    const rt = document.createElement('rt');
+                    rt.className = 'ncw-token-phonetic';
+                    rt.textContent = phonetic;
+                    rt.style.userSelect = 'none';
+                    rt.style.webkitUserSelect = 'none';
+                    rt.style.pointerEvents = 'none';
+                    ruby.appendChild(rt);
+                    span.appendChild(ruby);
+                }
+            }
+        }
     }
 
     private renderOriginalTextContent(
@@ -413,6 +505,8 @@ export class SubtitleOverlay {
             this.learningManager && this.learningManager.isEnabled,
         );
         const learningStateKey = isLearning ? 'learning' : 'plain';
+
+        origEl.dataset.originalRaw = originalText;
 
         if (
             origEl.dataset.renderedText === originalText &&
@@ -476,6 +570,10 @@ export class SubtitleOverlay {
         const wrapper = document.createElement('div');
         wrapper.className = 'ncw-subtitle-wrapper';
         wrapper.setAttribute('data-cue-id', String(cueId));
+        wrapper.setAttribute('data-original-text', originalText);
+        if (translatedText) {
+            wrapper.setAttribute('data-translated-text', translatedText);
+        }
 
         const formattedTrans = (translatedText || '').replace(/\n/g, '<br/>');
 
@@ -537,6 +635,12 @@ export class SubtitleOverlay {
         if (!wrapper) return;
 
         const cueId = wrapper.getAttribute('data-cue-id') || 0;
+        wrapper.setAttribute('data-original-text', originalText);
+        if (translatedText) {
+            wrapper.setAttribute('data-translated-text', translatedText);
+        } else {
+            wrapper.removeAttribute('data-translated-text');
+        }
         const formattedTrans = (translatedText || '').replace(/\n/g, '<br/>');
 
         const transEl = wrapper.querySelector(

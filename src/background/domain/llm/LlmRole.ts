@@ -1,4 +1,4 @@
-export type LlmRole = 'translator' | 'supervisor';
+export type LlmRole = 'translator' | 'supervisor' | 'vocab';
 
 export interface AiCapability {
     hasAi: boolean;

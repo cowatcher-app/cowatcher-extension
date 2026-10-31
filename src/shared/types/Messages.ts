@@ -324,6 +324,26 @@ export type MessagePayloadMap = {
         request: WordLookupRequest;
         response: { success: boolean; data?: WordLookupResult; error?: string };
     };
+    NCW_GET_PHONETIC_READING: {
+        request: {
+            word: string;
+            lang: string;
+            system?: string;
+        };
+        response: { success: boolean; reading: string; error?: string };
+    };
+    NCW_GET_PHONETIC_BATCH: {
+        request: {
+            words: string[];
+            lang: string;
+            system?: string;
+        };
+        response: {
+            success: boolean;
+            readings: Record<string, string>;
+            error?: string;
+        };
+    };
 
     // Connection Checks
     NCW_CHECK_OLLAMA: {

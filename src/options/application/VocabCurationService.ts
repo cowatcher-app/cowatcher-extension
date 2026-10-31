@@ -11,6 +11,7 @@ import {
     CuratedVocabWord,
 } from './VocabCurationSession';
 import { FieldLockConfig, CurationFieldKey } from './VocabFieldLock';
+import { PhoneticAdapterFactory } from '@shared/infrastructure/phonetic/PhoneticAdapterFactory';
 
 const CUSTOM_PROMPT_STORAGE_KEY = 'ncw_curation_custom_prompt';
 const FIELD_LOCKS_STORAGE_KEY = 'ncw_curation_field_locks';
@@ -80,7 +81,7 @@ export class VocabCurationService {
             sourceLang,
             targetLang,
             customPrompt: customPrompt?.trim() || undefined,
-            preferredRole: 'supervisor',
+            preferredRole: 'vocab',
         });
 
         if (!res) {
@@ -90,12 +91,27 @@ export class VocabCurationService {
         const isLocked = (field: CurationFieldKey): boolean =>
             lockConfig ? lockConfig.isLocked(field) : false;
 
+        let finalPhonetic = word.phonetic;
+        if (!isLocked('phonetic')) {
+            const adapter = PhoneticAdapterFactory.getAdapter(sourceLang);
+            if (adapter) {
+                try {
+                    const deterministic = await adapter.getWordReading(word.word);
+                    finalPhonetic = deterministic || res.reading || word.phonetic;
+                } catch {
+                    finalPhonetic = res.reading || word.phonetic;
+                }
+            } else {
+                finalPhonetic = res.reading || word.phonetic;
+            }
+        }
+
         return {
             ...word,
+            lemma: isLocked('lemma') ? word.lemma : res.lemma || word.lemma,
+            dictMeaning: res.dictMeaning || word.dictMeaning,
             pos: isLocked('pos') ? word.pos : res.pos || word.pos,
-            phonetic: isLocked('phonetic')
-                ? word.phonetic
-                : res.reading || word.phonetic,
+            phonetic: finalPhonetic,
             meaning: isLocked('meaning')
                 ? word.meaning
                 : res.meaning || word.meaning,

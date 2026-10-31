@@ -11,6 +11,7 @@ import { ExtensionSettings } from '@shared/domain/constants/SettingsDefaults';
 import { SubtitleLearningPopover } from '../../presentation/SubtitleLearningPopover';
 import { ISubtitleSelectionListener } from '../../presentation/SubtitleSelectionController';
 import { Logger } from '@shared/utils/logger';
+import { normalizeLanguageCode } from '@shared/domain/phonetic/IPhoneticAdapter';
 
 interface SegmentData {
     segment: string;
@@ -38,14 +39,16 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
     private settings: ExtensionSettings;
     private currentMovieId: string | null = null;
     private currentShowTitle: string = '';
-    private currentSourceLang: string = 'ja';
+    private currentSourceLang: string = '';
     private currentTargetLang: string = 'zh-CN';
 
     private userVocabWords = new Set<string>();
     private learningCueCache = new Map<number, LearningCueItem>();
     private wordLookupCache = new Map<string, WordLookupResult>();
+    private phoneticWordCache = new Map<string, string>();
     private pausedByLearning: boolean = false;
     private segmenterCache = new Map<string, IntlSegmenterInstance>();
+    private onPhoneticUpdateListener?: (cue: LearningCueItem) => void;
 
     constructor(
         adapter: IStreamingAdapter,
@@ -57,6 +60,15 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         this.settings = settings;
         this.popover = new SubtitleLearningPopover();
 
+        const initialVocabSrc =
+            typeof settings.vocabSourceLanguage === 'object' &&
+            settings.vocabSourceLanguage !== null
+                ? settings.vocabSourceLanguage.code
+                : settings.vocabSourceLanguage;
+        if (initialVocabSrc && initialVocabSrc !== 'auto') {
+            this.currentSourceLang = normalizeLanguageCode(initialVocabSrc);
+        }
+
         // Listen for vocabulary updates to stay synchronized
         this.messageService.onVocabChanged((data) => {
             if (data && Array.isArray(data.words)) {
@@ -66,14 +78,38 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
     }
 
     updateSettings(settings: ExtensionSettings): void {
+        const oldChineseSystem = this.settings?.chinesePhoneticSystem || 'pinyin';
+        const newChineseSystem = settings?.chinesePhoneticSystem || 'pinyin';
+        const oldKoreanSystem =
+            this.settings?.koreanPhoneticSystem || 'default';
+        const newKoreanSystem = settings?.koreanPhoneticSystem || 'default';
         this.settings = settings;
         if (!settings.enableSubtitleLearning && this.popover.isVisible) {
             this.popover.hide();
+        }
+        if (
+            oldChineseSystem !== newChineseSystem ||
+            oldKoreanSystem !== newKoreanSystem
+        ) {
+            this.learningCueCache.clear();
+            this.phoneticWordCache.clear();
         }
     }
 
     get isEnabled(): boolean {
         return Boolean(this.settings.enableSubtitleLearning);
+    }
+
+    setSourceLanguage(lang: string): void {
+        if (!lang) return;
+        const normalized = normalizeLanguageCode(lang);
+        const currentNorm = normalizeLanguageCode(this.currentSourceLang);
+        if (normalized && normalized !== currentNorm) {
+            this.currentSourceLang = normalized;
+            this.learningCueCache.clear();
+            this.phoneticWordCache.clear();
+            this.segmenterCache.clear();
+        }
     }
 
     onShowContext(
@@ -84,10 +120,11 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
     ): void {
         this.currentMovieId = movieId;
         this.currentShowTitle = showTitle || this.currentShowTitle;
-        if (sourceLang) this.currentSourceLang = sourceLang;
+        if (sourceLang) this.setSourceLanguage(sourceLang);
         if (targetLang) this.currentTargetLang = targetLang;
 
         this.learningCueCache.clear();
+        this.phoneticWordCache.clear();
         this.userVocabWords.clear();
 
         if (movieId) {
@@ -108,6 +145,56 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         }
     }
 
+    setOnPhoneticUpdateListener(
+        listener: (cue: LearningCueItem) => void,
+    ): void {
+        this.onPhoneticUpdateListener = listener;
+    }
+
+    getSourceLanguage(): string {
+        return this.currentSourceLang;
+    }
+
+    private resolveCueLanguage(rawText: string, cueLang?: string): string {
+        // 1. Priority 1: Ground truth from platform subtitle track or explicitly passed cue language
+        const candidate = cueLang || this.currentSourceLang;
+        const currentNorm = normalizeLanguageCode(candidate);
+        if (currentNorm && currentNorm !== 'auto' && currentNorm !== 'und') {
+            return currentNorm;
+        }
+
+        // 2. Priority 2: Heuristic script detection if platform track is unknown, missing, or 'auto'
+        // Japanese: contains Hiragana or Katakana
+        if (/[\u3040-\u30ff]/.test(rawText)) {
+            return 'ja';
+        }
+        // Korean: contains Hangul
+        if (/[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f]/.test(rawText)) {
+            return 'ko';
+        }
+        // Chinese: contains Hanzi
+        if (/\p{Script=Han}/u.test(rawText)) {
+            return 'zh';
+        }
+        // Russian / Cyrillic
+        if (/[\u0400-\u04ff]/.test(rawText)) {
+            return 'ru';
+        }
+
+        // 3. Priority 3: Fallback to user-configured vocabSourceLanguage (if not auto), or 'en'
+        const vocabSrc =
+            typeof this.settings?.vocabSourceLanguage === 'object' &&
+            this.settings.vocabSourceLanguage !== null
+                ? this.settings.vocabSourceLanguage.code
+                : this.settings?.vocabSourceLanguage;
+        const normVocab = normalizeLanguageCode(vocabSrc || '');
+        if (normVocab && normVocab !== 'auto' && normVocab !== 'und') {
+            return normVocab;
+        }
+
+        return 'en';
+    }
+
     /**
      * Tokenize original subtitle cue text into interactive tokens.
      * Does NOT mutate or touch the underlying SubtitleCue or raw cues.
@@ -116,6 +203,7 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         cueId: number,
         rawText: string,
         translatedText?: string,
+        cueLang?: string,
     ): LearningCueItem {
         if (this.learningCueCache.has(cueId)) {
             const cached = this.learningCueCache.get(cueId)!;
@@ -128,7 +216,17 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
             return cached;
         }
 
-        const tokens = this.tokenizeText(rawText, cueId);
+        const effectiveLang = this.resolveCueLanguage(rawText, cueLang);
+        const tokens = this.tokenizeText(rawText, cueId, effectiveLang);
+
+        // Pre-fill any cached phonetics immediately
+        for (const token of tokens) {
+            if (token.isWordLike && this.phoneticWordCache.has(token.text)) {
+                token.phonetic = this.phoneticWordCache.get(token.text);
+                token.reading = token.phonetic;
+            }
+        }
+
         const learningCue: LearningCueItem = {
             cueId,
             originalText: rawText,
@@ -137,16 +235,92 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         };
 
         this.learningCueCache.set(cueId, learningCue);
+
+        // Asynchronously resolve phonetics via background using effectiveLang
+        this.enrichCuePhonetics(learningCue, effectiveLang);
+
         return learningCue;
+    }
+
+    private async enrichCuePhonetics(
+        cue: LearningCueItem,
+        lang: string,
+    ): Promise<void> {
+        const canonical = (lang || '').toLowerCase();
+        if (
+            !canonical.startsWith('ja') &&
+            !canonical.startsWith('zh') &&
+            !canonical.startsWith('ko')
+        ) {
+            return;
+        }
+
+        const wordsToFetch: string[] = [];
+        for (const token of cue.tokens) {
+            if (!token.isWordLike || token.phonetic) continue;
+            // Target tokens containing ideographic or phonological characters (Kanji/Hanzi or Hangul)
+            if (
+                /\p{Script=Han}/u.test(token.text) ||
+                /[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f]/.test(token.text)
+            ) {
+                if (this.phoneticWordCache.has(token.text)) {
+                    token.phonetic = this.phoneticWordCache.get(token.text);
+                    token.reading = token.phonetic;
+                } else if (!wordsToFetch.includes(token.text)) {
+                    wordsToFetch.push(token.text);
+                }
+            }
+        }
+
+        if (wordsToFetch.length === 0) {
+            return;
+        }
+
+        try {
+            const system = (lang || '').toLowerCase().startsWith('ko')
+                ? this.settings?.koreanPhoneticSystem || 'default'
+                : this.settings?.chinesePhoneticSystem || 'pinyin';
+            const res = await this.messageService.getPhoneticBatch({
+                words: wordsToFetch,
+                lang,
+                system,
+            });
+
+            if (res && res.success && res.readings) {
+                let hasNewPhonetics = false;
+                for (const token of cue.tokens) {
+                    if (res.readings[token.text]) {
+                        const reading = res.readings[token.text];
+                        token.phonetic = reading;
+                        token.reading = reading;
+                        this.phoneticWordCache.set(token.text, reading);
+                        hasNewPhonetics = true;
+                    }
+                }
+                if (hasNewPhonetics && this.onPhoneticUpdateListener) {
+                    this.onPhoneticUpdateListener(cue);
+                }
+            }
+        } catch (err) {
+            this.logger.warn(
+                'Phonetic',
+                'Failed batch phonetic lookup from background:',
+                err,
+            );
+        }
     }
 
     /**
      * Fast, zero-dependency tokenization using modern browser native Intl.Segmenter.
      */
-    private tokenizeText(text: string, cueId: number): SubtitleToken[] {
+    private tokenizeText(
+        text: string,
+        cueId: number,
+        language?: string,
+    ): SubtitleToken[] {
         if (!text || typeof text !== 'string') return [];
 
-        const lang = this.currentSourceLang || 'ja';
+        const lang = language || this.currentSourceLang || 'en';
         let segmenter = this.segmenterCache.get(lang);
         if (!segmenter) {
             try {
@@ -170,7 +344,11 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
                 for (const seg of segments) {
                     const segText = seg.segment || '';
                     if (!segText) continue;
-                    const isWordLike = Boolean(seg.isWordLike);
+                    // SpiderMonkey/ICU word-breaker can report isWordLike=false for valid CJK words/kanji (e.g. 看了, 报警, 見).
+                    // Fall back to Unicode letter/number check to ensure words are never dropped.
+                    const isWordLike =
+                        Boolean(seg.isWordLike) ||
+                        /[\p{L}\p{N}]/u.test(segText);
                     const normalized = segText.toLowerCase().trim();
                     tokens.push({
                         id: `c${cueId}_t${tIdx++}`,
@@ -193,13 +371,12 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         }
 
         // Fallback word tokenization with regex
-        const regex =
-            /([\u3040-\u30ff\u4e00-\u9fa5\w]+|[^\s\w\u3040-\u30ff\u4e00-\u9fa5]+|\s+)/g;
+        const regex = /([\p{L}\p{N}]+|[^\s\p{L}\p{N}]+|\s+)/gu;
         let match: RegExpExecArray | null;
         let tIdx = 0;
         while ((match = regex.exec(text)) !== null) {
             const segText = match[0];
-            const isWordLike = /[\u3040-\u30ff\u4e00-\u9fa5\w]/.test(segText);
+            const isWordLike = /[\p{L}\p{N}]/u.test(segText);
             const normalized = segText.toLowerCase().trim();
             tokens.push({
                 id: `c${cueId}_t${tIdx++}`,
@@ -273,9 +450,13 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         const targetContainer =
             container || selection.container || document.body;
 
+        const effectiveSourceLang =
+            this.currentSourceLang ||
+            this.resolveCueLanguage(selection.originalText);
+
         this.popover.show({
             word,
-            sourceLang: this.currentSourceLang,
+            sourceLang: effectiveSourceLang,
             targetLang: this.currentTargetLang,
             tokenEl: selection.anchorEl,
             container: targetContainer,
@@ -294,7 +475,7 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         });
 
         // Check lookup cache
-        const cacheKey = `${word}_${this.currentSourceLang}_${this.currentTargetLang}`;
+        const cacheKey = `${word}_${effectiveSourceLang}_${this.currentTargetLang}`;
         if (this.wordLookupCache.has(cacheKey)) {
             this.popover.updateDefinition(this.wordLookupCache.get(cacheKey)!);
             return;
@@ -306,12 +487,18 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
                 word,
                 contextSentence: selection.originalText,
                 contextTranslation: selection.translatedText,
-                sourceLang: this.currentSourceLang,
+                sourceLang: effectiveSourceLang,
                 targetLang: this.currentTargetLang,
             })
             .then((res) => {
                 if (res && res.success && res.data) {
-                    this.wordLookupCache.set(cacheKey, res.data);
+                    if (
+                        res.data.meaning &&
+                        res.data.meaning !==
+                            'Tap to lookup or right-click to save'
+                    ) {
+                        this.wordLookupCache.set(cacheKey, res.data);
+                    }
                     this.popover.updateDefinition(res.data);
                 }
             })
@@ -352,18 +539,49 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
                 this.adapter?.getVideoElement()?.currentTime ??
                 0;
 
+            const effectiveSourceLang =
+                this.currentSourceLang ||
+                this.resolveCueLanguage(selection.originalText);
+
+            let phonetic = this.phoneticWordCache.get(word) || '';
+            if (!phonetic) {
+                try {
+                    const system = (effectiveSourceLang || '')
+                        .toLowerCase()
+                        .startsWith('ko')
+                        ? this.settings?.koreanPhoneticSystem || 'default'
+                        : this.settings?.chinesePhoneticSystem || 'pinyin';
+                    const res = await this.messageService.getPhoneticReading({
+                        word,
+                        lang: effectiveSourceLang,
+                        system,
+                    });
+                    if (res && res.success && res.reading) {
+                        phonetic = res.reading;
+                        this.phoneticWordCache.set(word, phonetic);
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
+            const cacheKey = `${word}_${effectiveSourceLang}_${this.currentTargetLang}`;
+            const cached = this.wordLookupCache.get(cacheKey);
+
             const wordItem: VocabWordItem = {
                 word,
-                pos: '',
-                phonetic: '',
-                meaning: '',
+                lemma: cached?.lemma || '',
+                dictMeaning: cached?.dictMeaning || undefined,
+                pos: cached?.pos || '',
+                phonetic: cached?.reading || phonetic,
+                meaning: cached?.meaning || '',
                 sentence: selection.originalText,
                 sentenceTranslation: selection.translatedText || '',
                 timestamp: currentTimestamp,
                 frequency: 1,
                 source: 'user',
                 createdAt: Date.now(),
-                sourceLang: this.currentSourceLang,
+                sourceLang: effectiveSourceLang,
                 targetLang: this.currentTargetLang,
             };
 
@@ -401,9 +619,13 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         const word = token.text.trim();
         const isMarked = this.userVocabWords.has(word.toLowerCase());
 
+        const effectiveSourceLang =
+            this.currentSourceLang ||
+            this.resolveCueLanguage(cueText);
+
         this.popover.show({
             word,
-            sourceLang: this.currentSourceLang,
+            sourceLang: effectiveSourceLang,
             targetLang: this.currentTargetLang,
             tokenEl,
             container,
@@ -427,7 +649,7 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         });
 
         // Check lookup cache
-        const cacheKey = `${word}_${this.currentSourceLang}_${this.currentTargetLang}`;
+        const cacheKey = `${word}_${effectiveSourceLang}_${this.currentTargetLang}`;
         if (this.wordLookupCache.has(cacheKey)) {
             this.popover.updateDefinition(this.wordLookupCache.get(cacheKey)!);
             return;
@@ -439,12 +661,18 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
                 word,
                 contextSentence: cueText,
                 contextTranslation: translatedText,
-                sourceLang: this.currentSourceLang,
+                sourceLang: effectiveSourceLang,
                 targetLang: this.currentTargetLang,
             })
             .then((res) => {
                 if (res && res.success && res.data) {
-                    this.wordLookupCache.set(cacheKey, res.data);
+                    if (
+                        res.data.meaning &&
+                        res.data.meaning !==
+                            'Tap to lookup or right-click to save'
+                    ) {
+                        this.wordLookupCache.set(cacheKey, res.data);
+                    }
                     this.popover.updateDefinition(res.data);
                 }
             })
@@ -517,18 +745,27 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
                 this.adapter?.getVideoElement()?.currentTime ??
                 0;
 
+            const effectiveSourceLang =
+                this.currentSourceLang ||
+                this.resolveCueLanguage(contextSentence);
+
+            const cacheKey = `${word}_${effectiveSourceLang}_${this.currentTargetLang}`;
+            const cached = this.wordLookupCache.get(cacheKey);
+
             const wordItem: VocabWordItem = {
                 word,
-                pos: '',
-                phonetic: '',
-                meaning: '',
+                lemma: cached?.lemma || '',
+                dictMeaning: cached?.dictMeaning || undefined,
+                pos: cached?.pos || '',
+                phonetic: cached?.reading || '',
+                meaning: cached?.meaning || '',
                 sentence: contextSentence, // Contex sentence as example!
                 sentenceTranslation: contextTranslation || '',
                 timestamp: currentTimestamp,
                 frequency: 1,
                 source: 'user', // Explicitly user-marked!
                 createdAt: Date.now(),
-                sourceLang: this.currentSourceLang,
+                sourceLang: effectiveSourceLang,
                 targetLang: this.currentTargetLang,
             };
 

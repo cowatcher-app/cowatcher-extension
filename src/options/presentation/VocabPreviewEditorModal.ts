@@ -23,6 +23,33 @@ export class VocabPreviewEditorModal {
     private isEnriching: boolean = false;
     private onUpdateCallback: (() => void) | null = null;
     private fieldLockConfig: FieldLockConfig = new FieldLockConfig();
+    private exportFields = {
+        phonetic: true,
+        pos: true,
+        sentence: true,
+        sentenceTranslation: true,
+    };
+
+    private getWordsForExport(): CuratedVocabWord[] {
+        return this.words.map((w) => {
+            const dictM = (w.dictMeaning || '').trim();
+            const ctxM = (w.meaning || '').trim();
+            const combinedMeaning =
+                dictM && ctxM && dictM !== ctxM
+                    ? `${dictM} (语境: ${ctxM})`
+                    : dictM || ctxM || '';
+            return {
+                ...w,
+                meaning: combinedMeaning,
+                phonetic: this.exportFields.phonetic ? w.phonetic : '',
+                pos: this.exportFields.pos ? w.pos : '',
+                sentence: this.exportFields.sentence ? w.sentence : '',
+                sentenceTranslation: this.exportFields.sentenceTranslation
+                    ? w.sentenceTranslation
+                    : '',
+            };
+        });
+    }
 
     constructor(
         private readonly curationService: VocabCurationService,
@@ -124,6 +151,33 @@ export class VocabPreviewEditorModal {
             await this.handleSaveChanges(true);
         });
 
+        // Export Auxiliary Fields Selection Checkboxes
+        const chkPho = document.getElementById(
+            'curation-export-pho',
+        ) as HTMLInputElement | null;
+        const chkPos = document.getElementById(
+            'curation-export-pos',
+        ) as HTMLInputElement | null;
+        const chkSent = document.getElementById(
+            'curation-export-sentence',
+        ) as HTMLInputElement | null;
+        const chkTrans = document.getElementById(
+            'curation-export-translation',
+        ) as HTMLInputElement | null;
+
+        chkPho?.addEventListener('change', () => {
+            this.exportFields.phonetic = !!chkPho.checked;
+        });
+        chkPos?.addEventListener('change', () => {
+            this.exportFields.pos = !!chkPos.checked;
+        });
+        chkSent?.addEventListener('change', () => {
+            this.exportFields.sentence = !!chkSent.checked;
+        });
+        chkTrans?.addEventListener('change', () => {
+            this.exportFields.sentenceTranslation = !!chkTrans.checked;
+        });
+
         // Download CSV Button
         const btnDownloadCsv = document.getElementById('modal-download-btn');
         btnDownloadCsv?.addEventListener('click', async () => {
@@ -132,10 +186,11 @@ export class VocabPreviewEditorModal {
                 return;
             }
             await this.handleSaveChanges(false);
+            const exportWords = this.getWordsForExport();
             if (this.session.onExportCsv) {
-                await this.session.onExportCsv(this.words);
+                await this.session.onExportCsv(exportWords);
             } else if (this.onExportCsv && this.session.primaryEpisode) {
-                this.onExportCsv(this.session.primaryEpisode, this.words);
+                this.onExportCsv(this.session.primaryEpisode, exportWords);
             }
             this.hide();
         });
@@ -148,10 +203,11 @@ export class VocabPreviewEditorModal {
                 return;
             }
             await this.handleSaveChanges(false);
+            const exportWords = this.getWordsForExport();
             if (this.session.onExportAnki) {
-                await this.session.onExportAnki(this.words);
+                await this.session.onExportAnki(exportWords);
             } else {
-                const items: VocabExportItem[] = this.words.map((w) => ({
+                const items: VocabExportItem[] = exportWords.map((w) => ({
                     word: w,
                     episodeInfo: {
                         showTitle:
@@ -370,6 +426,7 @@ export class VocabPreviewEditorModal {
         }
 
         const isMultiEpisode = (this.session?.episodes.length || 0) > 1;
+        const isLemmaLocked = this.fieldLockConfig.isLocked('lemma');
         const isMeaningLocked = this.fieldLockConfig.isLocked('meaning');
         const isPhoLocked = this.fieldLockConfig.isLocked('phonetic');
         const isPosLocked = this.fieldLockConfig.isLocked('pos');
@@ -382,6 +439,7 @@ export class VocabPreviewEditorModal {
                 const isChecked = this.selectedIndices.has(idx);
                 const isUser = w.source === 'user';
                 const word = this.escapeHtml(w.word || '');
+                const lemma = this.escapeHtml(w.lemma || '');
                 const pos = this.escapeHtml(w.pos || '');
                 const pho = this.escapeHtml(w.phonetic || '');
                 const meaning = this.escapeHtml(w.meaning || '');
@@ -424,8 +482,23 @@ export class VocabPreviewEditorModal {
               </div>
             </div>
 
-            <!-- Row 1: Meaning (2fr), Phonetic (1fr), POS (1fr) -->
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <!-- Row 1: Lemma (1fr), Meaning (2fr), Phonetic (1fr), POS (0.8fr) -->
+            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 0.8fr; gap: 8px; margin-bottom: 8px;">
+              <div>
+                <div class="curation-field-label">
+                  <span>原型 (Lemma):</span>
+                  ${isLemmaLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                </div>
+                <input
+                  type="text"
+                  class="form-control input-word-lemma"
+                  data-idx="${idx}"
+                  value="${lemma}"
+                  placeholder="Root / Lemma..."
+                  style="width: 100%; height: 28px; font-size: 12.5px; color: #38bdf8; background: #0e0e12; border: 1px solid ${isLemmaLocked ? 'rgba(239,68,68,0.35)' : 'var(--border-color)'};"
+                />
+              </div>
+
               <div>
                 <div class="curation-field-label">
                   <span>释义 (Meaning):</span>
@@ -529,6 +602,17 @@ export class VocabPreviewEditorModal {
                     const idx = parseInt(input.dataset.idx || '-1', 10);
                     if (idx >= 0 && this.words[idx]) {
                         this.words[idx].word = input.value.trim();
+                    }
+                });
+            });
+
+        container
+            .querySelectorAll<HTMLInputElement>('.input-word-lemma')
+            .forEach((input) => {
+                input.addEventListener('input', () => {
+                    const idx = parseInt(input.dataset.idx || '-1', 10);
+                    if (idx >= 0 && this.words[idx]) {
+                        this.words[idx].lemma = input.value.trim();
                     }
                 });
             });

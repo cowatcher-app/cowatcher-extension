@@ -876,3 +876,40 @@ input[type='range'] {
     line-height: 1.35;
     font-style: italic;
 }
+
+/* --- Provider Status Badge --- */
+.provider-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.provider-status-badge:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+.provider-status-badge.status-ready {
+    background: rgba(76, 175, 80, 0.15);
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.35);
+}
+
+.provider-status-badge.status-offline {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.35);
+}
+
+.provider-status-badge.status-checking {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.35);
+}

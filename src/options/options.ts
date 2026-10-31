@@ -206,11 +206,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const cfgAutoPauseLearning = document.getElementById(
         'cfg-auto-pause-learning',
     ) as HTMLInputElement | null;
+    const cfgChinesePhoneticSystem = document.getElementById(
+        'cfg-chinese-phonetic-system',
+    ) as HTMLSelectElement | null;
+    const cfgKoreanPhoneticSystem = document.getElementById(
+        'cfg-korean-phonetic-system',
+    ) as HTMLSelectElement | null;
     const cfgVocabEnabled = document.getElementById(
         'cfg-vocab-enabled',
     ) as HTMLInputElement | null;
+    const cfgRecordVocabAsLemma = document.getElementById(
+        'cfg-record-vocab-as-lemma',
+    ) as HTMLInputElement | null;
     const cfgVocabProvider = document.getElementById(
         'cfg-vocab-provider',
+    ) as HTMLSelectElement | null;
+    const cfgVocabOpenrouterGroup = document.getElementById(
+        'cfg-vocab-openrouter-group',
+    ) as HTMLElement | null;
+    const cfgVocabOpenrouterModel = document.getElementById(
+        'cfg-vocab-openrouter-model',
+    ) as HTMLSelectElement | null;
+    const cfgVocabOllamaGroup = document.getElementById(
+        'cfg-vocab-ollama-group',
+    ) as HTMLElement | null;
+    const cfgVocabOllamaModel = document.getElementById(
+        'cfg-vocab-ollama-model',
     ) as HTMLSelectElement | null;
     const cfgVocabDifficulty = document.getElementById(
         'cfg-vocab-difficulty',
@@ -1550,6 +1571,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
     }
 
+    function formatMergedMeaning(w: {
+        dictMeaning?: string;
+        meaning?: string;
+    }): string {
+        const dictM = (w.dictMeaning || '').trim();
+        const ctxM = (w.meaning || '').trim();
+        if (dictM && ctxM && dictM !== ctxM) {
+            return `${dictM} (语境: ${ctxM})`;
+        }
+        return dictM || ctxM || '';
+    }
+
     function exportUserMarkedVocabCsv(
         episodes: EpisodeVocabData[],
         wordsOverride?: CuratedVocabWord[],
@@ -1587,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     escapeCsv(w.word || ''),
                     escapeCsv(w.pos || ''),
                     escapeCsv(w.phonetic || ''),
-                    escapeCsv(w.meaning || ''),
+                    escapeCsv(formatMergedMeaning(w)),
                     escapeCsv(w.sentence || ''),
                     escapeCsv(w.sentenceTranslation || ''),
                     escapeCsv(
@@ -1613,7 +1646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             escapeCsv(w.word || ''),
                             escapeCsv(w.pos || ''),
                             escapeCsv(w.phonetic || ''),
-                            escapeCsv(w.meaning || ''),
+                            escapeCsv(formatMergedMeaning(w)),
                             escapeCsv(w.sentence || ''),
                             escapeCsv(w.sentenceTranslation || ''),
                             escapeCsv(
@@ -1694,7 +1727,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ),
                     escapeCsv(w.pos || ''),
                     escapeCsv(w.phonetic || ''),
-                    escapeCsv(w.meaning || ''),
+                    escapeCsv(formatMergedMeaning(w)),
                     escapeCsv(w.sentence || ''),
                     escapeCsv(w.sentenceTranslation || ''),
                     escapeCsv(
@@ -1719,7 +1752,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ),
                         escapeCsv(w.pos || ''),
                         escapeCsv(w.phonetic || ''),
-                        escapeCsv(w.meaning || ''),
+                        escapeCsv(formatMergedMeaning(w)),
                         escapeCsv(w.sentence || ''),
                         escapeCsv(w.sentenceTranslation || ''),
                         escapeCsv(
@@ -1790,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', () => {
             escapeCsv(w.source === 'user' ? 'User Marked' : 'AI Extracted'),
             escapeCsv(w.pos || ''),
             escapeCsv(w.phonetic || ''),
-            escapeCsv(w.meaning || ''),
+            escapeCsv(formatMergedMeaning(w)),
             escapeCsv(w.sentence || ''),
             escapeCsv(w.sentenceTranslation || ''),
             escapeCsv(
@@ -2828,14 +2861,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cfgAutoPauseLearning)
             cfgAutoPauseLearning.checked =
                 currentSettings.autoPauseOnTokenClick !== false;
+        if (cfgChinesePhoneticSystem)
+            cfgChinesePhoneticSystem.value =
+                currentSettings.chinesePhoneticSystem || 'pinyin';
+        if (cfgKoreanPhoneticSystem)
+            cfgKoreanPhoneticSystem.value =
+                currentSettings.koreanPhoneticSystem || 'default';
 
         if (cfgVocabEnabled)
             cfgVocabEnabled.checked = Boolean(
                 currentSettings.vocabExtractorEnabled,
             );
-        if (cfgVocabProvider)
+        if (cfgRecordVocabAsLemma)
+            cfgRecordVocabAsLemma.checked =
+                currentSettings.recordVocabAsLemma !== false;
+        if (cfgVocabProvider) {
             cfgVocabProvider.value =
                 currentSettings.vocabExtractorProvider || 'openrouter';
+            updateVocabProviderVisibility(cfgVocabProvider.value);
+        }
         if (cfgVocabDifficulty)
             cfgVocabDifficulty.value =
                 currentSettings.vocabExtractorDifficulty || 'medium';
@@ -2878,6 +2922,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 : 'none';
     }
 
+    function updateVocabProviderVisibility(provider: string): void {
+        const isOllama = provider === 'ollama';
+        if (cfgVocabOllamaGroup)
+            cfgVocabOllamaGroup.style.display = isOllama ? 'block' : 'none';
+        if (cfgVocabOpenrouterGroup)
+            cfgVocabOpenrouterGroup.style.display = isOllama ? 'none' : 'block';
+    }
+
+    cfgVocabProvider?.addEventListener('change', () => {
+        if (cfgVocabProvider) {
+            updateVocabProviderVisibility(cfgVocabProvider.value);
+        }
+    });
+
     cfgAiProvider?.addEventListener('change', (e) => {
         const target = e.target as HTMLSelectElement | null;
         if (target) toggleProviderVisibility(target.value);
@@ -2901,6 +2959,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         cfgOpenrouterTransModel.innerHTML = '';
         cfgOpenrouterSupModel.innerHTML = '';
+        if (cfgVocabOpenrouterModel) cfgVocabOpenrouterModel.innerHTML = '';
 
         RECOMMENDED_MODELS.forEach((m) => {
             const opt1 = document.createElement('option');
@@ -2912,6 +2971,13 @@ document.addEventListener('DOMContentLoaded', () => {
             opt2.value = m.id;
             opt2.textContent = `${m.name} (${m.id})`;
             cfgOpenrouterSupModel?.appendChild(opt2);
+
+            if (cfgVocabOpenrouterModel) {
+                const opt3 = document.createElement('option');
+                opt3.value = m.id;
+                opt3.textContent = `${m.name} (${m.id})`;
+                cfgVocabOpenrouterModel.appendChild(opt3);
+            }
         });
 
         if (currentSettings.openrouterTranslationModel) {
@@ -2921,6 +2987,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentSettings.openrouterSupervisorModel) {
             cfgOpenrouterSupModel.value =
                 currentSettings.openrouterSupervisorModel;
+        }
+        if (currentSettings.vocabExtractorModel && cfgVocabOpenrouterModel) {
+            cfgVocabOpenrouterModel.value = currentSettings.vocabExtractorModel;
+        }
+
+        if (cfgVocabOllamaModel) {
+            cfgVocabOllamaModel.innerHTML = [
+                'qwen2.5:7b',
+                'qwen2.5:14b',
+                'llama3.1:8b',
+                'gemma2:9b',
+            ]
+                .map((m) => `<option value="${m}">${m}</option>`)
+                .join('');
+            if (currentSettings.vocabExtractorOllamaModel) {
+                cfgVocabOllamaModel.value =
+                    currentSettings.vocabExtractorOllamaModel;
+            }
         }
     }
 
@@ -2976,13 +3060,28 @@ document.addEventListener('DOMContentLoaded', () => {
             autoPauseOnTokenClick: cfgAutoPauseLearning
                 ? cfgAutoPauseLearning.checked
                 : currentSettings.autoPauseOnTokenClick,
+            chinesePhoneticSystem: cfgChinesePhoneticSystem
+                ? (cfgChinesePhoneticSystem.value as 'pinyin' | 'zhuyin')
+                : currentSettings.chinesePhoneticSystem || 'pinyin',
+            koreanPhoneticSystem: cfgKoreanPhoneticSystem
+                ? (cfgKoreanPhoneticSystem.value as 'default' | 'hyphenated')
+                : currentSettings.koreanPhoneticSystem || 'default',
             vocabExtractorEnabled: cfgVocabEnabled
                 ? cfgVocabEnabled.checked
                 : currentSettings.vocabExtractorEnabled,
+            recordVocabAsLemma: cfgRecordVocabAsLemma
+                ? cfgRecordVocabAsLemma.checked
+                : currentSettings.recordVocabAsLemma !== false,
             vocabExtractorProvider: (cfgVocabProvider
                 ? cfgVocabProvider.value
                 : currentSettings.vocabExtractorProvider) as
                 'ollama' | 'openrouter',
+            vocabExtractorModel: cfgVocabOpenrouterModel
+                ? cfgVocabOpenrouterModel.value
+                : currentSettings.vocabExtractorModel,
+            vocabExtractorOllamaModel: cfgVocabOllamaModel
+                ? cfgVocabOllamaModel.value
+                : currentSettings.vocabExtractorOllamaModel,
             vocabExtractorDifficulty: (cfgVocabDifficulty
                 ? cfgVocabDifficulty.value
                 : currentSettings.vocabExtractorDifficulty) as
@@ -3023,6 +3122,29 @@ document.addEventListener('DOMContentLoaded', () => {
         await storage.set({
             [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
         });
+    });
+
+    cfgChinesePhoneticSystem?.addEventListener('change', async (e) => {
+        const target = e.target as HTMLSelectElement | null;
+        if (!target) return;
+        const system = (target.value as 'pinyin' | 'zhuyin') || 'pinyin';
+        currentSettings.chinesePhoneticSystem = system;
+        await storage.set({
+            [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
+        });
+        showToast('Phonetic system updated!');
+    });
+
+    cfgKoreanPhoneticSystem?.addEventListener('change', async (e) => {
+        const target = e.target as HTMLSelectElement | null;
+        if (!target) return;
+        const system =
+            (target.value as 'default' | 'hyphenated') || 'default';
+        currentSettings.koreanPhoneticSystem = system;
+        await storage.set({
+            [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
+        });
+        showToast('Phonetic system updated!');
     });
 
     // Initial Data Loads

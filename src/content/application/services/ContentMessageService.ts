@@ -353,6 +353,32 @@ export class ContentMessageService {
         );
     }
 
+    async getPhoneticReading(params: {
+        word: string;
+        lang: string;
+        system?: string;
+    }): Promise<{ success: boolean; reading: string; error?: string }> {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING,
+            params,
+        );
+    }
+
+    async getPhoneticBatch(params: {
+        words: string[];
+        lang: string;
+        system?: string;
+    }): Promise<{
+        success: boolean;
+        readings: Record<string, string>;
+        error?: string;
+    }> {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH,
+            params,
+        );
+    }
+
     onSettingsChanged(
         callback: (settings: ExtensionSettings) => void,
     ): () => void {
