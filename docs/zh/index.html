@@ -1,0 +1,2822 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="msvalidate.01" content="74D1D82251CCD15C73F83C9A3298381E" />
+        <title>CoWatcher - 你的观影小助手</title>
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="../icons/icon48.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="../icons/icon16.png"
+        />
+        <link rel="apple-touch-icon" href="../icons/icon128.png" />
+
+        <style>
+            :root {
+                --bg: #090a0f;
+                --card-bg: rgba(22, 24, 35, 0.7);
+                --card-border: rgba(255, 255, 255, 0.08);
+                --primary: #e50914;
+                --primary-glow: rgba(229, 9, 20, 0.35);
+                --accent: #6366f1;
+                --accent-glow: rgba(99, 102, 241, 0.3);
+                --text: #f3f4f6;
+                --text-muted: #9ca3af;
+                --highlight: #38bdf8;
+                --success: #10b981;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background-color: var(--bg);
+                color: var(--text);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                    'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                overflow-x: hidden;
+                background-image:
+                    radial-gradient(
+                        circle at 15% 20%,
+                        rgba(229, 9, 20, 0.12) 0%,
+                        transparent 40%
+                    ),
+                    radial-gradient(
+                        circle at 85% 60%,
+                        rgba(99, 102, 241, 0.12) 0%,
+                        transparent 40%
+                    );
+                background-attachment: fixed;
+            }
+
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            /* Header / Nav */
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                backdrop-filter: blur(16px);
+                background: rgba(9, 10, 15, 0.75);
+                border-bottom: 1px solid var(--card-border);
+            }
+
+            .nav-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 1rem 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .logo-group {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 700;
+                font-size: 1.25rem;
+                letter-spacing: -0.02em;
+            }
+
+            .logo-group img {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                box-shadow: 0 0 15px var(--primary-glow);
+            }
+
+            .nav-links {
+                display: flex;
+                align-items: center;
+                gap: 1.25rem;
+            }
+
+            .nav-links a {
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                transition: color 0.2s;
+            }
+
+            .nav-links a:hover {
+                color: #fff;
+            }
+
+            .lang-toggle {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid var(--card-border);
+                color: #fff;
+                padding: 0.35rem 0.75rem;
+                border-radius: 20px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                transition: all 0.2s;
+            }
+
+            .lang-toggle:hover {
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            /* Hero Section */
+            .hero {
+                max-width: 1100px;
+                margin: 4rem auto 3rem;
+                padding: 0 1.5rem;
+                text-align: center;
+            }
+
+            .badge-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.4rem 1rem;
+                border-radius: 50px;
+                background: rgba(229, 9, 20, 0.15);
+                border: 1px solid rgba(229, 9, 20, 0.3);
+                color: #ff6b6b;
+                font-size: 0.875rem;
+                font-weight: 500;
+                margin-bottom: 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: clamp(2.5rem, 5vw, 4rem);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+                line-height: 1.15;
+                margin-bottom: 1.25rem;
+                background: linear-gradient(
+                    135deg,
+                    #ffffff 30%,
+                    #e2e8f0 70%,
+                    #94a3b8 100%
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .hero h1 span.gradient-text {
+                background: linear-gradient(135deg, #ff4d4d, #f43f5e, #a855f7);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .hero p.subtitle {
+                font-size: 1.2rem;
+                color: var(--text-muted);
+                max-width: 720px;
+                margin: 0 auto 2.5rem;
+            }
+
+            .cta-group {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 1rem;
+                margin-bottom: 3.5rem;
+            }
+
+            .btn {
+                padding: 0.8rem 1.6rem;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 1rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, #e50914, #dc2626);
+                color: #fff;
+                box-shadow: 0 4px 20px var(--primary-glow);
+                border: none;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(229, 9, 20, 0.5);
+            }
+
+            .btn-secondary {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--card-border);
+                color: #fff;
+                backdrop-filter: blur(10px);
+            }
+
+            .btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: translateY(-2px);
+            }
+
+            .btn-kofi {
+                background: #ff5e5b;
+                color: white;
+                box-shadow: 0 4px 15px rgba(255, 94, 91, 0.3);
+            }
+
+            .btn-kofi:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(255, 94, 91, 0.5);
+            }
+
+            /* Subtitle Simulator */
+            .player-showcase {
+                max-width: 860px;
+                margin: 0 auto 5rem;
+                border-radius: 16px;
+                border: 1px solid var(--card-border);
+                background: #000;
+                box-shadow:
+                    0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                    0 0 40px rgba(229, 9, 20, 0.15);
+                overflow: hidden;
+                position: relative;
+            }
+
+            .player-bar {
+                height: 38px;
+                background: #141414;
+                display: flex;
+                align-items: center;
+                padding: 0 1rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                justify-content: space-between;
+            }
+
+            .window-dots {
+                display: flex;
+                gap: 6px;
+            }
+
+            .window-dots span {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #333;
+            }
+            .window-dots span:nth-child(1) {
+                background: #ff5f56;
+            }
+            .window-dots span:nth-child(2) {
+                background: #ffbd2e;
+            }
+            .window-dots span:nth-child(3) {
+                background: #27c93f;
+            }
+
+            .video-viewport {
+                height: 380px;
+                position: relative;
+                background: linear-gradient(180deg, #181924 0%, #0e0f17 100%);
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                align-items: center;
+                padding-bottom: 3.5rem;
+                user-select: none;
+            }
+
+            .bg-cinema-ambient {
+                position: absolute;
+                inset: 0;
+                opacity: 0.4;
+                background:
+                    radial-gradient(
+                        circle at 50% 30%,
+                        rgba(99, 102, 241, 0.25) 0%,
+                        transparent 60%
+                    ),
+                    radial-gradient(
+                        circle at 70% 70%,
+                        rgba(229, 9, 20, 0.2) 0%,
+                        transparent 50%
+                    );
+                pointer-events: none;
+            }
+
+            /* Subtitle Container */
+            .subtitles-box {
+                z-index: 10;
+                text-align: center;
+                padding: 0.8rem 1.6rem;
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.72);
+                backdrop-filter: blur(8px);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                max-width: 85%;
+                animation: fadeInSub 0.6s ease-out;
+            }
+
+            .sub-orig {
+                font-size: 1.15rem;
+                font-weight: 500;
+                color: #e5e7eb;
+                margin-bottom: 0.35rem;
+                letter-spacing: 0.02em;
+            }
+
+            .sub-orig .highlight-word {
+                color: #38bdf8;
+                border-bottom: 1.5px dashed #38bdf8;
+                cursor: pointer;
+                position: relative;
+            }
+
+            .sub-trans {
+                font-size: 1.35rem;
+                font-weight: 700;
+                color: #facc15;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+                letter-spacing: 0.04em;
+            }
+
+            .sub-pill-tag {
+                display: inline-block;
+                margin-top: 0.5rem;
+                font-size: 0.75rem;
+                color: #a78bfa;
+                background: rgba(167, 139, 250, 0.12);
+                padding: 2px 8px;
+                border-radius: 4px;
+                border: 1px solid rgba(167, 139, 250, 0.25);
+            }
+
+            .player-controls-mock {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 44px;
+                background: rgba(10, 10, 12, 0.85);
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 1.25rem;
+                font-size: 0.85rem;
+                color: #9ca3af;
+            }
+
+            .badge-sub-on {
+                background: #e50914;
+                color: #fff;
+                font-size: 0.75rem;
+                font-weight: 700;
+                padding: 3px 8px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            /* Section Headers */
+            .section-title {
+                text-align: center;
+                max-width: 700px;
+                margin: 0 auto 3rem;
+                padding: 0 1.5rem;
+            }
+
+            .section-title h2 {
+                font-size: 2.25rem;
+                font-weight: 700;
+                margin-bottom: 0.75rem;
+                letter-spacing: -0.02em;
+            }
+
+            .section-title p {
+                color: var(--text-muted);
+                font-size: 1.05rem;
+            }
+
+            /* Features Grid */
+            .features-grid {
+                max-width: 1200px;
+                margin: 0 auto 6rem;
+                padding: 0 1.5rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                gap: 1.75rem;
+            }
+
+            .feature-card {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 16px;
+                padding: 2rem;
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(12px);
+            }
+
+            .feature-card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(255, 255, 255, 0.2);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            }
+
+            .feature-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .feature-card h3 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 0.75rem;
+            }
+
+            .feature-card p {
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                line-height: 1.6;
+            }
+
+            .platform-tags {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
+
+            .platform-pill {
+                font-size: 0.75rem;
+                padding: 2px 8px;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.08);
+                color: #cbd5e1;
+            }
+
+            /* Install Step Section */
+            .steps-section {
+                max-width: 1000px;
+                margin: 0 auto 6rem;
+                padding: 0 1.5rem;
+            }
+
+            .step-list {
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+
+            .step-item {
+                display: flex;
+                gap: 1.5rem;
+                align-items: flex-start;
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 14px;
+                padding: 1.5rem;
+                transition: border-color 0.2s;
+            }
+
+            .step-item:hover {
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .step-num {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: var(--primary);
+                color: #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 1.1rem;
+                flex-shrink: 0;
+                box-shadow: 0 0 12px var(--primary-glow);
+            }
+
+            .step-content h4 {
+                font-size: 1.1rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .step-content p {
+                color: var(--text-muted);
+                font-size: 0.95rem;
+            }
+
+            .step-content code {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 2px 6px;
+                border-radius: 4px;
+                color: #f43f5e;
+                font-family: monospace;
+            }
+
+            /* Support Callout */
+            .coffee-callout {
+                max-width: 800px;
+                margin: 0 auto 6rem;
+                padding: 2.5rem 2rem;
+                border-radius: 20px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 94, 91, 0.15) 0%,
+                    rgba(99, 102, 241, 0.15) 100%
+                );
+                border: 1px solid rgba(255, 94, 91, 0.3);
+                text-align: center;
+                position: relative;
+            }
+
+            .coffee-callout h3 {
+                font-size: 1.6rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .coffee-callout p {
+                color: #d1d5db;
+                max-width: 600px;
+                margin: 0 auto 1.5rem;
+            }
+
+            /* Footer */
+            footer {
+                border-top: 1px solid var(--card-border);
+                background: #06070a;
+                padding: 3rem 1.5rem 2rem;
+                color: var(--text-muted);
+                font-size: 0.9rem;
+            }
+
+            .footer-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+
+            .footer-links {
+                display: flex;
+                gap: 1.5rem;
+            }
+
+            .footer-links a:hover {
+                color: #fff;
+            }
+
+            @keyframes fadeInSub {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @media (max-width: 768px) {
+                .hero {
+                    margin-top: 2.5rem;
+                }
+                .video-viewport {
+                    height: 280px;
+                    padding-bottom: 2.5rem;
+                }
+                .sub-orig {
+                    font-size: 0.95rem;
+                }
+                .sub-trans {
+                    font-size: 1.1rem;
+                }
+                .features-grid {
+                    grid-template-columns: 1fr;
+                }
+                .step-item {
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+                .nav-links a.hide-mobile {
+                    display: none;
+                }
+            }
+
+            /* Platform Support Bar */
+            .platform-bar {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                padding: 0.45rem 1rem;
+                border-radius: 50px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                backdrop-filter: blur(12px);
+                margin-bottom: 2rem;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .platform-bar-label {
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                font-weight: 500;
+                margin-right: 0.25rem;
+            }
+
+            .platform-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-size: 0.82rem;
+                font-weight: 600;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                letter-spacing: 0.01em;
+            }
+
+            .platform-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+
+            .platform-netflix {
+                color: #ff6b6b;
+                background: rgba(229, 9, 20, 0.12);
+                border: 1px solid rgba(229, 9, 20, 0.35);
+            }
+            .platform-netflix .platform-dot {
+                background: #e50914;
+                box-shadow: 0 0 8px rgba(229, 9, 20, 0.9);
+            }
+
+            .platform-tver {
+                color: #38bdf8;
+                background: rgba(0, 160, 233, 0.12);
+                border: 1px solid rgba(0, 160, 233, 0.35);
+            }
+            .platform-tver .platform-dot {
+                background: #00a0e9;
+                box-shadow: 0 0 8px rgba(0, 160, 233, 0.9);
+            }
+
+            .platform-youtube {
+                color: #f87171;
+                background: rgba(255, 0, 0, 0.12);
+                border: 1px solid rgba(255, 0, 0, 0.35);
+            }
+            .platform-youtube .platform-dot {
+                background: #ff0000;
+                box-shadow: 0 0 8px rgba(255, 0, 0, 0.9);
+            }
+
+            .platform-badge {
+                font-size: 0.78rem;
+                color: #cbd5e1;
+                background: rgba(255, 255, 255, 0.06);
+                padding: 0.2rem 0.6rem;
+                border-radius: 12px;
+                margin-left: 0.25rem;
+            }
+
+            /* Sticky Stacking Cards Showcase Section */
+            .stacking-section {
+                max-width: 1220px;
+                margin: 3rem auto 8rem;
+                padding: 0 1.5rem;
+                position: relative;
+            }
+
+            .stacking-intro {
+                text-align: center;
+                max-width: 720px;
+                margin: 0 auto 3.5rem;
+            }
+
+            .stacking-title {
+                font-size: clamp(2rem, 3.5vw, 2.75rem);
+                font-weight: 800;
+                line-height: 1.25;
+                margin: 1rem 0 0.75rem;
+                color: #fff;
+                letter-spacing: -0.02em;
+            }
+
+            .stacking-sub {
+                color: var(--text-muted);
+                font-size: 1.05rem;
+            }
+
+            .stacking-cards-wrapper {
+                position: relative;
+                width: 100%;
+            }
+
+            .stacking-card {
+                position: sticky;
+                top: calc(76px + (var(--card-index) - 1) * 12px);
+                min-height: calc(100vh - 120px);
+                margin-bottom: 10vh;
+                border-radius: 28px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                box-shadow:
+                    0 -25px 60px rgba(0, 0, 0, 0.85),
+                    0 30px 60px rgba(0, 0, 0, 0.7);
+                padding: 2rem 3rem 3rem;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+                justify-content: center;
+                backdrop-filter: blur(24px);
+                transform-origin: center top;
+                transition:
+                    transform 0.25s cubic-bezier(0.2, 0, 0, 1),
+                    filter 0.25s cubic-bezier(0.2, 0, 0, 1);
+            }
+
+            .stacking-card:last-child {
+                margin-bottom: 5rem;
+            }
+
+            .stacking-card.card-1 {
+                z-index: 1;
+                background: linear-gradient(155deg, #131525 0%, #090a12 100%);
+                border-color: rgba(229, 9, 20, 0.35);
+            }
+
+            .stacking-card.card-2 {
+                z-index: 2;
+                background: linear-gradient(155deg, #0e182e 0%, #060b16 100%);
+                border-color: rgba(56, 189, 248, 0.35);
+            }
+
+            .stacking-card.card-3 {
+                z-index: 3;
+                background: linear-gradient(155deg, #0b1f1e 0%, #051010 100%);
+                border-color: rgba(52, 211, 153, 0.35);
+            }
+
+            .stacking-card.card-4 {
+                z-index: 4;
+                background: linear-gradient(155deg, #201a0f 0%, #0f0c06 100%);
+                border-color: rgba(251, 191, 36, 0.35);
+            }
+
+            .stacking-step-anchor {
+                position: relative;
+                height: 0;
+                width: 100%;
+                pointer-events: none;
+                visibility: hidden;
+            }
+
+            .stacking-card-topbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                padding-bottom: 0.85rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .card-step-badge {
+                font-size: 0.78rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                color: #94a3b8;
+                text-transform: uppercase;
+            }
+
+            .card-step-hint {
+                font-size: 0.76rem;
+                color: var(--text-muted);
+                opacity: 0.85;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+
+            .card-step-dots {
+                display: flex;
+                gap: 0.4rem;
+                align-items: center;
+            }
+
+            .step-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.25);
+                transition: all 0.25s ease;
+                cursor: pointer;
+            }
+
+            .step-dot:hover {
+                background: rgba(255, 255, 255, 0.6);
+                transform: scale(1.3);
+            }
+
+            .step-dot.active {
+                width: 22px;
+                border-radius: 4px;
+                background: #fff;
+                cursor: default;
+                transform: none;
+            }
+
+            .card-1 .step-dot.active {
+                background: #ff4d4d;
+                box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
+            }
+            .card-2 .step-dot.active {
+                background: #38bdf8;
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            }
+            .card-3 .step-dot.active {
+                background: #34d399;
+                box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+            }
+            .card-4 .step-dot.active {
+                background: #fbbf24;
+                box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+            }
+
+            .stacking-card-body {
+                display: grid;
+                grid-template-columns: 1fr 1.15fr;
+                gap: 3rem;
+                align-items: center;
+            }
+
+            .showcase-info {
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+                text-align: left;
+            }
+
+            .showcase-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.3rem 0.8rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                width: fit-content;
+            }
+
+            .showcase-pill-sub {
+                color: #ff6b6b;
+                background: rgba(229, 9, 20, 0.12);
+                border: 1px solid rgba(229, 9, 20, 0.3);
+            }
+
+            .showcase-pill-history {
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.12);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+            }
+
+            .showcase-pill-learn {
+                color: #34d399;
+                background: rgba(52, 211, 153, 0.12);
+                border: 1px solid rgba(52, 211, 153, 0.3);
+            }
+
+            .showcase-pill-ai {
+                color: #fbbf24;
+                background: rgba(251, 191, 36, 0.12);
+                border: 1px solid rgba(251, 191, 36, 0.3);
+            }
+
+            .showcase-heading {
+                font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+                font-weight: 800;
+                line-height: 1.25;
+                letter-spacing: -0.02em;
+                color: #fff;
+            }
+
+            .showcase-desc {
+                color: var(--text-muted);
+                font-size: 0.98rem;
+                line-height: 1.7;
+            }
+
+            .showcase-feature-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.9rem;
+            }
+
+            .showcase-feature-item {
+                display: flex;
+                gap: 0.75rem;
+                align-items: flex-start;
+                font-size: 0.95rem;
+                color: #e2e8f0;
+                line-height: 1.5;
+            }
+
+            .showcase-feature-item strong {
+                color: #fff;
+            }
+
+            .showcase-feature-bullet {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+                font-weight: 700;
+                flex-shrink: 0;
+                margin-top: 2px;
+                background: rgba(255, 255, 255, 0.08);
+                color: #38bdf8;
+            }
+
+            .showcase-tags-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+            }
+
+            .showcase-canvas {
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: #090a10;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+                position: relative;
+            }
+
+            /* Mockup Components */
+            .mock-dash {
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+                text-align: left;
+            }
+
+            .mock-dash-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                padding-bottom: 0.75rem;
+            }
+
+            .mock-dash-title {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #f1f5f9;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .mock-dash-badge {
+                font-size: 0.75rem;
+                color: #38bdf8;
+                font-weight: 600;
+            }
+
+            .mock-stat-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+            }
+
+            .mock-stat-box {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
+                padding: 0.75rem;
+                text-align: center;
+            }
+
+            .mock-stat-num {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #38bdf8;
+            }
+
+            .mock-stat-lbl {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+
+            .mock-item-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+
+            .mock-item-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: #fff;
+            }
+
+            .mock-item-tag {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                background: rgba(255, 255, 255, 0.06);
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .mock-progress-track {
+                height: 6px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 3px;
+                overflow: hidden;
+            }
+
+            .mock-progress-bar {
+                height: 100%;
+                background: linear-gradient(90deg, #38bdf8, #6366f1);
+                border-radius: 3px;
+            }
+
+            .mock-item-footer {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.78rem;
+                color: #94a3b8;
+                align-items: center;
+            }
+
+            .mock-cache-pill {
+                color: #34d399;
+                font-weight: 600;
+            }
+
+            /* Mock Vocab Popover */
+            .mock-vocab-viewport {
+                padding: 2.5rem 1.5rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+                position: relative;
+                min-height: 380px;
+                background: radial-gradient(
+                    circle at 50% 50%,
+                    rgba(99, 102, 241, 0.15) 0%,
+                    transparent 70%
+                );
+            }
+
+            .mock-sub-row {
+                background: rgba(0, 0, 0, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                max-width: 90%;
+            }
+
+            .mock-sub-jp {
+                font-size: 1.2rem;
+                color: #f1f5f9;
+                font-weight: 500;
+                margin-bottom: 0.35rem;
+            }
+
+            .mock-sub-zh {
+                font-size: 1.25rem;
+                color: #facc15;
+                font-weight: 700;
+            }
+
+            .mock-word-highlight {
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.15);
+                padding: 2px 4px;
+                border-radius: 4px;
+                border-bottom: 2px solid #38bdf8;
+                cursor: pointer;
+            }
+
+            .mock-popover {
+                background: rgba(22, 24, 35, 0.95);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+                box-shadow:
+                    0 20px 40px rgba(0, 0, 0, 0.7),
+                    0 0 20px rgba(56, 189, 248, 0.2);
+                border-radius: 12px;
+                padding: 1.25rem;
+                max-width: 360px;
+                text-align: left;
+                backdrop-filter: blur(16px);
+                animation: popoverFloat 3s ease-in-out infinite alternate;
+            }
+
+            @keyframes popoverFloat {
+                0% {
+                    transform: translateY(0);
+                }
+                100% {
+                    transform: translateY(-4px);
+                }
+            }
+
+            .mock-popover-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin-bottom: 0.5rem;
+            }
+
+            .mock-popover-word {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .mock-popover-kana {
+                font-size: 0.85rem;
+                color: #94a3b8;
+                margin-left: 0.4rem;
+            }
+
+            .mock-popover-type {
+                font-size: 0.72rem;
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.1);
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .mock-popover-def {
+                font-size: 0.85rem;
+                color: #cbd5e1;
+                line-height: 1.5;
+                margin-bottom: 0.9rem;
+            }
+
+            .mock-popover-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .mock-popover-btn {
+                font-size: 0.78rem;
+                padding: 0.4rem 0.75rem;
+                border-radius: 6px;
+                font-weight: 600;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.05);
+                color: #fff;
+                cursor: pointer;
+            }
+
+            .mock-popover-btn.active {
+                background: #10b981;
+                border-color: #10b981;
+                color: #fff;
+            }
+
+            /* Mock Models Card */
+            .mock-models-body {
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                text-align: left;
+            }
+
+            .mock-model-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 1.1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+                transition: all 0.2s;
+            }
+
+            .mock-model-card.active {
+                border-color: rgba(251, 191, 36, 0.4);
+                background: rgba(251, 191, 36, 0.05);
+                box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);
+            }
+
+            .mock-model-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+
+            .mock-model-name {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .mock-model-sub {
+                display: block;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+
+            .mock-model-tag {
+                font-size: 0.72rem;
+                padding: 2px 7px;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.08);
+                color: #cbd5e1;
+            }
+
+            .mock-model-tag.active {
+                background: rgba(251, 191, 36, 0.2);
+                color: #fbbf24;
+                font-weight: 600;
+            }
+
+            .mock-model-detail {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.8rem;
+                color: #94a3b8;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 0.5rem;
+            }
+
+            .mock-model-detail code {
+                background: rgba(255, 255, 255, 0.08);
+                padding: 1px 5px;
+                border-radius: 3px;
+                color: #38bdf8;
+            }
+
+            .mock-models-footer {
+                text-align: center;
+                font-size: 0.8rem;
+                color: #94a3b8;
+                padding-top: 0.5rem;
+            }
+
+            @media (max-width: 900px) {
+                .stacking-card {
+                    position: relative;
+                    top: auto !important;
+                    min-height: auto;
+                    margin-bottom: 2rem;
+                    padding: 2rem 1.25rem;
+                    transform: none !important;
+                    filter: none !important;
+                }
+                .stacking-card-body {
+                    grid-template-columns: 1fr;
+                    gap: 2rem;
+                }
+                .mock-stat-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Navigation -->
+        <header>
+            <div class="nav-container">
+                <div class="logo-group">
+                    <img src="../icons/icon48.png" alt="CoWatcher Logo" />
+                    <span>CoWatcher</span>
+                </div>
+                <div class="nav-links">
+                    <a
+                        href="#features"
+                        class="hide-mobile"
+                        data-i18n="nav-features"
+                        >核心特性</a
+                    >
+                    <a href="#guide" class="hide-mobile" data-i18n="nav-guide"
+                        >安装指南</a
+                    >
+                    <a
+                        href="docs/"
+                        id="doc-link"
+                        target="_blank"
+                        data-i18n="nav-docs"
+                        >使用文档</a
+                    >
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension"
+                        target="_blank"
+                        >GitHub</a
+                    >
+                    <a
+                        class="lang-toggle"
+                        id="lang-btn"
+                        href="../en/"
+                        onclick="localStorage.setItem('ncw_page_lang', 'en')"
+                        >🌐 <span id="lang-text">English</span></a
+                    >
+                </div>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <main>
+            <section class="hero">
+                <!-- Platform Support Bar -->
+                <div class="platform-bar">
+                    <span class="platform-bar-label">支持平台</span>
+                    <span class="platform-chip platform-netflix"
+                        ><span class="platform-dot"></span>Netflix
+                        官方/广告版</span
+                    >
+                    <span class="platform-chip platform-tver"
+                        ><span class="platform-dot"></span>TVer 日本电视</span
+                    >
+                    <span class="platform-chip platform-youtube"
+                        ><span class="platform-dot"></span>YouTube 视频</span
+                    >
+                    <span class="platform-badge">专有优化</span>
+                </div>
+
+                <h1 data-i18n="hero-title">
+                    让每一部好剧，都不再受限于语言<br />
+                    <span class="gradient-text"
+                        >让每一次遇见，不再被时光遗忘</span
+                    >
+                </h1>
+
+                <p class="subtitle" data-i18n="hero-sub">
+                    专为流媒体打造的 AI 智能观影助手 ·
+                    融合实时双语字幕、影视观影足迹与沉浸式外语学习
+                </p>
+
+                <div class="cta-group">
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension/releases"
+                        target="_blank"
+                        class="btn btn-primary"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span data-i18n="btn-download"
+                            >下载最新扩展包 (.zip)</span
+                        >
+                    </a>
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension"
+                        target="_blank"
+                        class="btn btn-secondary"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                            ></polygon>
+                        </svg>
+                        <span>Star on GitHub</span>
+                    </a>
+                    <a
+                        href="https://ko-fi.com/sfbb49898"
+                        target="_blank"
+                        class="btn btn-kofi"
+                    >
+                        ☕
+                        <span data-i18n="btn-kofi">赞助作者上架 Web Store</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Sticky Stacking Cards Showcase Section -->
+            <section class="stacking-section" id="showcase">
+                <!-- Section Intro Heading -->
+                <div class="stacking-intro">
+                    <div class="badge-pill">✨ 核心功能</div>
+                    <h2 class="stacking-title">四大核心功能，提升观影体验</h2>
+                    <p class="stacking-sub">向下滚动页面</p>
+                </div>
+
+                <div class="stacking-cards-wrapper">
+                    <!-- Step Anchor 0 -->
+                    <div class="stacking-step-anchor" data-step="0"></div>
+                    <!-- Card 1: 影视双语字幕 -->
+                    <div
+                        class="stacking-card card-1"
+                        id="stack-card-1"
+                        style="--card-index: 1"
+                    >
+                        <div class="stacking-card-topbar">
+                            <span class="card-step-badge">FEATURE 01 / 04</span>
+                            <span class="card-step-hint"
+                                >自然滚动 · 自动磁吸 ↕</span
+                            >
+                            <div class="card-step-dots">
+                                <span
+                                    class="step-dot active"
+                                    data-goto="0"
+                                    title="第 1 项：影视双语字幕"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="1"
+                                    title="第 2 项：智能观影足迹"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="2"
+                                    title="第 3 项：语言学习"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="3"
+                                    title="第 4 项：隐私优先，兼顾服务"
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="stacking-card-body">
+                            <div class="showcase-info">
+                                <span class="showcase-pill showcase-pill-sub"
+                                    >✨ 实时双语 · 原生融入</span
+                                >
+                                <h2 class="showcase-heading">
+                                    连贯追剧不跳戏，角色译名跨集高度一致
+                                </h2>
+                                <p class="showcase-desc">
+                                    灵活接入 Google Translate 与新一代生成式 AI
+                                    大模型。深度还原 Netflix
+                                    原生字幕排版与质感，让每一行台词都自然地融入画面。
+                                </p>
+                                <div class="showcase-feature-list">
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >角色译名记忆与术语表：</strong
+                                            >支持 AI
+                                            自动提取与手动校准，杜绝同名异译、代词混乱，长篇追剧更连贯</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >播放器深度级同步（抗广告偏移）：</strong
+                                            >专为 Netflix（含广告版）、TVer 与
+                                            YouTube
+                                            深度适配，精准对抗贴片广告引起的音画与字幕时轴错位</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >轻量无感的控制交互：</strong
+                                            >极简悬浮开关与快捷键随时唤醒，播放时静默自动隐藏，绝不遮挡原画与操作界面。</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >原生级的同屏多字幕与竖排支持：</strong
+                                            >完整解析同屏多处、多角色的屏幕字幕与竖排台词，完美复刻官方原生排版体验。</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >字幕缓存，你花的每一分不会浪费：</strong
+                                            >翻译结果会被我们暂时缓存起来，当你重看时可以直接享用之前的成果</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="showcase-tags-row">
+                                    <span class="platform-pill"
+                                        >术语表实时注入</span
+                                    >
+                                    <span class="platform-pill"
+                                        >广告时钟重对齐</span
+                                    >
+                                    <span class="platform-pill"
+                                        >快捷键 Alt + T</span
+                                    >
+                                    <span class="platform-pill">智能缓存</span>
+                                </div>
+                            </div>
+
+                            <div class="showcase-canvas">
+                                <div
+                                    class="player-showcase"
+                                    style="margin: 0; box-shadow: none"
+                                >
+                                    <div class="player-bar">
+                                        <div class="window-dots">
+                                            <span></span><span></span
+                                            ><span></span>
+                                        </div>
+                                        <div>
+                                            CoWatcher In-Player Live Preview
+                                        </div>
+                                        <div
+                                            style="
+                                                font-size: 0.75rem;
+                                                color: #10b981;
+                                            "
+                                        >
+                                            ● Active
+                                        </div>
+                                    </div>
+                                    <div class="video-viewport">
+                                        <div class="bg-cinema-ambient"></div>
+                                        <div
+                                            class="subtitles-box"
+                                            id="demo-sub"
+                                        >
+                                            <div
+                                                class="sub-orig"
+                                                id="demo-orig"
+                                            >
+                                                「君の言葉を、もっと知りたいんだ。」
+                                            </div>
+                                            <div
+                                                class="sub-trans"
+                                                id="demo-trans"
+                                            >
+                                                “我想更加理解你所说的话。”
+                                            </div>
+                                            <div class="sub-pill-tag">
+                                                🤖 Gemma-4 Supervisor:
+                                                角色全名统一为「西宫硝子」|
+                                                词汇已收录
+                                            </div>
+                                        </div>
+                                        <div class="player-controls-mock">
+                                            <div
+                                                style="
+                                                    display: flex;
+                                                    gap: 0.75rem;
+                                                    align-items: center;
+                                                "
+                                            >
+                                                <span>08:24 / 24:12</span>
+                                                <span class="badge-sub-on"
+                                                    >AI Sub ON</span
+                                                >
+                                            </div>
+                                            <div>
+                                                <span
+                                                    >快捷开关：<kbd
+                                                        style="
+                                                            background: #333;
+                                                            padding: 2px 5px;
+                                                            border-radius: 3px;
+                                                            color: #fff;
+                                                        "
+                                                        >Alt + T</kbd
+                                                    ></span
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Anchor 1 -->
+                    <div class="stacking-step-anchor" data-step="1"></div>
+                    <!-- Card 2: 智能观影足迹 -->
+                    <div
+                        class="stacking-card card-2"
+                        id="stack-card-2"
+                        style="--card-index: 2"
+                    >
+                        <div class="stacking-card-topbar">
+                            <span class="card-step-badge">FEATURE 02 / 04</span>
+                            <span class="card-step-hint"
+                                >自然滚动 · 自动磁吸 ↕</span
+                            >
+                            <div class="card-step-dots">
+                                <span
+                                    class="step-dot active"
+                                    data-goto="0"
+                                    title="第 1 项：影视双语字幕"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="1"
+                                    title="第 2 项：智能观影足迹"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="2"
+                                    title="第 3 项：语言学习"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="3"
+                                    title="第 4 项：隐私优先，兼顾服务"
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="stacking-card-body">
+                            <div class="showcase-info">
+                                <span
+                                    class="showcase-pill showcase-pill-history"
+                                    >⏱️ 观影足迹 · 记忆中心</span
+                                >
+                                <h2 class="showcase-heading">
+                                    自动记录追剧时光<br />一目了然的统计图表
+                                </h2>
+                                <p class="showcase-desc">
+                                    自动追踪你看过的剧，轻松了解自己的追剧习惯
+                                </p>
+                                <div class="showcase-feature-list">
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >智能时长与进度追踪：</strong
+                                            >Netflix、TVer、YouTube
+                                            观看时间自动沉淀，生成可视化观影统计</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >广告时间/暂停时间不被记录：</strong
+                                            >我们只记录你的观剧时长，广告和暂停不会计入</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong>休息一下：</strong
+                                            >基于你的观剧时长，不时帮你暂停影片，让你休息一下</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="showcase-tags-row">
+                                    <span class="platform-pill"
+                                        >观影足迹看板</span
+                                    >
+                                </div>
+                                <div class="showcase-tags-row">
+                                    <span class="platform-pill">数字健康</span>
+                                </div>
+                            </div>
+
+                            <div class="showcase-canvas">
+                                <div class="mock-dash">
+                                    <div class="mock-dash-header">
+                                        <div class="mock-dash-title">
+                                            <span>📊</span> CoWatcher
+                                            观影足迹与记忆中心
+                                        </div>
+                                        <span class="mock-dash-badge"
+                                            >● IndexedDB 离线就绪</span
+                                        >
+                                    </div>
+                                    <div class="mock-stat-grid">
+                                        <div class="mock-stat-box">
+                                            <div class="mock-stat-num">
+                                                48.5h
+                                            </div>
+                                            <div class="mock-stat-lbl">
+                                                本月追剧时长
+                                            </div>
+                                        </div>
+                                        <div class="mock-stat-box">
+                                            <div class="mock-stat-num">
+                                                12 部
+                                            </div>
+                                            <div class="mock-stat-lbl">
+                                                正在追剧集
+                                            </div>
+                                        </div>
+                                        <div class="mock-stat-box">
+                                            <div class="mock-stat-num">
+                                                3,420
+                                            </div>
+                                            <div class="mock-stat-lbl">
+                                                已缓存字幕行数
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mock-item-card">
+                                        <div class="mock-item-top">
+                                            <span
+                                                >葬送のフリーレン (第 28
+                                                话)</span
+                                            >
+                                            <span class="mock-item-tag"
+                                                >Netflix</span
+                                            >
+                                        </div>
+                                        <div class="mock-progress-track">
+                                            <div
+                                                class="mock-progress-bar"
+                                                style="width: 82%"
+                                            ></div>
+                                        </div>
+                                        <div class="mock-item-footer">
+                                            <span
+                                                >Show Context: 角色词条 36 项
+                                                (已同步至后集)</span
+                                            >
+                                            <span class="mock-cache-pill"
+                                                >✓ 缓存已生效 (0 Token)</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="mock-item-card">
+                                        <div class="mock-item-top">
+                                            <span>Eye Love You (第 4 话)</span>
+                                            <span class="mock-item-tag"
+                                                >TVer</span
+                                            >
+                                        </div>
+                                        <div class="mock-progress-track">
+                                            <div
+                                                class="mock-progress-bar"
+                                                style="width: 45%"
+                                            ></div>
+                                        </div>
+                                        <div class="mock-item-footer">
+                                            <span
+                                                >广告自动时移补偿：+120s
+                                                偏移已校准</span
+                                            >
+                                            <span class="mock-cache-pill"
+                                                >✓ 竖排字幕适配</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Anchor 2 -->
+                    <div class="stacking-step-anchor" data-step="2"></div>
+                    <!-- Card 3: 沉浸生词学习 -->
+                    <div
+                        class="stacking-card card-3"
+                        id="stack-card-3"
+                        style="--card-index: 3"
+                    >
+                        <div class="stacking-card-topbar">
+                            <span class="card-step-badge">FEATURE 03 / 04</span>
+                            <span class="card-step-hint"
+                                >自然滚动 · 自动磁吸 ↕</span
+                            >
+                            <div class="card-step-dots">
+                                <span
+                                    class="step-dot active"
+                                    data-goto="0"
+                                    title="第 1 项：影视双语字幕"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="1"
+                                    title="第 2 项：智能观影足迹"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="2"
+                                    title="第 3 项：语言学习"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="3"
+                                    title="第 4 项：隐私优先，兼顾服务"
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="stacking-card-body">
+                            <div class="showcase-info">
+                                <span class="showcase-pill showcase-pill-learn"
+                                    >📖 单词学习 · 记忆流</span
+                                >
+                                <h2 class="showcase-heading">
+                                    看剧即是学外语<br />点词即查 · 1-Click 导入
+                                    Anki
+                                </h2>
+                                <p class="showcase-desc">
+                                    不用暂停切屏查字典。播放过程中鼠标悬停即见假名注音与地道释义，生词一键录入并导出至
+                                    Anki 卡片盒。
+                                </p>
+                                <div class="showcase-feature-list">
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong>智能分词与注音：</strong
+                                            >智能分词，并针对日文、中文、韩文进行注音支持</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong>悬浮词典极速释义：</strong
+                                            >长按鼠标左键即可选中生词，词典显示期间自动暂停，消失后自动恢复，让你的追剧没有阻碍</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong>稍后再学：</strong
+                                            >长按鼠标右键选中生词，松开手直接入库，视频马上恢复播放，让阅读和生词解藕</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >优先使用平台原生翻译字幕：</strong
+                                            >优先选择平台原生的翻译字幕，你花给Netflix订阅费不会浪费</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong>原生字幕优先显示：</strong
+                                            >支持翻译字幕与原始字幕位置转换，优先显示原始字幕，支持翻译字幕透明度调节，可以让你更加注重所学习的语言</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >原生 Anki 格式直出：</strong
+                                            >带例句、时间戳、上下文台词一键导出，高效构建日常背词库</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="showcase-tags-row">
+                                    <span class="platform-pill"
+                                        >Intl 精准分词与智能注音</span
+                                    >
+                                    <span class="platform-pill"
+                                        >划词悬浮释义</span
+                                    >
+                                    <span class="platform-pill"
+                                        >一键收藏生词</span
+                                    >
+                                    <span class="platform-pill"
+                                        >Anki 卡片直连</span
+                                    >
+                                    <span class="platform-pill">原生优先</span>
+                                </div>
+                            </div>
+
+                            <div class="showcase-canvas">
+                                <div class="mock-vocab-viewport">
+                                    <div class="mock-sub-row">
+                                        <div class="mock-sub-jp">
+                                            あきらめたら、そこで<span
+                                                class="mock-word-highlight"
+                                                >試合終了</span
+                                            >ですよ…？
+                                        </div>
+                                        <div class="mock-sub-zh">
+                                            如果放弃的话，比赛可就提前结束了哦…？
+                                        </div>
+                                    </div>
+                                    <div class="mock-popover">
+                                        <div class="mock-popover-header">
+                                            <div>
+                                                <span class="mock-popover-word"
+                                                    >試合終了</span
+                                                >
+                                                <span class="mock-popover-kana"
+                                                    >しあいしゅうりょう</span
+                                                >
+                                            </div>
+                                            <span class="mock-popover-type"
+                                                >名 · 惯用</span
+                                            >
+                                        </div>
+                                        <div class="mock-popover-def">
+                                            【释义】比赛结束。常引申为「放弃即宣告彻底失败，坚持到底才能迎来转机」。
+                                        </div>
+                                        <div class="mock-popover-actions">
+                                            <button
+                                                class="mock-popover-btn active"
+                                            >
+                                                ★ 已录入生词本
+                                            </button>
+                                            <button class="mock-popover-btn">
+                                                📥 导出至 Anki
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Anchor 3 -->
+                    <div class="stacking-step-anchor" data-step="3"></div>
+                    <!-- Card 4: 本地与云端算力 -->
+                    <div
+                        class="stacking-card card-4"
+                        id="stack-card-4"
+                        style="--card-index: 4"
+                    >
+                        <div class="stacking-card-topbar">
+                            <span class="card-step-badge">FEATURE 04 / 04</span>
+                            <span class="card-step-hint"
+                                >自然滚动 · 自动磁吸 ↕</span
+                            >
+                            <div class="card-step-dots">
+                                <span
+                                    class="step-dot active"
+                                    data-goto="0"
+                                    title="第 1 项：影视双语字幕"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="1"
+                                    title="第 2 项：智能观影足迹"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="2"
+                                    title="第 3 项：语言学习"
+                                ></span>
+                                <span
+                                    class="step-dot"
+                                    data-goto="3"
+                                    title="第 4 项：隐私优先，兼顾服务"
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="stacking-card-body">
+                            <div class="showcase-info">
+                                <span class="showcase-pill showcase-pill-ai"
+                                    >⚡ 隐私安全，当然也可云端大模型</span
+                                >
+                                <h2 class="showcase-heading">
+                                    支持本地部署的小模型<br />或云端顶级模型随心直连
+                                </h2>
+                                <p class="showcase-desc">
+                                    完全尊重你的数据与成本。拥有独显的用户可通过本地
+                                    Ollama 享受 0 成本、100%
+                                    隐私的流畅快译；亦可填入 OpenRouter API Key
+                                    直连 Claude 3.5、DeepSeek、Gemini
+                                    顶级大模型。
+                                </p>
+                                <div class="showcase-feature-list">
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >开源透明，专注安全：</strong
+                                            >代码完全开源，我们会将你的key隔离在阿奴安的扩展上下文中，不会被窃取，支持自定password，进行本地加密</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >本地 Ollama
+                                                零花费部署：</strong
+                                            >支持 translategemma:4b、gemma4:e2b
+                                            等轻量高效模型，显卡纯离线计算</span
+                                        >
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong>云端百模直连聚合：</strong
+                                            >如果您愿意放弃一些隐私，自备
+                                            OpenRoute
+                                            Key，即可享受顶级大模型绝佳译文，隐私条款见openrouter用户协议
+                                        </span>
+                                    </div>
+                                    <div class="showcase-feature-item">
+                                        <span class="showcase-feature-bullet"
+                                            >✓</span
+                                        >
+                                        <span
+                                            ><strong
+                                                >Google
+                                                Translate，开箱即用：</strong
+                                            >默认使用Google
+                                            Translate，然你不必去搞懂什么大模型</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="showcase-tags-row">
+                                    <span class="platform-pill">开源透明</span>
+                                    <span class="platform-pill"
+                                        >本地 Ollama (0 成本)</span
+                                    >
+                                    <span class="platform-pill"
+                                        >DeepSeek / Gemini</span
+                                    >
+                                    <span class="platform-pill"
+                                        >OpenRouter 聚合</span
+                                    >
+                                    <span class="platform-pill"
+                                        >开箱即用免费通道</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="showcase-canvas">
+                                <div class="mock-models-body">
+                                    <div class="mock-model-card active">
+                                        <div class="mock-model-header">
+                                            <div>
+                                                <span class="mock-model-name"
+                                                    >🖥️ 本地 Ollama
+                                                    显卡部署</span
+                                                >
+                                                <span class="mock-model-sub"
+                                                    >localhost:11434 ·
+                                                    完全私有无外部流量</span
+                                                >
+                                            </div>
+                                            <span class="mock-model-tag active"
+                                                >推荐 · 零花费</span
+                                            >
+                                        </div>
+                                        <div class="mock-model-detail">
+                                            <span
+                                                >当前模型:
+                                                <code
+                                                    >translategemma:4b</code
+                                                ></span
+                                            >
+                                            <span style="color: #10b981"
+                                                >● 延迟 38ms</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="mock-model-card">
+                                        <div class="mock-model-header">
+                                            <div>
+                                                <span class="mock-model-name"
+                                                    >☁️ OpenRouter / DeepSeek /
+                                                    Gemini</span
+                                                >
+                                                <span class="mock-model-sub"
+                                                    >自带 API Key ·
+                                                    顶尖文学润色与翻译质量</span
+                                                >
+                                            </div>
+                                            <span class="mock-model-tag"
+                                                >云端高智</span
+                                            >
+                                        </div>
+                                        <div class="mock-model-detail">
+                                            <span
+                                                >支持:
+                                                <code>deepseek-v3</code> /
+                                                <code
+                                                    >gemini-2.0-flash</code
+                                                ></span
+                                            >
+                                            <span style="color: #38bdf8"
+                                                >● 跨集审校</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="mock-model-card">
+                                        <div class="mock-model-header">
+                                            <div>
+                                                <span class="mock-model-name"
+                                                    >🎁
+                                                    内置免费通用翻译服务</span
+                                                >
+                                                <span class="mock-model-sub"
+                                                    >无需任何配置 ·
+                                                    开启扩展即刻享受</span
+                                                >
+                                            </div>
+                                            <span class="mock-model-tag"
+                                                >开箱即用</span
+                                            >
+                                        </div>
+                                        <div class="mock-model-detail">
+                                            <span>公共通道服务</span>
+                                            <span style="color: #fbbf24"
+                                                >● 新手默认</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="mock-models-footer">
+                                        🔒 纯本地网络存储，所有 Key
+                                        与字幕数据绝不上报第三方服务器
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Install Guide -->
+            <section class="steps-section" id="guide">
+                <div class="section-title">
+                    <h2 data-i18n="guide-title">三分钟快速上手</h2>
+                    <p data-i18n="guide-sub">
+                        只需简单几步，即可在 Chrome / Edge 中开启观影新体验
+                    </p>
+                </div>
+
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h4 data-i18n="step-1-title">下载扩展安装包</h4>
+                            <p data-i18n="step-1-desc">
+                                前往
+                                <a
+                                    href="https://github.com/cowatcher-app/cowatcher-extension/releases"
+                                    target="_blank"
+                                    style="
+                                        color: #38bdf8;
+                                        text-decoration: underline;
+                                    "
+                                    >GitHub Releases</a
+                                >
+                                下载最新的
+                                <code>cowatcher-extension.zip</code
+                                >，并在本地解压缩。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h4 data-i18n="step-2-title">
+                                打开开发者模式并加载
+                            </h4>
+                            <p data-i18n="step-2-desc">
+                                在浏览器地址栏输入
+                                <code>chrome://extensions/</code>，勾选右上角的
+                                <strong>开发者模式 (Developer Mode)</strong
+                                >，点击
+                                <strong
+                                    >加载已解压的扩展程序 (Load
+                                    unpacked)</strong
+                                >，选中解压出来的文件夹。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h4 data-i18n="step-3-title">选择模型并开启观影</h4>
+                            <p data-i18n="step-3-desc">
+                                点击浏览器右上角 CoWatcher
+                                插件图标，选择默认免费翻译、本地 Ollama
+                                或填写云端 API Key，打开 Netflix、TVer 或
+                                YouTube 播放页按下
+                                <code>Alt + T</code> 即可立即享受！
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ko-fi Support Banner -->
+            <div class="coffee-callout">
+                <h3>
+                    ☕
+                    <span data-i18n="coffee-title"
+                        >支持 CoWatcher 上架 Chrome 应用商店</span
+                    >
+                </h3>
+                <p data-i18n="coffee-desc">
+                    CoWatcher
+                    坚持完全开源透明。如果您喜欢这个项目，欢迎请作者喝一杯咖啡，您的赞助将帮助我们支付
+                    Chrome Web Store
+                    开发者账号费用，让更多影迷与外语学习者直接一键安装！所有赞助者都将被永久记录在鸣谢名册中。
+                </p>
+                <div
+                    style="
+                        display: flex;
+                        gap: 1rem;
+                        justify-content: center;
+                        flex-wrap: wrap;
+                        margin-top: 1rem;
+                    "
+                >
+                    <a
+                        href="https://ko-fi.com/sfbb49898"
+                        target="_blank"
+                        class="btn btn-kofi"
+                    >
+                        👉
+                        <span data-i18n="coffee-btn"
+                            >前往 Ko-fi 请作者喝杯咖啡</span
+                        >
+                    </a>
+                    <a
+                        href="../zh/docs/contributors.html"
+                        target="_blank"
+                        class="btn"
+                        style="
+                            background: rgba(255, 255, 255, 0.08);
+                            border: 1px solid rgba(255, 255, 255, 0.15);
+                        "
+                    >
+                        🌟
+                        <span data-i18n="coffee-contributors"
+                            >致谢与赞助者榜单</span
+                        >
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-container">
+                <div>
+                    <p>
+                        <strong>CoWatcher</strong> - Smart Watch History & AI
+                        Bilingual Subtitle Assistant
+                    </p>
+                    <p style="margin-top: 0.35rem; font-size: 0.8rem">
+                        Licensed under MIT © 2026 CoWatcher Contributors
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension"
+                        target="_blank"
+                        >GitHub Repo</a
+                    >
+                    <a href="docs/" target="_blank" id="footer-doc-link"
+                        >控制面板详细指南</a
+                    >
+                    <a
+                        href="../zh/docs/contributors.html"
+                        target="_blank"
+                        data-i18n="footer-contributors"
+                        >贡献者与赞助者</a
+                    >
+                    <a
+                        href="../zh/docs/credits.html"
+                        target="_blank"
+                        data-i18n="footer-credits"
+                        >第三方引用与免责声明</a
+                    >
+                    <a href="https://ko-fi.com/sfbb49898" target="_blank"
+                        >Ko-fi 赞助</a
+                    >
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            // i18n Dictionary
+            const i18n = {
+                zh: {
+                    'page-title':
+                        'CoWatcher - 智能观影记录 · 双语字幕 · AI实时翻译 · 沉浸式外语学习助手',
+                    'nav-features': '核心特性',
+                    'nav-guide': '安装指南',
+                    'nav-docs': '使用文档',
+                    'hero-badge':
+                        'Netflix · TVer · YouTube 影视双语字幕 · 自动观影记录 · AI 智能伴侣',
+                    'hero-title':
+                        '让每一部好剧，都不再受限于语言<br><span class="gradient-text">让每一次遇见，不再被时光遗忘</span>',
+                    'hero-sub':
+                        '专为流媒体打造的 AI 智能观影助手 · 融合实时双语字幕、影视观影足迹与沉浸式外语学习',
+                    'btn-download': '下载最新扩展包 (.zip)',
+                    'btn-kofi': '赞助作者上架 Web Store',
+                    'feat-title': '为什么选择 CoWatcher？',
+                    'feat-sub':
+                        '不仅是实时字幕，更是为你量身定制的 AI 智能观影助手与外语学习伴侣',
+                    'feat-1-title': '双模型协同翻译 (Dual-Model)',
+                    'feat-1-desc':
+                        '轻量快译模型负责毫秒级字幕生成，追剧流畅不卡顿；后台智能审校模型动态纠错，确保连播中角色名、敬语与专属术语高度统一，不再机翻出戏。',
+                    'feat-2-title':
+                        '智能观影记录与影视记忆 (Show Context & History)',
+                    'feat-2-desc':
+                        '自动统计追剧活动与观看时长，第 1 集识别出的角色名与专有名词在下一集无缝继承。支持按语种独立隔离缓存，并在控制面板可视化查看与调整。',
+                    'feat-3-title': '语言学习与 Anki 深度整合',
+                    'feat-3-desc':
+                        '原生支持双语对照，原语言与翻译字幕可一键互换主副层；后台自动提取对话中的生词并支持一键录入，无缝衔接你的背词工作流。',
+                    'feat-4-title': '广告时移与原生级融合排版',
+                    'feat-4-desc':
+                        '深度适配 Netflix 广告版，智能校准插播广告后的时间轴偏移。同时完美支持横排与日剧/动漫常见的竖排排版，宛如官方原生质感。',
+                    'feat-5-title':
+                        '多种翻译方案随心选 (Flexible AI Providers)',
+                    'feat-5-desc':
+                        '内置免费翻译服务，开箱即用无需任何折腾；电脑有独立显卡可使用本地 Ollama 享受零费用与隐私保护；亦可一键直连 DeepSeek、Gemini、Claude 等顶尖云端模型。',
+                    'feat-6-title': '持久化缓存，Token 零浪费',
+                    'feat-6-desc':
+                        '自动基于当前剧集与模型持久化缓存翻译结果。重温心仪电影或反复拉片复习时，秒级调出历史字幕，绝不多耗费一枚 Token 或多余算力。',
+                    'guide-title': '三分钟快速上手',
+                    'guide-sub':
+                        '只需简单几步，即可在 Chrome / Edge 中开启观影新体验',
+                    'step-1-title': '下载扩展安装包',
+                    'step-1-desc':
+                        '前往 GitHub Releases 下载最新的 cowatcher-extension.zip，并在本地解压缩。',
+                    'step-2-title': '打开开发者模式并加载',
+                    'step-2-desc':
+                        '在浏览器地址栏输入 chrome://extensions/，勾选右上角的 开发者模式 (Developer Mode)，点击 加载已解压的扩展程序 (Load unpacked)，选中解压出来的文件夹。',
+                    'step-3-title': '选择模型并开启观影',
+                    'step-3-desc':
+                        '点击浏览器右上角 CoWatcher 插件图标，选择默认免费翻译、本地 Ollama 或填写云端 API Key，打开 Netflix、TVer 或 YouTube 播放页按下 Alt + T 即可立即享受！',
+                    'coffee-title': '支持 CoWatcher 上架 Chrome 应用商店',
+                    'coffee-desc':
+                        'CoWatcher 坚持完全开源透明。如果您喜欢这个项目，欢迎请作者喝一杯咖啡，您的赞助将帮助我们支付 Chrome Web Store 开发者账号费用与开源项目基础设施。所有赞助者都将被永久记录在鸣谢名册中！',
+                    'coffee-btn': '前往 Ko-fi 请作者喝杯咖啡',
+                    'coffee-contributors': '致谢与赞助者榜单',
+                    'footer-contributors': '贡献者与赞助者',
+                    'footer-credits': '第三方引用与免责声明',
+                },
+                en: {
+                    'page-title':
+                        'CoWatcher - Smart Watch History & Notes · Dual Subtitles · Real-Time AI Translation · Language Immersion',
+                    'nav-features': 'Features',
+                    'nav-guide': 'Installation',
+                    'nav-docs': 'Documentation',
+                    'hero-badge':
+                        'Netflix · TVer · YouTube Bilingual Subtitles · Watch History · AI Streaming Companion',
+                    'hero-title':
+                        'Never Let Language Bound a Great Show<br><span class="gradient-text">Never Let Encounters Fade in Time</span>',
+                    'hero-sub':
+                        'AI streaming companion for Netflix, TVer & YouTube · Real-time bilingual subtitles, watch footprints & immersive language learning',
+                    'btn-download': 'Download Latest (.zip)',
+                    'btn-kofi': 'Support on Ko-fi',
+                    'feat-title': 'Why CoWatcher?',
+                    'feat-sub':
+                        'More than real-time subtitles — an AI-native streaming companion engineered for movie lovers and language learners',
+                    'feat-1-title': 'Dual-Model Collaborative Pipeline',
+                    'feat-1-desc':
+                        'A fast model produces instant subtitles with zero lag, while a background supervisor model audits character names, honorifics, and terminology consistency.',
+                    'feat-2-title': 'Smart Watch History & Context Memory',
+                    'feat-2-desc':
+                        'Automatically tracks viewing sessions and duration. Character aliases and terms discovered in Episode 1 seamlessly persist into Episode 2 and beyond with per-language caching.',
+                    'feat-3-title': 'Designed for Language Learners',
+                    'feat-3-desc':
+                        'Native dual-language rendering with 1-click swap for primary/secondary subtitles. Automatic vocabulary detection bridges directly into your Anki flashcard workflow.',
+                    'feat-4-title': 'Ad Break Guard & Native Typography',
+                    'feat-4-desc':
+                        'Intelligent timeline compensation preserves subtitle sync across ad interruptions. Flawlessly supports both horizontal and authentic Japanese vertical typography.',
+                    'feat-5-title': 'Flexible AI Providers & Free Fallback',
+                    'feat-5-desc':
+                        'Free built-in translation works right away. Run privately and free on your local GPU with Ollama, or connect directly to top-tier cloud models (DeepSeek, Gemini, Claude).',
+                    'feat-6-title': 'Persistent Subtitle Cache',
+                    'feat-6-desc':
+                        'Translations are cached by show and model. Replay favorite scenes or rewatch episodes instantly with zero token consumption and zero latency.',
+                    'guide-title': 'Quick Start in 3 Minutes',
+                    'guide-sub':
+                        'Get up and running in Chrome or Edge in a few simple clicks',
+                    'step-1-title': '1. Download Extension Archive',
+                    'step-1-desc':
+                        'Navigate to GitHub Releases, download cowatcher-extension.zip, and extract it to a local folder.',
+                    'step-2-title': '2. Enable Developer Mode & Load',
+                    'step-2-desc':
+                        'Go to chrome://extensions/ in your browser, switch on Developer Mode (top right), click "Load unpacked", and pick the extracted folder.',
+                    'step-3-title': '3. Pick Provider & Start Watching',
+                    'step-3-desc':
+                        'Click the CoWatcher toolbar icon, pick free built-in translation, connect Ollama, or add your cloud API key, then press Alt + T in Netflix, TVer, or YouTube to start watching!',
+                    'coffee-title': 'Help Us Launch on the Chrome Web Store',
+                    'coffee-desc':
+                        'CoWatcher is 100% free and open-source. Buying the author a coffee helps cover Chrome Web Store developer registration fees and open-source infrastructure. All sponsors will be permanently acknowledged in our contributors roll!',
+                    'coffee-btn': 'Buy a Coffee on Ko-fi',
+                    'coffee-contributors': 'Sponsors & Contributors Roll',
+                    'footer-contributors': 'Contributors & Sponsors',
+                    'footer-credits': 'Credits & Notices',
+                },
+            };
+
+            const STORAGE_KEY = 'ncw_page_lang';
+
+            function detectInitialLang() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved === 'zh' || saved === 'en') {
+                        return saved;
+                    }
+                    const navLang = (
+                        navigator.language ||
+                        navigator.userLanguage ||
+                        ''
+                    ).toLowerCase();
+                    if (navLang.startsWith('zh')) {
+                        return 'zh';
+                    }
+                    return 'en';
+                } catch (e) {
+                    return 'zh';
+                }
+            }
+
+            let currentLang = 'zh';
+            try {
+                localStorage.setItem(STORAGE_KEY, 'zh');
+            } catch (e) {}
+
+            function toggleLang() {
+                currentLang = currentLang === 'zh' ? 'en' : 'zh';
+                try {
+                    localStorage.setItem(STORAGE_KEY, currentLang);
+                } catch (e) {}
+                applyLang(currentLang);
+            }
+
+            function applyLang(lang) {
+                currentLang = lang;
+                const langText = document.getElementById('lang-text');
+                if (langText) {
+                    langText.innerText = lang === 'zh' ? 'English' : '中文';
+                }
+                document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+
+                // Update page title
+                if (i18n[lang] && i18n[lang]['page-title']) {
+                    document.title = i18n[lang]['page-title'];
+                }
+
+                // Update doc links
+                const docLink = document.getElementById('doc-link');
+                const footerDocLink =
+                    document.getElementById('footer-doc-link');
+                if (docLink) {
+                    docLink.href = 'docs/';
+                }
+                if (footerDocLink) {
+                    footerDocLink.href = 'docs/';
+                    footerDocLink.innerText =
+                        lang === 'zh'
+                            ? '在线使用与配置指南'
+                            : 'Online Documentation & Guide';
+                }
+
+                // Update text nodes
+                const elements = document.querySelectorAll('[data-i18n]');
+                elements.forEach((el) => {
+                    const key = el.getAttribute('data-i18n');
+                    if (key && i18n[lang] && i18n[lang][key]) {
+                        el.innerHTML = i18n[lang][key];
+                    }
+                });
+            }
+
+            // Initialize language on page load based on browser detection or remembered preference
+            applyLang(currentLang);
+
+            // Dynamic Subtitle Demo cycling
+            const demoSamples = [
+                {
+                    orig: '「君の言葉を、もっと<span class="highlight-word" title="生词：知りたい (想知道)">知りたい</span>んだ。」',
+                    trans: '“我想更加理解你所说的话。”',
+                    note: '🤖 Gemma-4 Supervisor: 角色全名统一为「西宫硝子」| 词汇已收录',
+                },
+                {
+                    orig: '「あきらめたら、そこで<span class="highlight-word" title="生词：試合終了 (比赛结束)">試合終了</span>ですよ…？」',
+                    trans: '“如果放弃的话，比赛可就在这里提前结束了哦…？”',
+                    note: '⚡ TranslateGemma: 实时毫秒级流式快译',
+                },
+                {
+                    orig: '「俺は海賊王になる<span class="highlight-word" title="生词：男 (男子汉)">男</span>だ！」',
+                    trans: '“我可是要成为海贼王的男人！”',
+                    note: '🎬 Context: 自动继承跨集角色名与词表',
+                },
+            ];
+
+            let demoIndex = 0;
+            setInterval(() => {
+                demoIndex = (demoIndex + 1) % demoSamples.length;
+                const box = document.getElementById('demo-sub');
+                if (!box) return;
+                box.style.opacity = '0';
+                box.style.transform = 'translateY(6px)';
+                setTimeout(() => {
+                    const sample = demoSamples[demoIndex];
+                    const origEl = document.getElementById('demo-orig');
+                    const transEl = document.getElementById('demo-trans');
+                    if (origEl) origEl.innerHTML = sample.orig;
+                    if (transEl) transEl.innerText = sample.trans;
+                    const tag = box.querySelector('.sub-pill-tag');
+                    if (tag) tag.innerText = sample.note;
+                    box.style.transition = 'all 0.5s ease-out';
+                    box.style.opacity = '1';
+                    box.style.transform = 'translateY(0)';
+                }, 300);
+            }, 4500);
+
+            // Sticky Stacking Cards: Progressive Real-Time Scrubbing + Soft Magnetic Snap
+            (function () {
+                const wrapper = document.querySelector(
+                    '.stacking-cards-wrapper',
+                );
+                const cards = document.querySelectorAll('.stacking-card');
+                const anchors = document.querySelectorAll(
+                    '.stacking-step-anchor',
+                );
+                if (!wrapper || !cards.length) return;
+
+                // 1. Progressive Scale & Brightness on Natural Scroll
+                function updateCardDepth() {
+                    if (window.innerWidth <= 900) {
+                        cards.forEach((card) => {
+                            card.style.transform = 'none';
+                            card.style.filter = 'none';
+                        });
+                        return;
+                    }
+
+                    const topThreshold = 80;
+                    cards.forEach((card, i) => {
+                        if (i === cards.length - 1) return; // Last card doesn't need to shrink
+                        const nextCard = cards[i + 1];
+                        const nextRect = nextCard.getBoundingClientRect();
+
+                        // When nextCard enters from window bottom and climbs toward topThreshold
+                        if (
+                            nextRect.top < window.innerHeight &&
+                            nextRect.top > topThreshold
+                        ) {
+                            const progress =
+                                (window.innerHeight - nextRect.top) /
+                                (window.innerHeight - topThreshold);
+                            const scale = 1 - progress * 0.045; // 1 -> 0.955
+                            const brightness = 1 - progress * 0.35; // 1 -> 0.65
+                            card.style.transform = `scale(${scale})`;
+                            card.style.filter = `brightness(${brightness})`;
+                        } else if (nextRect.top <= topThreshold) {
+                            card.style.transform = 'scale(0.955)';
+                            card.style.filter = 'brightness(0.65)';
+                        } else {
+                            card.style.transform = 'scale(1)';
+                            card.style.filter = 'brightness(1)';
+                        }
+                    });
+                }
+
+                // 2. Compute Target Scroll Position for Each Card
+                function getCardScrollY(index) {
+                    if (!anchors[index]) return 0;
+                    const stickyTop = 76 + index * 12;
+                    const docTop =
+                        anchors[index].getBoundingClientRect().top +
+                        window.pageYOffset;
+                    return Math.max(0, docTop - stickyTop);
+                }
+
+                // 3. Soft Magnetic Snap on Settle (Only when user stops scrolling)
+                let settleTimer = null;
+
+                function onScrollHandler() {
+                    updateCardDepth();
+
+                    if (window.innerWidth <= 900) return; // Native touch on mobile
+
+                    clearTimeout(settleTimer);
+                    settleTimer = setTimeout(settleToNearestCard, 170);
+                }
+
+                function settleToNearestCard() {
+                    const wrapRect = wrapper.getBoundingClientRect();
+                    // Only apply gentle magnetic snap when the stacking cards occupy the viewport
+                    if (
+                        wrapRect.top > 120 ||
+                        wrapRect.bottom < window.innerHeight * 0.4
+                    ) {
+                        return;
+                    }
+
+                    const currentY = window.pageYOffset;
+                    let closestIndex = 0;
+                    let minDistance = Infinity;
+
+                    for (let i = 0; i < cards.length; i++) {
+                        const targetY = getCardScrollY(i);
+                        const dist = Math.abs(currentY - targetY);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            closestIndex = i;
+                        }
+                    }
+
+                    // Gently snap to the closest resting card if within 240px and off by more than 10px
+                    if (minDistance > 10 && minDistance <= 240) {
+                        window.scrollTo({
+                            top: getCardScrollY(closestIndex),
+                            behavior: 'smooth',
+                        });
+                    }
+                }
+
+                // Cancel snap immediately if user starts rolling wheel again
+                window.addEventListener(
+                    'wheel',
+                    () => {
+                        clearTimeout(settleTimer);
+                    },
+                    { passive: true },
+                );
+
+                window.addEventListener('scroll', onScrollHandler, {
+                    passive: true,
+                });
+                window.addEventListener('resize', updateCardDepth, {
+                    passive: true,
+                });
+                updateCardDepth();
+
+                // 4. Smooth Target Navigation Helper
+                function scrollToCard(targetIdx) {
+                    if (targetIdx < 0) {
+                        const hero = document.querySelector('.hero');
+                        if (hero) {
+                            window.scrollTo({
+                                top: hero.offsetTop,
+                                behavior: 'smooth',
+                            });
+                        }
+                        return;
+                    }
+
+                    if (targetIdx >= cards.length) {
+                        const feat = document.getElementById('features');
+                        if (feat) {
+                            window.scrollTo({
+                                top: feat.offsetTop - 40,
+                                behavior: 'smooth',
+                            });
+                        }
+                        return;
+                    }
+
+                    window.scrollTo({
+                        top: getCardScrollY(targetIdx),
+                        behavior: 'smooth',
+                    });
+                }
+
+                // 5. Detect Current Active Index for Keyboard Stepping
+                function getCurrentIndex() {
+                    let active = 0;
+                    cards.forEach((card, idx) => {
+                        const rect = card.getBoundingClientRect();
+                        const stickyTop = 76 + idx * 12;
+                        if (rect.top <= stickyTop + 35) {
+                            active = idx;
+                        }
+                    });
+                    return active;
+                }
+
+                // 6. Keyboard Stepping (ArrowDown / ArrowUp / PageDown / PageUp)
+                window.addEventListener('keydown', (e) => {
+                    if (window.innerWidth <= 900) return;
+                    const wrapRect = wrapper.getBoundingClientRect();
+                    const isStackInView =
+                        wrapRect.top <= 120 &&
+                        wrapRect.bottom >= window.innerHeight * 0.45;
+                    if (!isStackInView) return;
+
+                    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+                        const current = getCurrentIndex();
+                        if (current < cards.length) {
+                            e.preventDefault();
+                            scrollToCard(current + 1);
+                        }
+                    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                        const current = getCurrentIndex();
+                        if (current > 0 || wrapRect.top <= 100) {
+                            e.preventDefault();
+                            scrollToCard(current - 1);
+                        }
+                    }
+                });
+
+                // 7. Clickable Dot Navigation
+                document
+                    .querySelectorAll('.step-dot[data-goto]')
+                    .forEach((dot) => {
+                        dot.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const target = parseInt(
+                                dot.getAttribute('data-goto'),
+                                10,
+                            );
+                            if (!isNaN(target)) {
+                                scrollToCard(target);
+                            }
+                        });
+                    });
+            })();
+        </script>
+    </body>
+</html>

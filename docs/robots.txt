@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cowatcher-app.github.io/cowatcher-extension/sitemap.xml
