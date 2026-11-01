@@ -30,6 +30,8 @@ import {
     CuratedVocabWord,
 } from './application/VocabCurationSession';
 import { VocabPreviewEditorModal } from './presentation/VocabPreviewEditorModal';
+import contributorsMarkdown from '../../CONTRIBUTORS.md';
+import creditsMarkdown from '../../CREDITS.md';
 
 const logger = new Logger('options');
 
@@ -310,6 +312,133 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedTab = sessionStorage.getItem('ncw_options_active_tab');
     if (savedTab) {
         switchTab(savedTab);
+    }
+
+    // Dynamic Markdown Document Renderer for Single-Source Contributors & Credits
+    function renderMarkdownDocument(md: string): string {
+        const lines = md.split('\n');
+        const html: string[] = [];
+        let inList = false;
+        let inBlockquote = false;
+        let blockquoteLines: string[] = [];
+
+        const formatInline = (text: string): string => {
+            return text
+                .replace(
+                    /\[([^\]]+)\]\(([^)]+)\)/g,
+                    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+                )
+                .replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/_([^_]+)_/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>');
+        };
+
+        const flushBlockquote = () => {
+            if (!inBlockquote) return;
+            const joined = blockquoteLines.join('\n');
+            const isWarning =
+                joined.includes('[!IMPORTANT]') || joined.includes('⚠️');
+            const alertClass = isWarning
+                ? 'md-alert md-alert-warning'
+                : 'md-alert md-alert-info';
+            const cleanContent = blockquoteLines
+                .map((l) => l.replace(/^>\s?/, ''))
+                .filter((l) => !l.match(/^\[!(IMPORTANT|NOTE|TIP|WARNING)\]/))
+                .map((l) => {
+                    const t = l.trim();
+                    if (t.startsWith('### ')) {
+                        return `<h3 class="md-h3">${formatInline(t.substring(4))}</h3>`;
+                    }
+                    return formatInline(t);
+                })
+                .filter((l) => l.length > 0)
+                .join('<br />');
+
+            html.push(`<div class="${alertClass}">${cleanContent}</div>`);
+            blockquoteLines = [];
+            inBlockquote = false;
+        };
+
+        const flushList = () => {
+            if (inList) {
+                html.push('</ul>');
+                inList = false;
+            }
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const rawLine = lines[i];
+            const trimmed = rawLine.trim();
+
+            if (trimmed.startsWith('>')) {
+                flushList();
+                inBlockquote = true;
+                blockquoteLines.push(trimmed);
+                continue;
+            } else if (inBlockquote) {
+                flushBlockquote();
+            }
+
+            if (trimmed.startsWith('# ')) {
+                flushList();
+                html.push(
+                    `<h1 class="md-h1">${formatInline(trimmed.substring(2))}</h1>`,
+                );
+            } else if (trimmed.startsWith('## ')) {
+                flushList();
+                html.push(
+                    `<h2 class="md-h2">${formatInline(trimmed.substring(3))}</h2>`,
+                );
+            } else if (trimmed.startsWith('### ')) {
+                flushList();
+                html.push(
+                    `<h3 class="md-h3">${formatInline(trimmed.substring(4))}</h3>`,
+                );
+            } else if (trimmed === '---' || trimmed === '***') {
+                flushList();
+                html.push('<hr class="md-hr" />');
+            } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                if (!inList) {
+                    html.push('<ul class="md-ul">');
+                    inList = true;
+                }
+                html.push(
+                    `<li class="md-li">${formatInline(trimmed.substring(2))}</li>`,
+                );
+            } else if (
+                rawLine.startsWith('  - ') ||
+                rawLine.startsWith('    - ')
+            ) {
+                if (!inList) {
+                    html.push('<ul class="md-ul">');
+                    inList = true;
+                }
+                html.push(
+                    `<li class="md-li" style="margin-left: 1.25rem;">${formatInline(trimmed.substring(2))}</li>`,
+                );
+            } else if (trimmed.length === 0) {
+                flushList();
+            } else {
+                flushList();
+                html.push(`<p class="md-p">${formatInline(trimmed)}</p>`);
+            }
+        }
+
+        flushList();
+        flushBlockquote();
+        return html.join('\n');
+    }
+
+    const contributorsView = document.getElementById('contributors-md-view');
+    if (contributorsView) {
+        contributorsView.innerHTML =
+            renderMarkdownDocument(contributorsMarkdown);
+    }
+    const creditsView = document.getElementById('credits-md-view');
+    if (creditsView) {
+        creditsView.innerHTML = renderMarkdownDocument(creditsMarkdown);
     }
 
     // Toast Helper

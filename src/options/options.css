@@ -1211,3 +1211,109 @@ button {
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+/* Dynamic Markdown Container for Contributors & Credits */
+.md-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    line-height: 1.65;
+    color: var(--text-main);
+}
+
+.md-container .md-h1 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.85rem;
+}
+
+.md-container .md-h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f3f4f6;
+    margin-top: 1.75rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.45rem;
+}
+
+.md-container .md-h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e5e7eb;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.md-container .md-p {
+    margin-bottom: 0.85rem;
+    color: #d1d5db;
+    font-size: 0.88rem;
+}
+
+.md-container .md-ul {
+    padding-left: 1.5rem;
+    margin: 0.65rem 0 1rem 0;
+    color: #d1d5db;
+    font-size: 0.88rem;
+}
+
+.md-container .md-li {
+    margin-bottom: 0.45rem;
+    line-height: 1.6;
+}
+
+.md-container .md-hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 1.5rem 0;
+}
+
+.md-container a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.md-container a:hover {
+    text-decoration: underline;
+}
+
+.md-container code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: #fca5a5;
+    font-family: monospace;
+}
+
+.md-container .md-alert {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.md-container .md-alert-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
+}
+
+.md-container .md-alert-warning strong {
+    color: #f59e0b;
+}
+
+.md-container .md-alert-info {
+    background: rgba(229, 9, 20, 0.08);
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    color: #fee2e2;
+}
+
+.md-container .md-alert-info strong {
+    color: #ef4444;
+}
+

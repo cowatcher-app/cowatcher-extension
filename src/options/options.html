@@ -43,6 +43,14 @@
           <span class="tab-icon">⚙️</span>
           <span>Settings</span>
         </button>
+        <button class="nav-tab-btn" data-tab="contributors">
+          <span class="tab-icon">🌟</span>
+          <span>Contributors</span>
+        </button>
+        <button class="nav-tab-btn" data-tab="credits">
+          <span class="tab-icon">⚖️</span>
+          <span>Third-Party Credits</span>
+        </button>
       </nav>
 
       <!-- Right Controls -->
@@ -826,6 +834,60 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- TAB 6: CONTRIBUTORS & SPONSORS -->
+      <section id="pane-contributors" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">🌟 Contributors & Honorary Sponsors Roll</h2>
+            <p class="pane-desc">
+              Synchronized automatically from CONTRIBUTORS.md at project root.
+            </p>
+          </div>
+          <div class="pane-actions" style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <a
+              href="https://ko-fi.com/sfbb49898"
+              target="_blank"
+              class="btn-kofi"
+              title="Support on Ko-fi"
+            >
+              <span>☕ Support on Ko-fi</span>
+            </a>
+            <a
+              href="https://github.com/cowatcher-app/cowatcher-extension"
+              target="_blank"
+              class="btn-secondary"
+            >
+              ⭐ Star on GitHub
+            </a>
+          </div>
+        </div>
+
+        <div id="contributors-md-view" class="md-container"></div>
+      </section>
+
+      <!-- TAB 7: THIRD-PARTY CREDITS & LEGAL NOTICES -->
+      <section id="pane-credits" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">⚖️ Third-Party Credits, Open Source Notices & Licenses</h2>
+            <p class="pane-desc">
+              CoWatcher is built on the shoulders of giants. We gratefully acknowledge upstream open-source linguistics engines and free dictionary data services.
+            </p>
+          </div>
+          <div class="pane-actions" style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <a
+              href="https://github.com/cowatcher-app/cowatcher-extension/blob/main/CREDITS.md"
+              target="_blank"
+              class="btn-secondary"
+            >
+              📄 View CREDITS.md
+            </a>
+          </div>
+        </div>
+
+        <div id="credits-md-view" class="md-container"></div>
       </section>
     </main>
 
