@@ -1,6 +1,6 @@
 # ![](./icons/icon48.png) CoWatcher (智能观影记录 · 双语字幕 · AI实时字幕翻译 · 沉浸式影视外语学习助手)
 
-[English Documentation](README.md) | 简体中文文档 | [📖 控制面板详细使用指南](docs/popup_guide_zh.md) | [🌟 贡献者与赞助者榜单](CONTRIBUTORS.md)
+[English Documentation](README.md) | 简体中文文档 | [📖 控制面板详细使用指南](docs/popup_guide_zh.md) | [🌟 贡献者与赞助者榜单](CONTRIBUTORS.md) | [⚖️ 第三方开源与数据致谢](CREDITS.md)
 
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-请作者喝杯咖啡-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/sfbb49898)
 [![Discord](https://img.shields.io/badge/Discord-加入交流社区-5865F2?logo=discord&logoColor=white)](https://discord.gg/kXdPU4vh9K)
@@ -173,13 +173,26 @@ ollama pull gemma4:e2b
 
 ---
 
-## 鸣谢
+## 💖 鸣谢与灵感来源
 
-本项目受启发于
+本项目受启发于：
 
 - [Language Reactor](https://www.languagereactor.com/)
 - [Immersive Translation](https://immersivetranslate.com/)
 - [LiveCaption](https://github.com/begin0808/LiveCaption)
+
+---
+
+## ⚖️ 第三方开源许可与免责声明
+
+CoWatcher 客户端集成了开源语言学算法库与公开词典数据源。所有第三方商标与组件归原版权方所有。
+
+> [!NOTE]
+> 引用第三方 API 与开源库仅用于开源协议合规署名（Attribution）及技术互操作性；**绝不构成或暗示原作者、机构对 CoWatcher 项目有任何官方背书或合作关系**。
+>
+> 👉 完整第三方开源许可署名与非背书免责声明，请参阅 **[CREDITS.md](CREDITS.md)**。
+
+---
 
 ## 📄 开源许可证
 

@@ -1,6 +1,6 @@
 # ![](./icons/icon48.png) CoWatcher (Smart Watch History, AI Dual Subtitles, Real-Time Translation, Language Immersion & More)
 
-English Documentation | [简体中文文档](README_zh.md) | [📖 Detailed Popup UI Guide](docs/popup_guide.md) | [🌟 Contributors & Sponsors](CONTRIBUTORS.md)
+English Documentation | [简体中文文档](README_zh.md) | [📖 Detailed Popup UI Guide](docs/popup_guide.md) | [🌟 Contributors & Sponsors](CONTRIBUTORS.md) | [⚖️ Third-Party Credits & Notices](CREDITS.md)
 
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/sfbb49898)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/kXdPU4vh9K)
@@ -173,13 +173,24 @@ If this project enhances your streaming and language learning experience, consid
 
 ---
 
-## 💖 Acknowledgements
+## 💖 Acknowledgements & Inspirations
 
 This project was inspired by:
 
 - [Language Reactor](https://www.languagereactor.com/)
 - [Immersive Translation](https://immersivetranslate.com/)
 - [LiveCaption](https://github.com/begin0808/LiveCaption)
+
+---
+
+## ⚖️ Third-Party Credits & Open Source Notices
+
+CoWatcher incorporates open-source NLP toolkits and free dictionary public data sources. All external trademarks and libraries belong to their respective copyright holders.
+
+> [!NOTE]
+> Reference to third-party APIs and libraries is strictly for open-source license compliance (Attribution) and technical interoperability; it does **not** imply any endorsement, sponsorship, or affiliation with CoWatcher by the respective authors or organizations.
+>
+> 👉 Please see **[CREDITS.md](CREDITS.md)** for our complete third-party credits, open-source notices, and full non-endorsement disclaimer.
 
 ---
 

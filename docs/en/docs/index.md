@@ -44,7 +44,11 @@ features:
     - icon: 🌟
       title: Contributors & Sponsors
       details: Browse our honor roll of code contributors, translators, and coffee sponsors, and learn how to contribute.
-      link: https://github.com/cowatcher-app/cowatcher-extension/blob/main/CONTRIBUTORS.md
+      link: /en/docs/contributors
+    - icon: ⚖️
+      title: Third-Party Credits & Notices
+      details: Review licenses and non-endorsement disclaimers for open-source NLP engines, phonetic converters, and public dictionary APIs.
+      link: /en/docs/credits
 ---
 
 ## 🧭 Documentation Hub
@@ -87,4 +91,4 @@ While watching your favorite shows, you only need to know a few essential contro
 
 ### 4. 💖 Acknowledgements & Community
 
-CoWatcher is 100% open-source. Check out our [System Architecture Whitepaper](/en/docs/architecture), submit an issue or PR on [GitHub](https://github.com/cowatcher-app/cowatcher-extension), and view the [Contributors & Sponsors Roll](https://github.com/cowatcher-app/cowatcher-extension/blob/main/CONTRIBUTORS.md)!
+CoWatcher is 100% open-source. Check out our [System Architecture Whitepaper](/en/docs/architecture), submit an issue or PR on [GitHub](https://github.com/cowatcher-app/cowatcher-extension), and view our [Contributors, Sponsors & Data Credits Roll](/en/docs/contributors)!

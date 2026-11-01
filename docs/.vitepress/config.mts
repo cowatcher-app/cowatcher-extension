@@ -9,6 +9,7 @@ export default defineConfig({
     "Smart Watch History, AI Dual Subtitles, Real-Time Translation, Language Immersion & More",
   base,
   appearance: "dark",
+  ignoreDeadLinks: true,
   sitemap: {
     hostname: "https://sfbb.github.io/cowatcher-extension-public/",
   },
@@ -100,6 +101,13 @@ export default defineConfig({
             ],
           },
           { text: "Architecture", link: "/en/docs/architecture" },
+          {
+            text: "Community",
+            items: [
+              { text: "🌟 Contributors & Sponsors", link: "/en/docs/contributors" },
+              { text: "⚖️ Third-Party Credits & Notices", link: "/en/docs/credits" },
+            ],
+          },
         ],
         sidebar: [
           {
@@ -145,6 +153,19 @@ export default defineConfig({
               { text: "System Architecture", link: "/en/docs/architecture" },
             ],
           },
+          {
+            text: "Community & Acknowledgements",
+            items: [
+              {
+                text: "🌟 Contributors & Sponsors",
+                link: "/en/docs/contributors",
+              },
+              {
+                text: "⚖️ Third-Party Credits & Notices",
+                link: "/en/docs/credits",
+              },
+            ],
+          },
         ],
       },
     },
@@ -185,6 +206,13 @@ export default defineConfig({
             ],
           },
           { text: "系统架构", link: "/zh/docs/architecture" },
+          {
+            text: "社区与致谢",
+            items: [
+              { text: "🌟 贡献者与赞助者榜单", link: "/zh/docs/contributors" },
+              { text: "⚖️ 第三方开源与数据致谢", link: "/zh/docs/credits" },
+            ],
+          },
         ],
         sidebar: [
           {
@@ -228,6 +256,19 @@ export default defineConfig({
             text: "架构与开发",
             items: [
               { text: "核心架构白皮书", link: "/zh/docs/architecture" },
+            ],
+          },
+          {
+            text: "社区与致谢",
+            items: [
+              {
+                text: "🌟 贡献者与赞助者榜单",
+                link: "/zh/docs/contributors",
+              },
+              {
+                text: "⚖️ 第三方开源与数据致谢",
+                link: "/zh/docs/credits",
+              },
             ],
           },
         ],

@@ -44,7 +44,11 @@ features:
   - icon: 🌟
     title: 贡献者与赞助者榜单
     details: 查看为 CoWatcher 贡献代码、文档与赞助咖啡的荣誉名册，了解如何参与社区建设。
-    link: https://github.com/cowatcher-app/cowatcher-extension/blob/main/CONTRIBUTORS.md
+    link: /zh/docs/contributors
+  - icon: ⚖️
+    title: 第三方开源许可与免责声明
+    details: 查阅分词引擎、注音转换算法库与公共词典数据源的开源协议合规署名及非背书声明。
+    link: /zh/docs/credits
 ---
 
 ## 🧭 文档快速导航
@@ -87,4 +91,4 @@ CoWatcher 提供多种翻译接入方式，不管你是追剧高中生还是技�
 
 ### 4. 💖 鸣谢与社区贡献
 
-CoWatcher 是完全开源透明的项目。欢迎阅读我们的 [核心系统架构白皮书](/zh/docs/architecture)，或在 [GitHub 仓库](https://github.com/cowatcher-app/cowatcher-extension) 提交 Issue、Pull Request，以及查看 [贡献者与赞助者榜单](https://github.com/cowatcher-app/cowatcher-extension/blob/main/CONTRIBUTORS.md)！
+CoWatcher 是完全开源透明的项目。欢迎阅读我们的 [核心系统架构白皮书](/zh/docs/architecture)，在 [GitHub 仓库](https://github.com/cowatcher-app/cowatcher-extension) 提交 Issue 或 Pull Request，以及浏览我们的 [贡献者、赞助者与第三方致谢名册](/zh/docs/contributors)！
