@@ -18,6 +18,7 @@ import { ILlmClient, LlmChatMessage } from '../../domain/llm/ILlmClient';
 import { LlmClientFactory } from '../../infrastructure/llm/LlmClientFactory';
 import { OllamaClient } from '../../infrastructure/llm/OllamaClient';
 import { OpenRouterClient } from '../../infrastructure/llm/OpenRouterClient';
+import { CredentialVaultService } from './CredentialVaultService';
 
 export interface LlmRoleChatParams {
     messages: LlmChatMessage[];
@@ -352,9 +353,13 @@ export class LlmService {
         if (!this.vocabModel) return false;
 
         if (this.vocabProvider === 'openrouter') {
-            return Boolean(
-                this.openrouterApiKey && this.openrouterApiKey.trim().length > 0,
-            );
+            const status = CredentialVaultService.getInstance().getStatus();
+            return status.hasKey
+                ? true
+                : Boolean(
+                      this.openrouterApiKey &&
+                          this.openrouterApiKey.trim().length > 0,
+                  );
         }
 
         if (this.vocabProvider === 'ollama') {
@@ -378,9 +383,13 @@ export class LlmService {
         if (!this.enableSupervisor || !this.supervisorModel) return false;
 
         if (this.activeProvider === 'openrouter') {
-            return Boolean(
-                this.openrouterApiKey && this.openrouterApiKey.trim().length > 0,
-            );
+            const status = CredentialVaultService.getInstance().getStatus();
+            return status.hasKey
+                ? true
+                : Boolean(
+                      this.openrouterApiKey &&
+                          this.openrouterApiKey.trim().length > 0,
+                  );
         }
 
         if (this.activeProvider === 'ollama') {
@@ -394,9 +403,13 @@ export class LlmService {
         if (!this.translatorModel) return false;
 
         if (this.activeProvider === 'openrouter') {
-            return Boolean(
-                this.openrouterApiKey && this.openrouterApiKey.trim().length > 0,
-            );
+            const status = CredentialVaultService.getInstance().getStatus();
+            return status.hasKey
+                ? true
+                : Boolean(
+                      this.openrouterApiKey &&
+                          this.openrouterApiKey.trim().length > 0,
+                  );
         }
 
         if (this.activeProvider === 'ollama') {

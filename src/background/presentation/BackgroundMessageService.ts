@@ -31,6 +31,7 @@ import { Logger } from '@shared/utils/logger';
 import { PhoneticAdapterFactory } from '@shared/infrastructure/phonetic/PhoneticAdapterFactory';
 import { ChinesePhoneticAdapter } from '@shared/infrastructure/phonetic/adapters/ChinesePhoneticAdapter';
 import { KoreanPhoneticAdapter } from '@shared/infrastructure/phonetic/adapters/KoreanPhoneticAdapter';
+import { CredentialVaultService } from '../application/services/CredentialVaultService';
 
 export class BackgroundMessageService {
     private static instance: BackgroundMessageService | null = null;
@@ -115,6 +116,7 @@ export class BackgroundMessageService {
     }
 
     async init(): Promise<void> {
+        await CredentialVaultService.getInstance(this.storage).init();
         await this.llmService.init();
         await this.llmHelperService.init();
         await this.translationPipelineService.init();
@@ -956,6 +958,8 @@ export class BackgroundMessageService {
                                     NCW_STORAGE_KEYS.SETTINGS
                                 ] ||
                                     NCW_CONSTANTS.DEFAULT_SETTINGS) as ExtensionSettings;
+                                // Credentials write-only: never expose plaintext API key in settings
+                                settings.openrouterApiKey = '';
                                 sendResponse({
                                     success: true,
                                     settings,
@@ -974,10 +978,28 @@ export class BackgroundMessageService {
                                     NCW_STORAGE_KEYS.SETTINGS
                                 ] ||
                                     NCW_CONSTANTS.DEFAULT_SETTINGS) as Partial<ExtensionSettings>;
+
+                                // Intercept openrouterApiKey if provided and route to secure vault
+                                if (message.settings.openrouterApiKey !== undefined) {
+                                    const keyToSave = message.settings.openrouterApiKey;
+                                    if (keyToSave) {
+                                        await CredentialVaultService.getInstance().saveCredentials({
+                                            apiKey: keyToSave,
+                                        });
+                                    } else {
+                                        await CredentialVaultService.getInstance().clear();
+                                    }
+                                    delete message.settings.openrouterApiKey;
+                                }
+
                                 const updated = {
                                     ...current,
                                     ...(message.settings as Partial<ExtensionSettings>),
                                 } as ExtensionSettings;
+
+                                // Always ensure plaintext key is not stored in general settings or broadcast to tabs
+                                delete (updated as Partial<ExtensionSettings>).openrouterApiKey;
+
                                 await this.storage.set({
                                     [NCW_STORAGE_KEYS.SETTINGS]: updated,
                                 });
@@ -998,6 +1020,112 @@ export class BackgroundMessageService {
                                     success: true,
                                     settings: updated,
                                 } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_SETTINGS]['response']);
+                            });
+                        return true;
+                    }
+
+                    // --- Secure Credential Vault Operations ---
+                    case NCW_CONSTANTS.MESSAGE_TYPES.GET_CREDENTIAL_STATUS: {
+                        const status = CredentialVaultService.getInstance().getStatus();
+                        sendResponse({
+                            success: true,
+                            status,
+                        } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_CREDENTIAL_STATUS]['response']);
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.SAVE_CREDENTIALS: {
+                        CredentialVaultService.getInstance()
+                            .saveCredentials(message)
+                            .then((status) => {
+                                sendResponse({
+                                    success: true,
+                                    status,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.SAVE_CREDENTIALS]['response']);
+                            })
+                            .catch((err) => {
+                                sendResponse({
+                                    success: false,
+                                    error: err?.message,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.SAVE_CREDENTIALS]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.UNLOCK_CREDENTIALS: {
+                        CredentialVaultService.getInstance()
+                            .unlock(message.password)
+                            .then((unlocked) => {
+                                if (unlocked) {
+                                    sendResponse({
+                                        success: true,
+                                    } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.UNLOCK_CREDENTIALS]['response']);
+                                } else {
+                                    sendResponse({
+                                        success: false,
+                                        error: 'INVALID_PASSWORD',
+                                    } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.UNLOCK_CREDENTIALS]['response']);
+                                }
+                            })
+                            .catch((err) => {
+                                sendResponse({
+                                    success: false,
+                                    error: err?.message,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.UNLOCK_CREDENTIALS]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.CANCEL_UNLOCK: {
+                        CredentialVaultService.getInstance().cancelUnlock();
+                        sendResponse({
+                            success: true,
+                        } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.CANCEL_UNLOCK]['response']);
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.LOCK_CREDENTIALS: {
+                        CredentialVaultService.getInstance()
+                            .lock()
+                            .then(() => {
+                                sendResponse({
+                                    success: true,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.LOCK_CREDENTIALS]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.DISABLE_CREDENTIAL_ENCRYPTION: {
+                        CredentialVaultService.getInstance()
+                            .disableEncryption(message.password)
+                            .then((unlocked) => {
+                                if (unlocked) {
+                                    sendResponse({
+                                        success: true,
+                                    } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.DISABLE_CREDENTIAL_ENCRYPTION]['response']);
+                                } else {
+                                    sendResponse({
+                                        success: false,
+                                        error: 'INVALID_PASSWORD',
+                                    } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.DISABLE_CREDENTIAL_ENCRYPTION]['response']);
+                                }
+                            })
+                            .catch((err) => {
+                                sendResponse({
+                                    success: false,
+                                    error: err?.message,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.DISABLE_CREDENTIAL_ENCRYPTION]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.CLEAR_CREDENTIALS: {
+                        CredentialVaultService.getInstance()
+                            .clear()
+                            .then(() => {
+                                sendResponse({
+                                    success: true,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.CLEAR_CREDENTIALS]['response']);
                             });
                         return true;
                     }

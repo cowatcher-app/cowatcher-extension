@@ -34,6 +34,9 @@ export interface IBrowserPlatform {
     createTab(url: string): void;
     openPopupWindow(options: PopupWindowOptions): Promise<number | undefined>;
     setupOllamaRules(customHost?: string): Promise<void>;
+    setupStorageSecurity(
+        accessLevel?: 'TRUSTED_CONTEXTS' | 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
+    ): Promise<void>;
     onInstalled(callback: () => void): void;
     onStartup(callback: () => void): void;
     isContextValid(): boolean;
@@ -54,4 +57,6 @@ export interface IBrowserPlatform {
     broadcastToTabs(message: unknown): Promise<void>;
     onMessage(listener: PlatformMessageListener): () => void;
     onTabRemoved(callback: (tabId: number) => void): () => void;
+    onWindowRemoved(callback: (windowId: number) => void): () => void;
+    closeWindow(windowId: number): Promise<void>;
 }

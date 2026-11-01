@@ -58,6 +58,26 @@ export class ContentMessageService {
         );
     }
 
+    // --- Settings Operations ---
+
+    async fetchSettings(): Promise<ExtensionSettings | null> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_SETTINGS,
+            undefined,
+        );
+        return res.success && res.settings ? res.settings : null;
+    }
+
+    async saveSettings(
+        settings: Partial<ExtensionSettings>,
+    ): Promise<ExtensionSettings | null> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.SAVE_SETTINGS,
+            { settings },
+        );
+        return res.success && res.settings ? res.settings : null;
+    }
+
     // --- Glossary Operations ---
 
     async fetchGlossary(

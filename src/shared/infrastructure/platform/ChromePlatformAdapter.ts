@@ -148,11 +148,18 @@ export class ChromePlatformAdapter implements IBrowserPlatform {
             }
         }
 
-        window.open(
-            fullUrl,
-            options.title || 'PopupWindow',
-            `width=${width},height=${height},menubar=no,toolbar=no,location=no,status=no`,
-        );
+        if (
+            typeof window !== 'undefined' &&
+            typeof window.open === 'function'
+        ) {
+            window.open(
+                fullUrl,
+                options.title || 'PopupWindow',
+                `width=${width},height=${height},menubar=no,toolbar=no,location=no,status=no`,
+            );
+        } else if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+            chrome.tabs.create({ url: fullUrl });
+        }
         return undefined;
     }
 
@@ -249,6 +256,44 @@ export class ChromePlatformAdapter implements IBrowserPlatform {
             });
         } catch {
             // Ignore rules failure
+        }
+    }
+
+    async setupStorageSecurity(
+        accessLevel:
+            | 'TRUSTED_CONTEXTS'
+            | 'TRUSTED_AND_UNTRUSTED_CONTEXTS' = 'TRUSTED_CONTEXTS',
+    ): Promise<void> {
+        try {
+            if (
+                typeof chrome !== 'undefined' &&
+                chrome.storage?.local &&
+                typeof (
+                    chrome.storage.local as {
+                        setAccessLevel?: (options: {
+                            accessLevel: string;
+                        }) => Promise<void>;
+                    }
+                ).setAccessLevel === 'function'
+            ) {
+                await (
+                    chrome.storage.local as {
+                        setAccessLevel: (options: {
+                            accessLevel: string;
+                        }) => Promise<void>;
+                    }
+                ).setAccessLevel({ accessLevel });
+                this.logger.info(
+                    'Platform',
+                    `Storage local access level restricted to: ${accessLevel}`,
+                );
+            }
+        } catch (e) {
+            this.logger.debug(
+                'Platform',
+                'Storage setAccessLevel not supported in this runtime, safely ignored:',
+                e,
+            );
         }
     }
 
@@ -418,5 +463,32 @@ export class ChromePlatformAdapter implements IBrowserPlatform {
 
         chrome.tabs.onRemoved.addListener(callback);
         return () => chrome.tabs.onRemoved.removeListener(callback);
+    }
+
+    onWindowRemoved(callback: (windowId: number) => void): () => void {
+        if (
+            typeof chrome === 'undefined' ||
+            !chrome.windows ||
+            !chrome.windows.onRemoved
+        ) {
+            return () => {};
+        }
+
+        chrome.windows.onRemoved.addListener(callback);
+        return () => chrome.windows.onRemoved.removeListener(callback);
+    }
+
+    async closeWindow(windowId: number): Promise<void> {
+        if (
+            typeof chrome !== 'undefined' &&
+            chrome.windows &&
+            chrome.windows.remove
+        ) {
+            try {
+                await chrome.windows.remove(windowId);
+            } catch {
+                // Window might already be closed
+            }
+        }
     }
 }

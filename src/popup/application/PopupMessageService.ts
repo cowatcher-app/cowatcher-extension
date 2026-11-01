@@ -11,6 +11,7 @@ import {
     TermGlossaryMap,
 } from '@shared/domain/entities/Glossary';
 import { StreamingPlatformId } from '@shared/domain/constants/StreamingPlatforms';
+import { CredentialVaultStatus } from '@shared/domain/entities/CredentialVault';
 import NCW_CONSTANTS from '@shared/utils/constants';
 
 export class PopupMessageService {
@@ -355,6 +356,62 @@ export class PopupMessageService {
         return await ContentBackgroundBus.send(
             NCW_CONSTANTS.MESSAGE_TYPES.BULK_UPDATE_GLOSSARY,
             params,
+        );
+    }
+
+    // --- Credential Vault Operations ---
+
+    async getCredentialStatus(): Promise<CredentialVaultStatus> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_CREDENTIAL_STATUS,
+            undefined,
+        );
+        return (
+            res.status || {
+                hasKey: false,
+                isEncrypted: false,
+                isUnlocked: true,
+                maskedKey: '',
+            }
+        );
+    }
+
+    async saveCredentials(params: {
+        apiKey?: string;
+        masterPassword?: string;
+        enableEncryption?: boolean;
+    }) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.SAVE_CREDENTIALS,
+            params,
+        );
+    }
+
+    async unlockCredentials(password: string) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.UNLOCK_CREDENTIALS,
+            { password },
+        );
+    }
+
+    async lockCredentials() {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.LOCK_CREDENTIALS,
+            undefined,
+        );
+    }
+
+    async disableCredentialEncryption(password: string) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.DISABLE_CREDENTIAL_ENCRYPTION,
+            { password },
+        );
+    }
+
+    async clearCredentials() {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.CLEAR_CREDENTIALS,
+            undefined,
         );
     }
 }

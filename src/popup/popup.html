@@ -985,6 +985,64 @@
               Connect
             </button>
           </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <div id="popup-key-status" style="font-size: 11px; color: #888;"></div>
+            <button
+              type="button"
+              id="btn-clear-openrouter-key"
+              style="display: none; background: none; border: none; color: #e50914; font-size: 11px; cursor: pointer; text-decoration: underline; padding: 0;"
+              data-i18n="btnClearKey"
+            >
+              Remove Key
+            </button>
+          </div>
+
+          <!-- Master Password Unlock Card (only shown when AES-encrypted & locked) -->
+          <div
+            id="popup-vault-card"
+            style="display: none; margin-top: 8px; padding: 8px 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px;"
+          >
+            <div id="popup-vault-locked-view" style="display: none;">
+              <div style="font-size: 11px; color: #f59e0b; margin-bottom: 6px; font-weight: 500;">
+                🔒 Key is encrypted with Master Password
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <input
+                  type="password"
+                  id="popup-vault-pwd-input"
+                  placeholder="Enter Master Password..."
+                  data-i18n-placeholder="masterPasswordPlaceholder"
+                  style="flex: 1; font-size: 12px; padding: 4px 8px;"
+                />
+                <button
+                  type="button"
+                  id="btn-popup-vault-unlock"
+                  class="btn-sm"
+                  style="padding: 4px 10px; font-size: 12px;"
+                  data-i18n="btnUnlock"
+                >
+                  Unlock
+                </button>
+              </div>
+              <div id="popup-vault-error" style="font-size: 11px; color: #e50914; margin-top: 4px; display: none;"></div>
+            </div>
+
+            <div id="popup-vault-unlocked-view" style="display: none; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; color: #46d369; font-weight: 500;">
+                🔓 Unlocked (Active for session)
+              </span>
+              <button
+                type="button"
+                id="btn-popup-vault-lock"
+                class="btn-sm"
+                style="padding: 2px 8px; font-size: 11px; background: #333;"
+                data-i18n="btnLock"
+              >
+                Lock
+              </button>
+            </div>
+          </div>
+
           <div class="field-hint" data-i18n="openrouterApiKeyHint">
             Stored locally in browser. Get key at
             <a

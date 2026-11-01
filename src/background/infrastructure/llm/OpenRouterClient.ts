@@ -14,6 +14,7 @@ import { NCW_STORAGE_KEYS } from '@shared/domain/constants/StorageKeys';
 import { BrowserStorageFactory } from '@shared/infrastructure/storage/BrowserStorageFactory';
 import { IBrowserStorage } from '@shared/infrastructure/storage/IBrowserStorage';
 import { Logger } from '@shared/utils/logger';
+import { CredentialVaultService } from '../../application/services/CredentialVaultService';
 
 export class OpenRouterClient implements ILlmClient {
     readonly providerId: LLMProvider = 'openrouter';
@@ -73,9 +74,30 @@ export class OpenRouterClient implements ILlmClient {
         }
     }
 
+    private async getActiveApiKey(
+        promptIfLocked: boolean = true,
+    ): Promise<string> {
+        try {
+            const vaultKey =
+                await CredentialVaultService.getInstance().getApiKey(
+                    promptIfLocked,
+                );
+            if (vaultKey) return vaultKey;
+        } catch (err: unknown) {
+            if ((err as Error)?.message === 'CREDENTIAL_VAULT_LOCKED') {
+                throw new Error('CREDENTIAL_VAULT_LOCKED', { cause: err });
+            }
+            throw err;
+        }
+        return (this.apiKey || '').trim();
+    }
+
     async getCapability(): Promise<AiCapability> {
         const isSupervisor = this.role === 'supervisor';
-        const hasKey = Boolean(this.apiKey && this.apiKey.trim().length > 0);
+        const vaultStatus = CredentialVaultService.getInstance().getStatus();
+        const hasKey =
+            vaultStatus.hasKey ||
+            Boolean(this.apiKey && this.apiKey.trim().length > 0);
         return {
             hasAi: hasKey,
             provider: 'openrouter',
@@ -94,7 +116,18 @@ export class OpenRouterClient implements ILlmClient {
             jsonMode = false,
             signal,
         } = request;
-        const apiKey = (this.apiKey || '').trim();
+        let apiKey: string;
+        try {
+            apiKey = await this.getActiveApiKey();
+        } catch (err: unknown) {
+            if ((err as Error)?.message === 'CREDENTIAL_VAULT_LOCKED') {
+                throw new Error(
+                    'OpenRouter API Key is encrypted with Master Password. Please unlock in extension popup or settings.',
+                    { cause: err },
+                );
+            }
+            throw err;
+        }
         if (!apiKey) {
             throw new Error(
                 'OpenRouter API Key is missing. Please configure your API key in extension settings.',
@@ -146,7 +179,12 @@ export class OpenRouterClient implements ILlmClient {
     async fetchModels(
         forceRefresh: boolean = false,
     ): Promise<OpenRouterModelItem[]> {
-        const key = this.apiKey;
+        let key = '';
+        try {
+            key = await this.getActiveApiKey(false);
+        } catch {
+            // Locked or unconfigured - proceed with unauthenticated model list request
+        }
         const base = this.baseUrl;
         const now = Date.now();
 
@@ -207,7 +245,18 @@ export class OpenRouterClient implements ILlmClient {
     }
 
     async checkConnection(): Promise<LlmConnectionTestResult> {
-        const key = this.apiKey;
+        let key: string;
+        try {
+            key = await this.getActiveApiKey();
+        } catch (err: unknown) {
+            if ((err as Error)?.message === 'CREDENTIAL_VAULT_LOCKED') {
+                throw new Error(
+                    'OpenRouter API Key is encrypted with Master Password. Please unlock in extension popup or settings.',
+                    { cause: err },
+                );
+            }
+            throw err;
+        }
         if (!key) {
             throw new Error(
                 'API Key is required to test OpenRouter connection.',

@@ -33,6 +33,7 @@ import {
     DailyWatchStat,
     ShowEpisodeProgress,
 } from '../domain/entities/WatchHistory';
+import { CredentialVaultStatus } from '../domain/entities/CredentialVault';
 
 export {
     VocabWordItem,
@@ -48,6 +49,7 @@ export {
     WatchHistoryStats,
     DailyWatchStat,
     ShowEpisodeProgress,
+    CredentialVaultStatus,
 };
 
 export interface OpenRouterModelItem {
@@ -379,6 +381,43 @@ export type MessagePayloadMap = {
     NCW_SAVE_SETTINGS: {
         request: { settings: Partial<ExtensionSettings> };
         response: { success: boolean; settings: ExtensionSettings };
+    };
+    // Secure Credentials & Vault
+    NCW_GET_CREDENTIAL_STATUS: {
+        request: void;
+        response: { success: boolean; status: CredentialVaultStatus };
+    };
+    NCW_SAVE_CREDENTIALS: {
+        request: {
+            apiKey?: string;
+            masterPassword?: string;
+            enableEncryption?: boolean;
+        };
+        response: {
+            success: boolean;
+            status?: CredentialVaultStatus;
+            error?: string;
+        };
+    };
+    NCW_UNLOCK_CREDENTIALS: {
+        request: { password: string };
+        response: { success: boolean; error?: string };
+    };
+    NCW_CANCEL_UNLOCK: {
+        request: void;
+        response: { success: boolean };
+    };
+    NCW_LOCK_CREDENTIALS: {
+        request: void;
+        response: { success: boolean };
+    };
+    NCW_DISABLE_CREDENTIAL_ENCRYPTION: {
+        request: { password: string };
+        response: { success: boolean; error?: string };
+    };
+    NCW_CLEAR_CREDENTIALS: {
+        request: void;
+        response: { success: boolean };
     };
     NCW_PUSH_SETTINGS_CHANGED: {
         request: { settings: ExtensionSettings };

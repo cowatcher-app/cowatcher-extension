@@ -49,12 +49,16 @@ backgroundService.init().catch((err) => {
     logger.warn('Background', 'Failed during backgroundService init:', err);
 });
 
-// 3. Configure declarativeNetRequest Rules & Alarms via Platform Adapter
+// 3. Configure declarativeNetRequest Rules, Storage Security & Alarms via Platform Adapter
+platform.setupStorageSecurity('TRUSTED_CONTEXTS').catch(() => {});
+
 platform.onInstalled(() => {
+    platform.setupStorageSecurity('TRUSTED_CONTEXTS').catch(() => {});
     platform.setupOllamaRules();
     setupCacheCleanupAlarm();
 });
 platform.onStartup(() => {
+    platform.setupStorageSecurity('TRUSTED_CONTEXTS').catch(() => {});
     platform.setupOllamaRules();
     setupCacheCleanupAlarm();
 });

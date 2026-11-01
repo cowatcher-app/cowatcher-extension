@@ -175,6 +175,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const cfgOpenrouterKey = document.getElementById(
         'cfg-openrouter-key',
     ) as HTMLInputElement | null;
+    const cfgBtnClearKey = document.getElementById(
+        'cfg-btn-clear-key',
+    ) as HTMLButtonElement | null;
+    const cfgKeyStatusHint = document.getElementById(
+        'cfg-key-status-hint',
+    ) as HTMLDivElement | null;
+    const cfgEnableMasterPwd = document.getElementById(
+        'cfg-enable-master-pwd',
+    ) as HTMLInputElement | null;
+    const cfgMasterPwdSetupRow = document.getElementById(
+        'cfg-master-pwd-setup-row',
+    ) as HTMLDivElement | null;
+    const cfgMasterPwdInput = document.getElementById(
+        'cfg-master-pwd-input',
+    ) as HTMLInputElement | null;
+    const cfgMasterPwdConfirm = document.getElementById(
+        'cfg-master-pwd-confirm',
+    ) as HTMLInputElement | null;
+    const cfgBtnSaveMasterPwd = document.getElementById(
+        'cfg-btn-save-master-pwd',
+    ) as HTMLButtonElement | null;
+    const cfgMasterPwdMsg = document.getElementById(
+        'cfg-master-pwd-msg',
+    ) as HTMLDivElement | null;
+    const cfgMasterPwdUnlockRow = document.getElementById(
+        'cfg-master-pwd-unlock-row',
+    ) as HTMLDivElement | null;
+    const cfgVaultBadge = document.getElementById(
+        'cfg-vault-badge',
+    ) as HTMLDivElement | null;
+    const cfgVaultUnlockInput = document.getElementById(
+        'cfg-vault-unlock-input',
+    ) as HTMLInputElement | null;
+    const cfgBtnVaultUnlock = document.getElementById(
+        'cfg-btn-vault-unlock',
+    ) as HTMLButtonElement | null;
+    const cfgBtnVaultLock = document.getElementById(
+        'cfg-btn-vault-lock',
+    ) as HTMLButtonElement | null;
     const cfgOpenrouterTransModel = document.getElementById(
         'cfg-openrouter-trans-model',
     ) as HTMLSelectElement | null;
@@ -2953,8 +2992,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cfgSupervisorModel.value =
                 currentSettings.supervisorModel || 'translategemma:4b';
 
-        if (cfgOpenrouterKey)
-            cfgOpenrouterKey.value = currentSettings.openrouterApiKey || '';
+        refreshVaultStatus().catch(() => {});
         if (cfgEnableSupervisor)
             cfgEnableSupervisor.checked =
                 currentSettings.enableSupervisor !== false;
@@ -3137,7 +3175,212 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function refreshVaultStatus(): Promise<void> {
+        try {
+            const status = await messageService.getCredentialStatus();
+            if (cfgOpenrouterKey) {
+                if (status.hasKey) {
+                    cfgOpenrouterKey.placeholder =
+                        status.maskedKey || 'sk-or-••••••••';
+                    if (
+                        !cfgOpenrouterKey.value ||
+                        cfgOpenrouterKey.value.includes('••')
+                    ) {
+                        cfgOpenrouterKey.value = status.maskedKey;
+                    }
+                    if (cfgBtnClearKey)
+                        cfgBtnClearKey.style.display = 'inline-block';
+                } else {
+                    cfgOpenrouterKey.placeholder = 'sk-or-v1-...';
+                    cfgOpenrouterKey.value = '';
+                    if (cfgBtnClearKey) cfgBtnClearKey.style.display = 'none';
+                }
+            }
+
+            if (cfgEnableMasterPwd) {
+                cfgEnableMasterPwd.checked = status.isEncrypted;
+            }
+
+            if (status.isEncrypted) {
+                if (cfgMasterPwdUnlockRow)
+                    cfgMasterPwdUnlockRow.style.display = 'flex';
+                if (cfgMasterPwdSetupRow)
+                    cfgMasterPwdSetupRow.style.display = 'none';
+                if (status.isUnlocked) {
+                    if (cfgVaultBadge) {
+                        cfgVaultBadge.innerHTML =
+                            '<span style="color: var(--accent-green);">🔓 Unlocked (Active for session)</span>';
+                    }
+                    if (cfgVaultUnlockInput)
+                        cfgVaultUnlockInput.style.display = 'none';
+                    if (cfgBtnVaultUnlock)
+                        cfgBtnVaultUnlock.style.display = 'none';
+                    if (cfgBtnVaultLock)
+                        cfgBtnVaultLock.style.display = 'inline-block';
+                    if (cfgKeyStatusHint) {
+                        cfgKeyStatusHint.textContent =
+                            'API Key stored locally with AES-256 encryption.';
+                    }
+                } else {
+                    if (cfgVaultBadge) {
+                        cfgVaultBadge.innerHTML =
+                            '<span style="color: var(--accent-yellow);">🔒 Locked (Master Password required)</span>';
+                    }
+                    if (cfgVaultUnlockInput) {
+                        cfgVaultUnlockInput.style.display = 'inline-block';
+                        cfgVaultUnlockInput.value = '';
+                    }
+                    if (cfgBtnVaultUnlock)
+                        cfgBtnVaultUnlock.style.display = 'inline-block';
+                    if (cfgBtnVaultLock)
+                        cfgBtnVaultLock.style.display = 'none';
+                    if (cfgKeyStatusHint) {
+                        cfgKeyStatusHint.textContent =
+                            'Key is encrypted. Please unlock to enable OpenRouter AI features.';
+                    }
+                }
+            } else {
+                if (cfgMasterPwdUnlockRow)
+                    cfgMasterPwdUnlockRow.style.display = 'none';
+                if (cfgMasterPwdSetupRow)
+                    cfgMasterPwdSetupRow.style.display = 'none';
+                if (cfgKeyStatusHint) {
+                    cfgKeyStatusHint.textContent = status.hasKey
+                        ? 'API Key stored in local storage (Unencrypted).'
+                        : '';
+                }
+            }
+        } catch (err) {
+            logger.error(
+                'options',
+                'Failed to refresh credential vault status',
+                err,
+            );
+        }
+    }
+
+    cfgOpenrouterKey?.addEventListener('focus', () => {
+        if (cfgOpenrouterKey.value.includes('••')) {
+            cfgOpenrouterKey.value = '';
+        }
+    });
+
+    cfgOpenrouterKey?.addEventListener('blur', () => {
+        if (!cfgOpenrouterKey.value.trim()) {
+            refreshVaultStatus().catch(() => {});
+        }
+    });
+
+    cfgBtnClearKey?.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to remove the stored API key?')) {
+            await messageService.clearCredentials();
+            showToast('API Key removed.');
+            await refreshVaultStatus();
+        }
+    });
+
+    cfgEnableMasterPwd?.addEventListener('change', async () => {
+        const isChecked = cfgEnableMasterPwd.checked;
+        if (isChecked) {
+            if (cfgMasterPwdSetupRow) {
+                cfgMasterPwdSetupRow.style.display = 'block';
+                if (cfgMasterPwdInput) cfgMasterPwdInput.focus();
+            }
+            if (cfgMasterPwdMsg) cfgMasterPwdMsg.textContent = '';
+        } else {
+            const pwd = prompt(
+                'Enter your current Master Password to disable encryption:',
+            );
+            if (!pwd) {
+                cfgEnableMasterPwd.checked = true;
+                return;
+            }
+            const res =
+                await messageService.disableCredentialEncryption(pwd);
+            if (res.success) {
+                showToast('Master password protection disabled.');
+                await refreshVaultStatus();
+            } else {
+                alert('Incorrect master password. Encryption remains active.');
+                cfgEnableMasterPwd.checked = true;
+            }
+        }
+    });
+
+    cfgBtnSaveMasterPwd?.addEventListener('click', async () => {
+        const p1 = cfgMasterPwdInput?.value || '';
+        const p2 = cfgMasterPwdConfirm?.value || '';
+        if (p1.length < 4) {
+            if (cfgMasterPwdMsg) {
+                cfgMasterPwdMsg.style.color = 'var(--accent-red)';
+                cfgMasterPwdMsg.textContent =
+                    'Password must be at least 4 characters.';
+            }
+            return;
+        }
+        if (p1 !== p2) {
+            if (cfgMasterPwdMsg) {
+                cfgMasterPwdMsg.style.color = 'var(--accent-red)';
+                cfgMasterPwdMsg.textContent = 'Passwords do not match.';
+            }
+            return;
+        }
+
+        const rawKey = cfgOpenrouterKey?.value.trim() || '';
+        const keyToSave = rawKey && !rawKey.includes('••') ? rawKey : undefined;
+
+        const res = await messageService.saveCredentials({
+            apiKey: keyToSave,
+            masterPassword: p1,
+            enableEncryption: true,
+        });
+
+        if (res.success) {
+            showToast('Master Password set and key encrypted with AES-256!');
+            if (cfgMasterPwdInput) cfgMasterPwdInput.value = '';
+            if (cfgMasterPwdConfirm) cfgMasterPwdConfirm.value = '';
+            await refreshVaultStatus();
+        } else {
+            if (cfgMasterPwdMsg) {
+                cfgMasterPwdMsg.style.color = 'var(--accent-red)';
+                cfgMasterPwdMsg.textContent =
+                    res.error || 'Failed to save credentials.';
+            }
+        }
+    });
+
+    cfgBtnVaultUnlock?.addEventListener('click', async () => {
+        const pwd = cfgVaultUnlockInput?.value || '';
+        if (!pwd) return;
+        const res = await messageService.unlockCredentials(pwd);
+        if (res.success) {
+            showToast('Vault unlocked successfully!');
+            await refreshVaultStatus();
+        } else {
+            alert('Incorrect master password.');
+        }
+    });
+
+    cfgVaultUnlockInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            cfgBtnVaultUnlock?.click();
+        }
+    });
+
+    cfgBtnVaultLock?.addEventListener('click', async () => {
+        await messageService.lockCredentials();
+        showToast('Vault locked.');
+        await refreshVaultStatus();
+    });
+
     btnSaveSettings?.addEventListener('click', async () => {
+        const rawKey = cfgOpenrouterKey?.value.trim() || '';
+        if (rawKey && !rawKey.includes('••')) {
+            await messageService.saveCredentials({
+                apiKey: rawKey,
+            });
+        }
+
         const updated: ExtensionSettings = {
             ...currentSettings,
             aiProvider: (cfgAiProvider
@@ -3152,9 +3395,6 @@ document.addEventListener('DOMContentLoaded', () => {
             supervisorModel: cfgSupervisorModel
                 ? cfgSupervisorModel.value
                 : currentSettings.supervisorModel,
-            openrouterApiKey: cfgOpenrouterKey
-                ? cfgOpenrouterKey.value.trim()
-                : currentSettings.openrouterApiKey,
             openrouterTranslationModel: cfgOpenrouterTransModel
                 ? cfgOpenrouterTransModel.value
                 : currentSettings.openrouterTranslationModel,
@@ -3237,10 +3477,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         currentSettings = updated;
-        await storage.set({ [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: updated });
+        delete (updated as Partial<ExtensionSettings>).openrouterApiKey;
+        await messageService.saveSettings(updated);
         await cacheRepository.cleanExpiredRecords(updated.cacheRetention);
         showToast('Settings saved successfully!');
         loadSubtitleCaches();
+        await refreshVaultStatus();
     });
 
     uiLanguageSelect?.addEventListener('change', async (e) => {

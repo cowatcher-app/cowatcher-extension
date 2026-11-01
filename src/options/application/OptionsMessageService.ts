@@ -13,6 +13,8 @@ import {
     WordLookupRequest,
     WordLookupResult,
 } from '@shared/domain/entities/SubtitleLearning';
+import { CredentialVaultStatus } from '@shared/domain/entities/CredentialVault';
+import { ExtensionSettings } from '@shared/domain/constants/SettingsDefaults';
 import NCW_CONSTANTS from '@shared/utils/constants';
 
 export class OptionsMessageService {
@@ -191,6 +193,15 @@ export class OptionsMessageService {
         );
     }
 
+    // --- Settings ---
+
+    async saveSettings(settings: Partial<ExtensionSettings>) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.SAVE_SETTINGS,
+            { settings },
+        );
+    }
+
     // --- Watch History & Analytics ---
 
     async getWatchHistory() {
@@ -216,5 +227,61 @@ export class OptionsMessageService {
             },
         );
         return res.success;
+    }
+
+    // --- Credential Vault Operations ---
+
+    async getCredentialStatus(): Promise<CredentialVaultStatus> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_CREDENTIAL_STATUS,
+            undefined,
+        );
+        return (
+            res.status || {
+                hasKey: false,
+                isEncrypted: false,
+                isUnlocked: true,
+                maskedKey: '',
+            }
+        );
+    }
+
+    async saveCredentials(params: {
+        apiKey?: string;
+        masterPassword?: string;
+        enableEncryption?: boolean;
+    }) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.SAVE_CREDENTIALS,
+            params,
+        );
+    }
+
+    async unlockCredentials(password: string) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.UNLOCK_CREDENTIALS,
+            { password },
+        );
+    }
+
+    async lockCredentials() {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.LOCK_CREDENTIALS,
+            undefined,
+        );
+    }
+
+    async disableCredentialEncryption(password: string) {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.DISABLE_CREDENTIAL_ENCRYPTION,
+            { password },
+        );
+    }
+
+    async clearCredentials() {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.CLEAR_CREDENTIALS,
+            undefined,
+        );
     }
 }

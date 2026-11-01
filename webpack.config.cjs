@@ -18,7 +18,8 @@ module.exports = (env = {}) => {
       injected: './src/injected/injected.ts',
       popup: './src/popup/popup.ts',
       options: './src/options/options.ts',
-      editor: './src/editor/editor.ts'
+      editor: './src/editor/editor.ts',
+      unlock: './src/unlock/unlock.ts'
     },
     output: {
       path: path.resolve(__dirname, outDir),
@@ -64,6 +65,8 @@ module.exports = (env = {}) => {
           { from: 'src/popup/popup.css', to: 'popup/popup.css' },
           { from: 'src/editor/editor.html', to: 'editor/editor.html' },
           { from: 'src/editor/editor.css', to: 'editor/editor.css' },
+          { from: 'src/unlock/unlock.html', to: 'unlock/unlock.html' },
+          { from: 'src/unlock/unlock.css', to: 'unlock/unlock.css' },
           { from: 'node_modules/kuromoji/dict', to: 'dict' }
         ]
       })
@@ -79,7 +82,8 @@ module.exports = (env = {}) => {
         '@content': path.resolve(__dirname, 'src/content'),
         '@popup': path.resolve(__dirname, 'src/popup'),
         '@options': path.resolve(__dirname, 'src/options'),
-        '@injected': path.resolve(__dirname, 'src/injected')
+        '@injected': path.resolve(__dirname, 'src/injected'),
+        '@unlock': path.resolve(__dirname, 'src/unlock')
       }
     }
   };

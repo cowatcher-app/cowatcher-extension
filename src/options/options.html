@@ -610,12 +610,100 @@
             <div id="cfg-openrouter-section" style="display: none">
               <div class="form-group">
                 <label for="cfg-openrouter-key">OpenRouter API Key</label>
-                <input
-                  type="password"
-                  id="cfg-openrouter-key"
-                  placeholder="sk-or-v1-..."
-                />
+                <div style="display: flex; gap: 8px;">
+                  <input
+                    type="password"
+                    id="cfg-openrouter-key"
+                    placeholder="sk-or-v1-..."
+                    style="flex: 1;"
+                  />
+                  <button
+                    type="button"
+                    id="cfg-btn-clear-key"
+                    class="btn secondary-btn"
+                    style="display: none; padding: 6px 12px; font-size: 13px;"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div id="cfg-key-status-hint" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></div>
               </div>
+
+              <!-- Master Password AES Protection -->
+              <div
+                class="form-group"
+                style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-top: 12px;"
+              >
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label for="cfg-enable-master-pwd" style="margin: 0; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <span>🔒 Master Password AES-256 Protection</span>
+                  </label>
+                  <input type="checkbox" id="cfg-enable-master-pwd" style="cursor: pointer;" />
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+                  Encrypts your API key locally with AES-256 to protect against disk scanners. Decrypted in memory only with your password. (Optional, disabled by default)
+                </div>
+
+                <!-- Setup / Change Password row -->
+                <div id="cfg-master-pwd-setup-row" style="display: none; margin-top: 12px;">
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input
+                      type="password"
+                      id="cfg-master-pwd-input"
+                      placeholder="Set Master Password..."
+                      style="flex: 1; min-width: 140px;"
+                    />
+                    <input
+                      type="password"
+                      id="cfg-master-pwd-confirm"
+                      placeholder="Confirm Password..."
+                      style="flex: 1; min-width: 140px;"
+                    />
+                    <button
+                      type="button"
+                      id="cfg-btn-save-master-pwd"
+                      class="btn primary-btn"
+                      style="padding: 6px 14px; font-size: 13px;"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  <div id="cfg-master-pwd-msg" style="font-size: 12px; margin-top: 6px;"></div>
+                </div>
+
+                <!-- Unlock / Lock status row -->
+                <div
+                  id="cfg-master-pwd-unlock-row"
+                  style="display: none; margin-top: 12px; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;"
+                >
+                  <div id="cfg-vault-badge" style="font-size: 13px; font-weight: 500;"></div>
+                  <div id="cfg-vault-unlock-actions" style="display: flex; gap: 8px; align-items: center;">
+                    <input
+                      type="password"
+                      id="cfg-vault-unlock-input"
+                      placeholder="Enter password..."
+                      style="max-width: 160px;"
+                    />
+                    <button
+                      type="button"
+                      id="cfg-btn-vault-unlock"
+                      class="btn primary-btn"
+                      style="padding: 6px 12px; font-size: 13px;"
+                    >
+                      Unlock
+                    </button>
+                    <button
+                      type="button"
+                      id="cfg-btn-vault-lock"
+                      class="btn secondary-btn"
+                      style="display: none; padding: 6px 12px; font-size: 13px;"
+                    >
+                      Lock
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label for="cfg-openrouter-trans-model"
                   >OpenRouter Translation Model</label

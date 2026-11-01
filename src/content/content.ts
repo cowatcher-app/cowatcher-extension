@@ -15,9 +15,7 @@ import { TVerContentAdapter } from './infrastructure/adapters/tver/TVerContentAd
 import { YouTubeContentAdapter } from './infrastructure/adapters/youtube/YouTubeContentAdapter';
 import { ContentMessageService } from './application/services/ContentMessageService';
 import { SubtitleParser } from './application/utils/parser';
-import { BrowserStorageFactory } from '@shared/infrastructure/storage/BrowserStorageFactory';
 import { BrowserPlatformFactory } from '@shared/infrastructure/platform/BrowserPlatformFactory';
-import { NCW_STORAGE_KEYS } from '@shared/domain/constants/StorageKeys';
 import { Logger } from '@shared/utils/logger';
 import { Language, LanguageInfo } from '@shared/domain/value-objects/Language';
 import { AiSubState } from '@shared/domain/entities/AiSubState';
@@ -75,7 +73,6 @@ const logger: Logger = new Logger('content');
         StreamingAdapterRegistry.getMatchingAdapter() ||
         new NetflixContentAdapter();
     const messageService = ContentMessageService.getInstance();
-    const storage = BrowserStorageFactory.getStorage();
     const platform = BrowserPlatformFactory.getPlatform();
 
     let settings: ExtensionSettings = { ...NCW_CONSTANTS.DEFAULT_SETTINGS };
@@ -483,27 +480,20 @@ const logger: Logger = new Logger('content');
             );
         }
 
-        // Persist via storage
+        // Persist via background message service
         try {
-            const res = await storage.get<ExtensionSettings>([
-                NCW_STORAGE_KEYS.SETTINGS,
-            ]);
             if (isExtensionValid()) {
-                const currentStored =
-                    res[NCW_STORAGE_KEYS.SETTINGS] || settings;
                 const updatedPlatformEnabled = {
-                    ...(currentStored.platformEnabled || {}),
+                    ...(settings.platformEnabled || {}),
                     [adapter.platformName]: nextState,
                 };
-                const updated = {
-                    ...currentStored,
+                await messageService.saveSettings({
                     enabled: nextState,
                     platformEnabled: updatedPlatformEnabled,
-                };
-                await storage.set({ [NCW_STORAGE_KEYS.SETTINGS]: updated });
+                });
             }
         } catch (e) {
-            logger.warn('Content', 'Storage access failed:', e);
+            logger.warn('Content', 'Settings persistence failed:', e);
         }
 
         if (nextState) {
@@ -757,18 +747,11 @@ const logger: Logger = new Logger('content');
         settings.subSyncOffset = updated;
         subtitleManager.updateSettings({ subSyncOffset: updated });
         try {
-            const res = await storage.get<ExtensionSettings>([
-                NCW_STORAGE_KEYS.SETTINGS,
-            ]);
             if (isExtensionValid()) {
-                const s = {
-                    ...(res[NCW_STORAGE_KEYS.SETTINGS] || settings),
-                    subSyncOffset: updated,
-                };
-                await storage.set({ [NCW_STORAGE_KEYS.SETTINGS]: s });
+                await messageService.saveSettings({ subSyncOffset: updated });
             }
         } catch (e) {
-            logger.warn('Content', 'Storage sync failed:', e);
+            logger.warn('Content', 'Settings sync failed:', e);
         }
 
         const sign = updated > 0 ? '+' : '';
@@ -790,18 +773,11 @@ const logger: Logger = new Logger('content');
         settings.subSyncOffset = 0;
         subtitleManager.updateSettings({ subSyncOffset: 0 });
         try {
-            const res = await storage.get<ExtensionSettings>([
-                NCW_STORAGE_KEYS.SETTINGS,
-            ]);
             if (isExtensionValid()) {
-                const s = {
-                    ...(res[NCW_STORAGE_KEYS.SETTINGS] || settings),
-                    subSyncOffset: 0,
-                };
-                await storage.set({ [NCW_STORAGE_KEYS.SETTINGS]: s });
+                await messageService.saveSettings({ subSyncOffset: 0 });
             }
         } catch (e) {
-            logger.warn('Content', 'Storage reset failed:', e);
+            logger.warn('Content', 'Settings reset failed:', e);
         }
 
         const msg = NCW_I18N.getText('toastSyncOffset', settings.uiLanguage, {
@@ -861,18 +837,16 @@ const logger: Logger = new Logger('content');
         }
     });
 
-    // 3. Load initial settings from storage
+    // 3. Load initial settings from background service
     async function loadInitialSettings(): Promise<void> {
         if (isExtensionValid()) {
             try {
-                const res = await storage.get<ExtensionSettings>([
-                    NCW_STORAGE_KEYS.SETTINGS,
-                ]);
+                const remoteSettings = await messageService.fetchSettings();
                 if (!isExtensionValid()) return;
-                if (res && res[NCW_STORAGE_KEYS.SETTINGS]) {
+                if (remoteSettings) {
                     settings = {
                         ...settings,
-                        ...res[NCW_STORAGE_KEYS.SETTINGS],
+                        ...remoteSettings,
                     };
                     if (
                         settings.platformEnabled &&
@@ -904,9 +878,17 @@ const logger: Logger = new Logger('content');
     // 4. Listen to settings changes from popup/options via ContentMessageService
     if (isExtensionValid()) {
         messageService.onSettingsChanged(async (newSettings) => {
-            if (!isExtensionValid()) return;
+            if (!isExtensionValid() || !newSettings) return;
             const oldVocabEnabled = settings.vocabExtractorEnabled;
             settings = { ...settings, ...newSettings };
+            if (
+                settings.platformEnabled &&
+                typeof settings.platformEnabled[adapter.platformName] ===
+                    'boolean'
+            ) {
+                settings.enabled =
+                    settings.platformEnabled[adapter.platformName]!;
+            }
             subtitleManager.updateSettings(settings);
             updatePlayerControlButtonState();
             applyNativeSubtitleVisibility();
@@ -923,27 +905,6 @@ const logger: Logger = new Logger('content');
                 );
             }
             await sendHeartbeat();
-        });
-
-        storage.onChanged(async (changes) => {
-            if (!isExtensionValid()) return;
-            if (changes[NCW_STORAGE_KEYS.SETTINGS]?.newValue) {
-                const newSettings = changes[NCW_STORAGE_KEYS.SETTINGS]
-                    .newValue as ExtensionSettings;
-                settings = { ...settings, ...newSettings };
-                if (
-                    settings.platformEnabled &&
-                    typeof settings.platformEnabled[adapter.platformName] ===
-                        'boolean'
-                ) {
-                    settings.enabled =
-                        settings.platformEnabled[adapter.platformName]!;
-                }
-                subtitleManager.updateSettings(settings);
-                updatePlayerControlButtonState();
-                applyNativeSubtitleVisibility();
-                await sendHeartbeat();
-            }
         });
     }
 

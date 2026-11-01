@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoWatcher - Unlock Credentials</title>
+    <link rel="stylesheet" href="unlock.css" />
+  </head>
+  <body>
+    <div class="unlock-dialog">
+      <div class="unlock-header">
+        <img src="../icons/icon48.png" alt="CoWatcher" class="unlock-logo" />
+        <div class="unlock-title-wrap">
+          <h1 class="unlock-title">🔒 Unlock API Credentials</h1>
+          <p class="unlock-subtitle">Enter your Master Password to resume translation.</p>
+        </div>
+      </div>
+
+      <div class="unlock-body">
+        <div class="input-row">
+          <input
+            type="password"
+            id="password-input"
+            class="password-input"
+            placeholder="Enter Master Password..."
+            autocomplete="current-password"
+            autofocus
+            spellcheck="false"
+          />
+          <button type="button" id="btn-toggle-pwd" class="btn-toggle-pwd" title="Show/Hide Password">
+            👁️
+          </button>
+        </div>
+        <div id="unlock-error" class="unlock-error" style="display: none;"></div>
+      </div>
+
+      <div class="unlock-footer">
+        <div class="footer-hint">Press <b>Enter</b> to Unlock · <b>Esc</b> to Cancel</div>
+        <div class="footer-actions">
+          <button type="button" id="btn-cancel" class="btn btn-secondary">Cancel</button>
+          <button type="button" id="btn-unlock" class="btn btn-primary">Unlock</button>
+        </div>
+      </div>
+    </div>
+    <script src="unlock.js"></script>
+  </body>
+</html>

@@ -21,9 +21,9 @@ import {
     StreamingPlatformId,
 } from '@shared/domain/constants/StreamingPlatforms';
 import { AiSubState } from '@shared/domain/entities/AiSubState';
-// import { Logger } from '@shared/utils/logger';
+import { Logger } from '@shared/utils/logger';
 
-// const logger: Logger = new Logger('popup');
+const logger: Logger = new Logger('popup');
 
 document.addEventListener('DOMContentLoaded', () => {
     const messageService = PopupMessageService.getInstance();
@@ -65,6 +65,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnTestOpenRouter = document.getElementById(
         'btn-test-openrouter',
     ) as HTMLButtonElement;
+    const popupKeyStatus = document.getElementById(
+        'popup-key-status',
+    ) as HTMLDivElement | null;
+    const btnClearOpenRouterKey = document.getElementById(
+        'btn-clear-openrouter-key',
+    ) as HTMLButtonElement | null;
+    const popupVaultCard = document.getElementById(
+        'popup-vault-card',
+    ) as HTMLDivElement | null;
+    const popupVaultLockedView = document.getElementById(
+        'popup-vault-locked-view',
+    ) as HTMLDivElement | null;
+    const popupVaultPwdInput = document.getElementById(
+        'popup-vault-pwd-input',
+    ) as HTMLInputElement | null;
+    const btnPopupVaultUnlock = document.getElementById(
+        'btn-popup-vault-unlock',
+    ) as HTMLButtonElement | null;
+    const popupVaultError = document.getElementById(
+        'popup-vault-error',
+    ) as HTMLDivElement | null;
+    const popupVaultUnlockedView = document.getElementById(
+        'popup-vault-unlocked-view',
+    ) as HTMLDivElement | null;
+    const btnPopupVaultLock = document.getElementById(
+        'btn-popup-vault-lock',
+    ) as HTMLButtonElement | null;
     const openrouterTranslationModelSelect = document.getElementById(
         'openrouter-translation-model',
     ) as HTMLSelectElement;
@@ -542,10 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ollamaHostInput.value =
                 currentSettings.ollamaHost || 'http://localhost:11434';
         }
-        if (openrouterApiKeyInput) {
-            openrouterApiKeyInput.value =
-                currentSettings.openrouterApiKey || '';
-        }
+        refreshPopupVaultStatus().catch(() => {});
 
         if (uiLanguageSelect) {
             uiLanguageSelect.value = currentSettings.uiLanguage || 'en';
@@ -807,10 +831,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveSettings(partial: Partial<ExtensionSettings>): void {
-        currentSettings = { ...currentSettings, ...partial };
+        const toSave = { ...partial };
+        if (toSave.openrouterApiKey !== undefined) {
+            const k = toSave.openrouterApiKey.trim();
+            if (k && !k.includes('••')) {
+                messageService.saveCredentials({ apiKey: k }).catch(() => {});
+            }
+            delete toSave.openrouterApiKey;
+        }
+        currentSettings = { ...currentSettings, ...toSave };
+        delete (currentSettings as Partial<ExtensionSettings>).openrouterApiKey;
         storage.set({
             [NCW_STORAGE_KEYS.SETTINGS]: currentSettings,
         });
+    }
+
+    async function refreshPopupVaultStatus(): Promise<void> {
+        try {
+            const status = await messageService.getCredentialStatus();
+            if (openrouterApiKeyInput) {
+                if (status.hasKey) {
+                    openrouterApiKeyInput.placeholder =
+                        status.maskedKey || 'sk-or-••••••••';
+                    if (
+                        !openrouterApiKeyInput.value ||
+                        openrouterApiKeyInput.value.includes('••')
+                    ) {
+                        openrouterApiKeyInput.value = status.maskedKey;
+                    }
+                    if (btnClearOpenRouterKey)
+                        btnClearOpenRouterKey.style.display = 'inline';
+                } else {
+                    openrouterApiKeyInput.placeholder = 'sk-or-v1-...';
+                    openrouterApiKeyInput.value = '';
+                    if (btnClearOpenRouterKey)
+                        btnClearOpenRouterKey.style.display = 'none';
+                }
+            }
+
+            if (popupKeyStatus) {
+                if (status.hasKey) {
+                    if (status.isEncrypted) {
+                        popupKeyStatus.textContent = status.isUnlocked
+                            ? '🔒 Encrypted (AES-256) · Unlocked'
+                            : '🔒 Encrypted (AES-256) · Locked';
+                        popupKeyStatus.style.color = status.isUnlocked
+                            ? '#46d369'
+                            : '#f59e0b';
+                    } else {
+                        popupKeyStatus.textContent = 'Key configured (Local)';
+                        popupKeyStatus.style.color = '#888';
+                    }
+                } else {
+                    popupKeyStatus.textContent = '';
+                }
+            }
+
+            if (popupVaultCard) {
+                if (status.isEncrypted) {
+                    popupVaultCard.style.display = 'block';
+                    if (status.isUnlocked) {
+                        if (popupVaultLockedView)
+                            popupVaultLockedView.style.display = 'none';
+                        if (popupVaultUnlockedView)
+                            popupVaultUnlockedView.style.display = 'flex';
+                    } else {
+                        if (popupVaultLockedView)
+                            popupVaultLockedView.style.display = 'block';
+                        if (popupVaultUnlockedView)
+                            popupVaultUnlockedView.style.display = 'none';
+                        if (popupVaultPwdInput) popupVaultPwdInput.value = '';
+                        if (popupVaultError)
+                            popupVaultError.style.display = 'none';
+                    }
+                } else {
+                    popupVaultCard.style.display = 'none';
+                }
+            }
+        } catch (err) {
+            logger.error(
+                'popup',
+                'Failed to refresh popup vault status',
+                err,
+            );
+        }
     }
 
     // 2. Render Show Context & Memory Card
@@ -1700,13 +1804,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function checkOpenRouterStatus(): Promise<void> {
+    async function checkOpenRouterStatus(
+        forceCheck: boolean = false,
+    ): Promise<void> {
         const l = currentSettings.uiLanguage || 'en';
-        const apiKey = (
-            openrouterApiKeyInput
-                ? openrouterApiKeyInput.value
-                : currentSettings.openrouterApiKey || ''
-        ).trim();
+        const vaultStatus = await messageService.getCredentialStatus();
         const baseUrl = (
             currentSettings.openrouterBaseUrl || 'https://openrouter.ai/api/v1'
         ).trim();
@@ -1723,7 +1825,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (statusDesc) statusDesc.textContent = baseUrl;
         }
 
-        if (!apiKey) {
+        if (!vaultStatus.hasKey) {
             isOpenRouterConnected = false;
             updateProviderStatusBadges();
             if (isCurrentProvider) {
@@ -1755,7 +1857,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (vaultStatus.isEncrypted && !vaultStatus.isUnlocked && !forceCheck) {
+            isOpenRouterConnected = false;
+            updateProviderStatusBadges();
+            if (isCurrentProvider) {
+                if (statusDot)
+                    statusDot.className = 'status-indicator disconnected';
+                if (statusTitle)
+                    statusTitle.textContent = NCW_I18N.getText(
+                        'vaultStatusLocked',
+                        l,
+                    );
+                if (statusDesc)
+                    statusDesc.textContent = 'Master Password required to unlock';
+            }
+            return;
+        }
+
         const res = await messageService.checkOpenRouter();
+        await refreshPopupVaultStatus();
         const lang = currentSettings.uiLanguage || 'en';
         const isProvider =
             (currentSettings.aiProvider || 'ollama') === 'openrouter';
@@ -1888,17 +2008,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (openrouterApiKeyInput) {
-        openrouterApiKeyInput.addEventListener('input', (e) => {
-            const target = e.target as HTMLInputElement;
-            saveSettings({ openrouterApiKey: target.value.trim() });
+        openrouterApiKeyInput.addEventListener('focus', () => {
+            if (openrouterApiKeyInput.value.includes('••')) {
+                openrouterApiKeyInput.value = '';
+            }
         });
+
+        openrouterApiKeyInput.addEventListener('blur', () => {
+            if (!openrouterApiKeyInput.value.trim()) {
+                refreshPopupVaultStatus().catch(() => {});
+            }
+        });
+
         openrouterApiKeyInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const target = e.target as HTMLInputElement;
-                saveSettings({ openrouterApiKey: target.value.trim() });
-                checkOpenRouterStatus();
+                const val = target.value.trim();
+                if (val && !val.includes('••')) {
+                    messageService
+                        .saveCredentials({ apiKey: val })
+                        .then(() => {
+                            refreshPopupVaultStatus();
+                            checkOpenRouterStatus();
+                        })
+                        .catch(() => {});
+                }
             }
+        });
+    }
+
+    if (btnClearOpenRouterKey) {
+        btnClearOpenRouterKey.addEventListener('click', async () => {
+            await messageService.clearCredentials();
+            await refreshPopupVaultStatus();
+            checkOpenRouterStatus();
+        });
+    }
+
+    if (btnPopupVaultUnlock && popupVaultPwdInput) {
+        btnPopupVaultUnlock.addEventListener('click', async () => {
+            const pwd = popupVaultPwdInput.value || '';
+            if (!pwd) return;
+            const res = await messageService.unlockCredentials(pwd);
+            if (res.success) {
+                if (popupVaultError) popupVaultError.style.display = 'none';
+                await refreshPopupVaultStatus();
+                checkOpenRouterStatus();
+            } else {
+                if (popupVaultError) {
+                    popupVaultError.textContent =
+                        res.error === 'INVALID_PASSWORD'
+                            ? NCW_I18N.getText(
+                                  'incorrectPassword',
+                                  currentSettings.uiLanguage || 'en',
+                              )
+                            : res.error || 'Unlock failed';
+                    popupVaultError.style.display = 'block';
+                }
+            }
+        });
+
+        popupVaultPwdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                btnPopupVaultUnlock?.click();
+            }
+        });
+    }
+
+    if (btnPopupVaultLock) {
+        btnPopupVaultLock.addEventListener('click', async () => {
+            await messageService.lockCredentials();
+            await refreshPopupVaultStatus();
+            checkOpenRouterStatus();
         });
     }
 
@@ -1911,13 +2093,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnTestOpenRouter) {
-        btnTestOpenRouter.addEventListener('click', () => {
+        btnTestOpenRouter.addEventListener('click', async () => {
             if (openrouterApiKeyInput) {
-                saveSettings({
-                    openrouterApiKey: openrouterApiKeyInput.value.trim(),
-                });
+                const val = openrouterApiKeyInput.value.trim();
+                if (val && !val.includes('••')) {
+                    await messageService.saveCredentials({ apiKey: val });
+                    await refreshPopupVaultStatus();
+                }
             }
-            checkOpenRouterStatus();
+            await checkOpenRouterStatus(true);
+            await refreshPopupVaultStatus();
         });
     }
 
