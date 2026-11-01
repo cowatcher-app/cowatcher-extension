@@ -1,6 +1,6 @@
 import { defineConfig } from "vitepress";
 
-const base = process.env.VITEPRESS_BASE || "/cowatcher-extension-public/";
+const base = process.env.VITEPRESS_BASE || "/cowatcher-extension/";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -11,7 +11,7 @@ export default defineConfig({
   appearance: "dark",
   ignoreDeadLinks: true,
   sitemap: {
-    hostname: "https://sfbb.github.io/cowatcher-extension-public/",
+    hostname: "https://cowatcher-app.github.io/cowatcher-extension/",
   },
   head: [
     [

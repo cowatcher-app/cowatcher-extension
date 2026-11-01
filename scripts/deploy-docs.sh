@@ -16,7 +16,26 @@ cd "$REPO_ROOT"
 TARGET_REMOTE="${1:-origin}"
 BRANCH="gh-pages"
 
-echo "==> 📦 1/3: Building VitePress documentation..."
+# Resolve target remote URL
+REMOTE_URL=$(git -C "$REPO_ROOT" remote get-url "$TARGET_REMOTE" 2>/dev/null || echo "")
+if [ -z "$REMOTE_URL" ]; then
+  echo "❌ Error: Git remote '$TARGET_REMOTE' does not exist in this repository!" >&2
+  echo "Available remotes:"
+  git -C "$REPO_ROOT" remote -v
+  exit 1
+fi
+
+# Auto-detect target repository name to set exact base path unless explicitly overridden
+if [ -z "${VITEPRESS_BASE:-}" ]; then
+  REPO_NAME=$(basename -s .git "$REMOTE_URL" 2>/dev/null || echo "")
+  if [ -n "$REPO_NAME" ]; then
+    export VITEPRESS_BASE="/${REPO_NAME}/"
+  else
+    export VITEPRESS_BASE="/cowatcher-extension/"
+  fi
+fi
+
+echo "==> 📦 1/3: Building VitePress documentation (Base: ${VITEPRESS_BASE})..."
 npm run docs:build
 
 DIST_DIR="$REPO_ROOT/docs/.vitepress/dist"
@@ -63,15 +82,6 @@ git config user.email "$USER_EMAIL"
 git add -A
 COMMIT_HASH=$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 git commit -q -m "deploy(docs): update documentation [skip ci] (${COMMIT_HASH})"
-
-# Resolve target remote URL
-REMOTE_URL=$(git -C "$REPO_ROOT" remote get-url "$TARGET_REMOTE" 2>/dev/null || echo "")
-if [ -z "$REMOTE_URL" ]; then
-  echo "❌ Error: Git remote '$TARGET_REMOTE' does not exist in this repository!" >&2
-  echo "Available remotes:"
-  git -C "$REPO_ROOT" remote -v
-  exit 1
-fi
 
 echo "==> 📤 3/3: Pushing to $TARGET_REMOTE ($REMOTE_URL) on branch '$BRANCH'..."
 git push -f "$REMOTE_URL" "$BRANCH"
