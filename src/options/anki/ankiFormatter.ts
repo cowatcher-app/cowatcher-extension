@@ -1,6 +1,7 @@
 import { VocabWordItem } from '@shared/domain/entities/Vocabulary';
 import {
     AnkiCard,
+    AnkiCardFieldMap,
     AnkiExportOptions,
     VocabExportItem,
 } from './ankiTypes';
@@ -71,6 +72,7 @@ export function formatWordToCard(
     word: VocabWordItem,
     episodeInfo: { showTitle?: string; movieId?: string },
     options: AnkiExportOptions,
+    audioFilename?: string,
 ): AnkiCard {
     const rawWord = word.word.trim();
     const pho = (word.phonetic || '').trim();
@@ -103,11 +105,21 @@ export function formatWordToCard(
         }
     }
 
-    // 2. Front Field (Word + Optional Native TTS tag)
-    const voiceLang = options.voiceLang || 'ja_JP';
+    // 2. Front Field & Audio Field (Word + Optional Native TTS tag or Sound tag)
+    const voiceLang = word.sourceLang || options.voiceLang || 'ja_JP';
     let front = frontWordHtml;
+    let audioTag = '';
+
     if (options.enableTts !== false) {
-        front += ` [tts:${voiceLang}]${rawWord}[/tts]`;
+        const mode = options.ttsMode || 'native';
+        if (mode === 'native') {
+            audioTag = `[tts:${voiceLang}]${rawWord}[/tts]`;
+            front += ` ${audioTag}`;
+        } else if (mode === 'edge' && audioFilename) {
+            audioTag = `[sound:${audioFilename}]`;
+            front += ` ${audioTag}`;
+        }
+        // mode === 'awesome' or 'none': do not append sound tag, keep clean
     }
 
     // 3. Back Field (Reading if placed on back, POS, Meaning, Example sentence with highlight & translation)
@@ -155,18 +167,48 @@ export function formatWordToCard(
         tags.push('user-marked');
     }
 
+    const readingVal = placement !== 'none' && pho ? escapeHtml(pho) : '';
+    const sentenceVal = sentence ? highlightKeyword(sentence, rawWord) : '';
+    const sentenceTransVal = escapeHtml(trans);
+    const notesVal = notesParts.join(' | ');
+
+    const standardFields: Record<string, string> = {
+        Word: rawWord,
+        Reading: readingVal,
+        Meaning: meaning,
+        POS: word.pos || '',
+        Sentence: sentenceVal,
+        SentenceTranslation: sentenceTransVal,
+        Audio: audioTag,
+        Notes: notesVal,
+        Front: front,
+        Back: backParts.join(''),
+    };
+
+    const fields: AnkiCardFieldMap = {
+        Front: front,
+        Back: backParts.join(''),
+        Word: rawWord,
+        Reading: readingVal,
+        Audio: audioTag,
+        Sentence: sentenceVal,
+        SentenceTranslation: sentenceTransVal,
+        Meaning: meaning,
+        Notes: notesVal,
+    };
+
+    if (options.fieldMapping) {
+        for (const [cwKey, ankiKey] of Object.entries(options.fieldMapping)) {
+            if (ankiKey && standardFields[cwKey] !== undefined) {
+                fields[ankiKey] = standardFields[cwKey];
+            }
+        }
+    }
+
     return {
         deckName: options.deckName,
         modelName: options.modelName || 'Basic',
-        fields: {
-            Front: front,
-            Back: backParts.join(''),
-            Reading: placement !== 'none' && pho ? escapeHtml(pho) : '',
-            Sentence: sentence ? highlightKeyword(sentence, rawWord) : '',
-            SentenceTranslation: escapeHtml(trans),
-            Meaning: meaning,
-            Notes: notesParts.join(' | '),
-        },
+        fields,
         tags,
     };
 }

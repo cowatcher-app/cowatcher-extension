@@ -79,4 +79,58 @@ export class AnkiConnectClient {
             })),
         });
     }
+
+    async storeMediaFile(
+        filename: string,
+        dataBase64: string,
+    ): Promise<string> {
+        return this.invoke<string>('storeMediaFile', {
+            filename,
+            data: dataBase64,
+        });
+    }
+
+    async getModelNames(): Promise<string[]> {
+        return this.invoke<string[]>('modelNames');
+    }
+
+    async getModelFieldNames(modelName: string): Promise<string[]> {
+        return this.invoke<string[]>('modelFieldNames', { modelName });
+    }
+
+    async getModelTemplates(
+        modelName: string,
+    ): Promise<Record<string, { Front: string; Back: string }>> {
+        return this.invoke<Record<string, { Front: string; Back: string }>>(
+            'modelTemplates',
+            { modelName },
+        );
+    }
+
+    async getModelStyling(modelName: string): Promise<{ css: string }> {
+        return this.invoke<{ css: string }>('modelStyling', { modelName });
+    }
+
+    async updateModelTemplates(model: {
+        name: string;
+        templates: Record<string, { Front: string; Back: string }>;
+    }): Promise<void> {
+        return this.invoke<void>('updateModelTemplates', { model });
+    }
+
+    async updateModelStyling(model: {
+        name: string;
+        css: string;
+    }): Promise<void> {
+        return this.invoke<void>('updateModelStyling', { model });
+    }
+
+    async createModel(params: {
+        modelName: string;
+        inOrderFields: string[];
+        css?: string;
+        cardTemplates: Array<{ Name: string; Front: string; Back: string }>;
+    }): Promise<Record<string, unknown>> {
+        return this.invoke<Record<string, unknown>>('createModel', params);
+    }
 }

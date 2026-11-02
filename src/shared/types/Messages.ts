@@ -346,6 +346,17 @@ export type MessagePayloadMap = {
             error?: string;
         };
     };
+    NCW_GET_TTS_AUDIO: {
+        request: {
+            text: string;
+            lang: string;
+        };
+        response: {
+            success: boolean;
+            audioBase64?: string;
+            error?: string;
+        };
+    };
 
     // Connection Checks
     NCW_CHECK_OLLAMA: {

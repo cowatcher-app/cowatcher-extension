@@ -2,11 +2,27 @@ import { VocabWordItem } from '@shared/domain/entities/Vocabulary';
 
 export type ReadingCardPlacement = 'front' | 'back' | 'none';
 
+export type AnkiTtsMode = 'edge' | 'native' | 'awesome' | 'none';
+
+export type CoWatcherFieldKey =
+    | 'Word'
+    | 'Reading'
+    | 'Meaning'
+    | 'POS'
+    | 'Sentence'
+    | 'SentenceTranslation'
+    | 'Audio'
+    | 'Notes';
+
+export type AnkiFieldMapping = Partial<Record<CoWatcherFieldKey, string>>;
+
 export interface AnkiExportOptions {
     deckName: string;
     modelName?: string;
+    fieldMapping?: AnkiFieldMapping;
     voiceLang?: string;
     enableTts?: boolean;
+    ttsMode?: AnkiTtsMode;
     formatFurigana?: boolean;
     readingPlacement?: ReadingCardPlacement;
     tags?: string[];

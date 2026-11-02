@@ -58,7 +58,7 @@ export class SubtitleLearningManager implements ISubtitleSelectionListener {
         this.adapter = adapter;
         this.messageService = messageService;
         this.settings = settings;
-        this.popover = new SubtitleLearningPopover();
+        this.popover = new SubtitleLearningPopover(this.messageService);
 
         const initialVocabSrc =
             typeof settings.vocabSourceLanguage === 'object' &&

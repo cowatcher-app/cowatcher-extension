@@ -8,6 +8,7 @@ export type VocabExportIntent = 'review' | 'csv' | 'anki';
 export interface CuratedVocabWord extends VocabWordItem {
     originEpisodeId?: string;
     originShowTitle?: string;
+    audio?: string;
 }
 
 export interface VocabCurationSessionOptions {
@@ -16,6 +17,7 @@ export interface VocabCurationSessionOptions {
     badgeText?: string;
     intent?: VocabExportIntent;
     isPartialFilter?: boolean;
+    isImported?: boolean;
     episodes: EpisodeVocabData[];
     words: CuratedVocabWord[];
     onExportCsv?: (words: CuratedVocabWord[]) => void | Promise<void>;
@@ -34,6 +36,7 @@ export class VocabCurationSession {
     readonly badgeText: string;
     readonly intent: VocabExportIntent;
     readonly isPartialFilter: boolean;
+    readonly isImported: boolean;
     readonly episodes: readonly EpisodeVocabData[];
     readonly initialWords: readonly CuratedVocabWord[];
     readonly onExportCsv?: (words: CuratedVocabWord[]) => void | Promise<void>;
@@ -46,6 +49,7 @@ export class VocabCurationSession {
         this.badgeText = options.badgeText || '';
         this.intent = options.intent || 'review';
         this.isPartialFilter = !!options.isPartialFilter;
+        this.isImported = !!options.isImported;
         this.episodes = [...options.episodes];
         this.initialWords = options.words.map((w) => ({ ...w }));
         this.onExportCsv = options.onExportCsv;
@@ -55,6 +59,10 @@ export class VocabCurationSession {
 
     get primaryEpisode(): EpisodeVocabData | undefined {
         return this.episodes[0];
+    }
+
+    get sourceLanguage(): string {
+        return this.primaryEpisode?.sourceLanguage || 'ja';
     }
 
     findEpisodeForWord(word: CuratedVocabWord): EpisodeVocabData | undefined {
@@ -206,6 +214,51 @@ export class VocabCurationSession {
             onExportCsv: options?.onExportCsv,
             onExportAnki: options?.onExportAnki,
             onUpdate: options?.onUpdate,
+        });
+    }
+
+    /**
+     * Factory for creating a transient curation session from an imported external CSV.
+     * Marked as isImported=true so changes cannot be written back to local episode storage.
+     */
+    static fromImportedCsv(
+        words: CuratedVocabWord[],
+        options?: {
+            title?: string;
+            sourceLang?: string;
+            targetLang?: string;
+            intent?: VocabExportIntent;
+            onExportCsv?: (words: CuratedVocabWord[]) => void | Promise<void>;
+            onExportAnki?: (words: CuratedVocabWord[]) => void | Promise<void>;
+        },
+    ): VocabCurationSession {
+        const src = options?.sourceLang || 'ja';
+        const tgt = options?.targetLang || 'zh-CN';
+        const dummyEpisode: EpisodeVocabData = {
+            movieId: 'imported_csv',
+            showTitle: 'External CSV Import',
+            sourceLanguage: src,
+            targetLanguage: tgt,
+            difficulty: 'normal',
+            customPrompt: '',
+            model: 'imported',
+            updatedAt: Date.now(),
+            totalWords: words.length,
+            words: words,
+        };
+
+        return new VocabCurationSession({
+            title: options?.title || '外部 CSV 词表导入 · 暂存与导出模式',
+            subtitle:
+                '已导入外部生词。可使用【✨ 一键 AI 释义】智能补全留空列，支持试听与直接导出。此模式不保存入本地剧集词库。',
+            badgeText: `📂 外部导入暂存 · ${src} ➔ ${tgt}`,
+            intent: options?.intent || 'review',
+            isPartialFilter: false,
+            isImported: true,
+            episodes: [dummyEpisode],
+            words,
+            onExportCsv: options?.onExportCsv,
+            onExportAnki: options?.onExportAnki,
         });
     }
 }

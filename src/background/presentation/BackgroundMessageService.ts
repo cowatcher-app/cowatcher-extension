@@ -32,6 +32,7 @@ import { PhoneticAdapterFactory } from '@shared/infrastructure/phonetic/Phonetic
 import { ChinesePhoneticAdapter } from '@shared/infrastructure/phonetic/adapters/ChinesePhoneticAdapter';
 import { KoreanPhoneticAdapter } from '@shared/infrastructure/phonetic/adapters/KoreanPhoneticAdapter';
 import { CredentialVaultService } from '../application/services/CredentialVaultService';
+import { TtsAudioService } from '@shared/infrastructure/audio/TtsAudioService';
 
 export class BackgroundMessageService {
     private static instance: BackgroundMessageService | null = null;
@@ -842,6 +843,26 @@ export class BackgroundMessageService {
                                     readings,
                                     error: String(err),
                                 } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.GET_TTS_AUDIO: {
+                        TtsAudioService.fetchAudioBase64(
+                            message.text,
+                            message.lang,
+                        )
+                            .then((audioBase64) => {
+                                sendResponse({
+                                    success: !!audioBase64,
+                                    audioBase64: audioBase64 || undefined,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_TTS_AUDIO]['response']);
+                            })
+                            .catch((err) => {
+                                sendResponse({
+                                    success: false,
+                                    error: String(err),
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_TTS_AUDIO]['response']);
                             });
                         return true;
                     }

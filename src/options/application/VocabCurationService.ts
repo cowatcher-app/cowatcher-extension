@@ -134,6 +134,7 @@ export class VocabCurationService {
         session: VocabCurationSession,
         curatedWords: CuratedVocabWord[],
     ): Promise<void> {
+        if (session.isImported) return;
         if (!session.episodes || session.episodes.length === 0) return;
 
         const wordsByMovieId = new Map<string, CuratedVocabWord[]>();

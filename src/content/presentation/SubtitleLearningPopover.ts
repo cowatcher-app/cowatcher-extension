@@ -1,4 +1,5 @@
 import { WordLookupResult } from '@shared/domain/entities/SubtitleLearning';
+import { ContentMessageService } from '../application/services/ContentMessageService';
 
 export interface PopoverOpenParams {
     word: string;
@@ -19,6 +20,13 @@ export class SubtitleLearningPopover {
     private currentParams: PopoverOpenParams | null = null;
     private outsideClickHandler: ((e: MouseEvent) => void) | null = null;
     private keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+    private readonly messageService: ContentMessageService;
+
+    constructor(
+        messageService: ContentMessageService = ContentMessageService.getInstance(),
+    ) {
+        this.messageService = messageService;
+    }
 
     get isVisible(): boolean {
         return this.element !== null && this.element.isConnected;
@@ -343,7 +351,41 @@ export class SubtitleLearningPopover {
         popover.style.top = `${top}px`;
     }
 
-    private speak(word: string, lang?: string): void {
+    private currentAudio: HTMLAudioElement | null = null;
+
+    private async speak(word: string, lang?: string): Promise<void> {
+        const text = word.trim();
+        if (!text) return;
+
+        try {
+            // Request high-fidelity cloud TTS through ContentMessageService
+            const response = await this.messageService.getTtsAudio({
+                text,
+                lang: lang || 'en',
+            });
+
+            if (!response?.success || !response?.audioBase64) {
+                this.fallbackSpeak(text, lang);
+                return;
+            }
+
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
+            const audio = new Audio(
+                `data:audio/mp3;base64,${response.audioBase64}`,
+            );
+            this.currentAudio = audio;
+            await audio.play().catch(() => {
+                this.fallbackSpeak(text, lang);
+            });
+        } catch {
+            this.fallbackSpeak(text, lang);
+        }
+    }
+
+    private fallbackSpeak(word: string, lang?: string): void {
         if (typeof window === 'undefined' || !('speechSynthesis' in window))
             return;
         try {

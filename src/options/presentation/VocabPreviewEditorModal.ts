@@ -14,6 +14,8 @@ import {
 } from '../application/VocabFieldLock';
 import { AnkiExportModal } from '../anki/AnkiExportModal';
 import { VocabExportItem } from '../anki/ankiTypes';
+import { TtsAudioService } from '@shared/infrastructure/audio/TtsAudioService';
+import { parseVocabCsv } from '@shared/utils/csvParser';
 
 export class VocabPreviewEditorModal {
     private modalEl: HTMLElement | null = null;
@@ -21,16 +23,24 @@ export class VocabPreviewEditorModal {
     private words: CuratedVocabWord[] = [];
     private selectedIndices = new Set<number>();
     private isEnriching: boolean = false;
+    private isImportedMode: boolean = false;
     private onUpdateCallback: (() => void) | null = null;
     private fieldLockConfig: FieldLockConfig = new FieldLockConfig();
+    private currentAudio: HTMLAudioElement | null = null;
     private exportFields = {
         phonetic: true,
         pos: true,
         sentence: true,
         sentenceTranslation: true,
+        audio: true,
     };
 
     private getWordsForExport(): CuratedVocabWord[] {
+        const isTtsMaster =
+            localStorage.getItem('ncw_anki_tts_master') !== 'false';
+        const ttsMode = localStorage.getItem('ncw_anki_tts_mode') || 'edge';
+        const includeAudio = this.exportFields.audio && isTtsMaster;
+
         return this.words.map((w) => {
             const dictM = (w.dictMeaning || '').trim();
             const ctxM = (w.meaning || '').trim();
@@ -38,6 +48,22 @@ export class VocabPreviewEditorModal {
                 dictM && ctxM && dictM !== ctxM
                     ? `${dictM} (语境: ${ctxM})`
                     : dictM || ctxM || '';
+
+            let audioVal = '';
+            if (includeAudio) {
+                const lang = (
+                    w.sourceLang ||
+                    this.session?.sourceLanguage ||
+                    'ja'
+                ).trim();
+                const word = (w.word || '').trim();
+                if (ttsMode === 'native') {
+                    audioVal = `[tts:${lang}]${word}[/tts]`;
+                } else if (ttsMode === 'edge') {
+                    audioVal = TtsAudioService.getAudioUrl(word, lang);
+                }
+            }
+
             return {
                 ...w,
                 meaning: combinedMeaning,
@@ -47,6 +73,7 @@ export class VocabPreviewEditorModal {
                 sentenceTranslation: this.exportFields.sentenceTranslation
                     ? w.sentenceTranslation
                     : '',
+                audio: audioVal,
             };
         });
     }
@@ -101,6 +128,21 @@ export class VocabPreviewEditorModal {
         promptInput?.addEventListener('change', () => {
             this.curationService.saveCustomPrompt(promptInput.value);
         });
+
+        // Config Accordion collapse state persistence
+        const accordion = document.getElementById(
+            'curation-config-accordion',
+        ) as HTMLDetailsElement | null;
+        if (accordion) {
+            accordion.open =
+                localStorage.getItem('ncw_curation_accordion_open') === 'true';
+            accordion.addEventListener('toggle', () => {
+                localStorage.setItem(
+                    'ncw_curation_accordion_open',
+                    String(accordion.open),
+                );
+            });
+        }
 
         // Select All Handler
         const selectAllCheckbox = document.getElementById(
@@ -164,6 +206,9 @@ export class VocabPreviewEditorModal {
         const chkTrans = document.getElementById(
             'curation-export-translation',
         ) as HTMLInputElement | null;
+        const chkAudio = document.getElementById(
+            'curation-export-audio',
+        ) as HTMLInputElement | null;
 
         chkPho?.addEventListener('change', () => {
             this.exportFields.phonetic = !!chkPho.checked;
@@ -177,6 +222,101 @@ export class VocabPreviewEditorModal {
         chkTrans?.addEventListener('change', () => {
             this.exportFields.sentenceTranslation = !!chkTrans.checked;
         });
+        chkAudio?.addEventListener('change', () => {
+            this.exportFields.audio = !!chkAudio.checked;
+        });
+
+        // TTS Engine & Audio Settings Handlers
+        const ttsMasterCheck = document.getElementById(
+            'curation-tts-master-check',
+        ) as HTMLInputElement | null;
+        ttsMasterCheck?.addEventListener('change', () => {
+            localStorage.setItem(
+                'ncw_anki_tts_master',
+                String(ttsMasterCheck.checked),
+            );
+            this.updateTtsBarUI();
+            this.renderWordRows();
+        });
+
+        const ttsModeRadios = document.querySelectorAll<HTMLInputElement>(
+            'input[name="curation-tts-mode"]',
+        );
+        ttsModeRadios.forEach((r) => {
+            r.addEventListener('change', () => {
+                if (r.checked) {
+                    localStorage.setItem('ncw_anki_tts_mode', r.value);
+                    this.updateTtsBarUI();
+                    this.renderWordRows();
+                }
+            });
+        });
+
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                if (this.modalEl && this.modalEl.style.display === 'flex') {
+                    this.renderWordRows();
+                }
+            };
+        }
+
+        // Import CSV Button & Hidden File Input
+        const btnImportCsv = document.getElementById('btn-curation-import-csv');
+        const fileInput = document.getElementById(
+            'curation-csv-file-input',
+        ) as HTMLInputElement | null;
+
+        btnImportCsv?.addEventListener('click', () => {
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.click();
+            }
+        });
+
+        fileInput?.addEventListener('change', async (e) => {
+            const files = (e.target as HTMLInputElement).files;
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            try {
+                const text = await file.text();
+                const defaultLang =
+                    this.words[0]?.sourceLang ||
+                    this.session?.sourceLanguage ||
+                    'ja';
+                const parsed = parseVocabCsv(text, {
+                    sourceLang: defaultLang,
+                    defaultShowTitle: file.name.replace(/\.[^/.]+$/, ''),
+                });
+
+                if (!parsed.success || parsed.words.length === 0) {
+                    this.onToast(`❌ ${parsed.error || '导入失败'}`);
+                    return;
+                }
+
+                if (this.words.length > 0) {
+                    const doAppend = confirm(
+                        `成功解析 ${parsed.words.length} 个生词！\n\n点击【确定】追加到当前列表末尾\n点击【取消】清空当前列表并替换`,
+                    );
+                    if (doAppend) {
+                        this.words = [...this.words, ...parsed.words];
+                    } else {
+                        this.words = parsed.words;
+                    }
+                } else {
+                    this.words = parsed.words;
+                }
+
+                this.setImportedMode(true);
+                this.selectedIndices.clear();
+                this.updateSelectionUI();
+                this.renderWordRows();
+                this.onToast(
+                    `🎉 成功导入 ${parsed.words.length} 个生词！（非 word 列允许留空，可点击【一键 AI 释义】智能补全）`,
+                );
+            } catch {
+                this.onToast('❌ 读取 CSV 文件失败');
+            }
+        });
 
         // Download CSV Button
         const btnDownloadCsv = document.getElementById('modal-download-btn');
@@ -185,12 +325,21 @@ export class VocabPreviewEditorModal {
                 this.onToast('No vocabulary items to export');
                 return;
             }
-            await this.handleSaveChanges(false);
+            if (!this.isImportedMode && !this.session.isImported) {
+                await this.handleSaveChanges(false);
+            }
             const exportWords = this.getWordsForExport();
             if (this.session.onExportCsv) {
                 await this.session.onExportCsv(exportWords);
-            } else if (this.onExportCsv && this.session.primaryEpisode) {
+            } else if (
+                this.onExportCsv &&
+                this.session.primaryEpisode &&
+                !this.isImportedMode &&
+                !this.session.isImported
+            ) {
                 this.onExportCsv(this.session.primaryEpisode, exportWords);
+            } else {
+                this.exportDirectCsv(exportWords);
             }
             this.hide();
         });
@@ -202,7 +351,9 @@ export class VocabPreviewEditorModal {
                 this.onToast('No vocabulary items to export');
                 return;
             }
-            await this.handleSaveChanges(false);
+            if (!this.isImportedMode && !this.session.isImported) {
+                await this.handleSaveChanges(false);
+            }
             const exportWords = this.getWordsForExport();
             if (this.session.onExportAnki) {
                 await this.session.onExportAnki(exportWords);
@@ -212,10 +363,12 @@ export class VocabPreviewEditorModal {
                     episodeInfo: {
                         showTitle:
                             w.originShowTitle ||
-                            this.session?.primaryEpisode?.showTitle,
+                            this.session?.primaryEpisode?.showTitle ||
+                            'Imported Vocab',
                         movieId:
                             w.originEpisodeId ||
-                            this.session?.primaryEpisode?.movieId,
+                            this.session?.primaryEpisode?.movieId ||
+                            'imported_csv',
                     },
                 }));
                 const lang =
@@ -253,6 +406,15 @@ export class VocabPreviewEditorModal {
         this.words = this.session.initialWords.map((w) => ({ ...w }));
         this.selectedIndices.clear();
         this.onUpdateCallback = onUpdate || null;
+
+        if (
+            this.session instanceof VocabCurationSession &&
+            this.session.isImported
+        ) {
+            this.setImportedMode(true);
+        } else {
+            this.setImportedMode(false);
+        }
 
         // Populate Titles & Language Snapshot Badge
         const titleEl = document.getElementById('modal-episode-title');
@@ -322,12 +484,20 @@ export class VocabPreviewEditorModal {
         this.renderColumnLocks();
 
         this.updateSelectionUI();
+        this.updateTtsBarUI();
         this.renderWordRows();
 
         this.modalEl.style.display = 'flex';
     }
 
     hide(): void {
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
         if (this.modalEl) {
             this.modalEl.style.display = 'none';
         }
@@ -433,6 +603,9 @@ export class VocabPreviewEditorModal {
         const isSentenceLocked = this.fieldLockConfig.isLocked('sentence');
         const isTransLocked =
             this.fieldLockConfig.isLocked('sentenceTranslation');
+        const isTtsMaster =
+            localStorage.getItem('ncw_anki_tts_master') !== 'false';
+        const ttsMode = localStorage.getItem('ncw_anki_tts_mode') || 'edge';
 
         container.innerHTML = this.words
             .map((w, idx) => {
@@ -445,6 +618,27 @@ export class VocabPreviewEditorModal {
                 const meaning = this.escapeHtml(w.meaning || '');
                 const sentence = this.escapeHtml(w.sentence || '');
                 const trans = this.escapeHtml(w.sentenceTranslation || '');
+                const wordLang = (
+                    w.sourceLang ||
+                    this.session?.sourceLanguage ||
+                    'ja'
+                ).trim();
+
+                let speakBtnHtml = '';
+                if (isTtsMaster) {
+                    if (ttsMode === 'edge') {
+                        if (TtsAudioService.isLanguageSupported(wordLang)) {
+                            speakBtnHtml = `<button type="button" class="btn-word-speak btn-icon" data-idx="${idx}" title="试听高保真发音 (${this.escapeHtml(wordLang)})" style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; border-radius: 4px; padding: 2px 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; margin-left: 2px;">🔈</button>`;
+                        }
+                    } else if (ttsMode === 'native') {
+                        if (this.hasNativeVoice(wordLang)) {
+                            speakBtnHtml = `<button type="button" class="btn-word-speak btn-icon" data-idx="${idx}" title="试听系统发音 (${this.escapeHtml(wordLang)})" style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; border-radius: 4px; padding: 2px 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; margin-left: 2px;">🔈</button>`;
+                        } else {
+                            speakBtnHtml = `<span title="系统未安装【${this.escapeHtml(wordLang)}】本地语音包" style="font-size: 11px; color: #64748b; cursor: help; padding: 2px 4px; margin-left: 2px;">🔇</span>`;
+                        }
+                    }
+                }
+
                 const langBadge =
                     w.sourceLang && w.targetLang
                         ? `<span class="badge badge-neutral" style="font-size:10px; margin-left:6px;">${w.sourceLang}➔${w.targetLang}</span>`
@@ -468,6 +662,7 @@ export class VocabPreviewEditorModal {
                   placeholder="Word..."
                   style="font-weight: 700; font-size: 15px; color: #fff; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 2px 8px; width: 170px; height: 28px;"
                 />
+                ${speakBtnHtml}
                 ${langBadge}
                 ${epBadge}
                 ${isUser ? '<span class="badge" style="background:rgba(212,175,55,0.2); color:#ffd700; border:1px solid #d4af37; font-size:10px;">⭐ User</span>' : '<span class="badge" style="background:#222; color:#888; font-size:10px;">🤖 AI</span>'}
@@ -696,6 +891,141 @@ export class VocabPreviewEditorModal {
                     }
                 });
             });
+
+        container
+            .querySelectorAll<HTMLButtonElement>('.btn-word-speak')
+            .forEach((btn) => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.idx || '-1', 10);
+                    if (idx >= 0 && this.words[idx]) {
+                        await this.handleWordSpeak(btn, idx);
+                    }
+                });
+            });
+    }
+
+    private updateTtsBarUI(): void {
+        const masterCheck = document.getElementById(
+            'curation-tts-master-check',
+        ) as HTMLInputElement | null;
+        const hintEl = document.getElementById('curation-tts-hint');
+        const modesContainer = document.getElementById('curation-tts-modes');
+
+        const isMaster =
+            localStorage.getItem('ncw_anki_tts_master') !== 'false';
+        const mode = localStorage.getItem('ncw_anki_tts_mode') || 'edge';
+
+        if (masterCheck) {
+            masterCheck.checked = isMaster;
+        }
+
+        const activeRadio = document.querySelector<HTMLInputElement>(
+            `input[name="curation-tts-mode"][value="${mode}"]`,
+        );
+        if (activeRadio) {
+            activeRadio.checked = true;
+        }
+
+        if (modesContainer) {
+            modesContainer.style.opacity = isMaster ? '1' : '0.4';
+            modesContainer.style.pointerEvents = isMaster ? 'auto' : 'none';
+        }
+
+        if (hintEl) {
+            if (!isMaster) {
+                hintEl.innerHTML =
+                    '<span style="color: #64748b;">🔇 发音已关闭</span>';
+            } else if (mode === 'edge') {
+                hintEl.innerHTML =
+                    '<span style="color: #38bdf8;">✅ 云端高保真语音：卡片小喇叭即点即试听，导出附带发音列</span>';
+            } else if (mode === 'native') {
+                hintEl.innerHTML =
+                    '<span style="color: #10b981;">✅ 本地原生语音：调用系统语音包试听与生成 [tts:lang] 标签</span>';
+            } else if (mode === 'awesome') {
+                hintEl.innerHTML =
+                    '<span style="color: #cbd5e1;">✨ AwesomeTTS 模式：卡片保持干净字段，供桌面插件批量生成</span>';
+            }
+        }
+    }
+
+    private hasNativeVoice(lang: string): boolean {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window))
+            return false;
+        const voices = window.speechSynthesis.getVoices();
+        const prefix = (lang || '').split(/[-_]/)[0].toLowerCase();
+        return voices.some(
+            (v) =>
+                v.lang.toLowerCase().startsWith(prefix) ||
+                v.lang.replace('_', '-').toLowerCase() ===
+                    lang.replace('_', '-').toLowerCase(),
+        );
+    }
+
+    private async handleWordSpeak(
+        btn: HTMLButtonElement,
+        idx: number,
+    ): Promise<void> {
+        const item = this.words[idx];
+        if (!item) return;
+        const text = (item.word || '').trim();
+        if (!text) return;
+        const lang = (
+            item.sourceLang ||
+            this.session?.sourceLanguage ||
+            'ja'
+        ).trim();
+        const mode = localStorage.getItem('ncw_anki_tts_mode') || 'edge';
+
+        if (mode === 'native') {
+            if (typeof window === 'undefined' || !('speechSynthesis' in window))
+                return;
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                const voices = window.speechSynthesis.getVoices();
+                const prefix = lang.split(/[-_]/)[0].toLowerCase();
+                const match = voices.find(
+                    (v) =>
+                        v.lang.toLowerCase().startsWith(prefix) ||
+                        v.lang.replace('_', '-').toLowerCase() ===
+                            lang.replace('_', '-').toLowerCase(),
+                );
+                if (match) utterance.voice = match;
+                window.speechSynthesis.speak(utterance);
+            } catch {
+                // Ignore speech synthesis errors
+            }
+            return;
+        }
+
+        if (mode === 'edge') {
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '⏳';
+            try {
+                const base64 = await TtsAudioService.fetchAudioBase64(
+                    text,
+                    lang,
+                );
+                if (base64) {
+                    if (this.currentAudio) {
+                        this.currentAudio.pause();
+                        this.currentAudio = null;
+                    }
+                    this.currentAudio = new Audio(
+                        `data:audio/mp3;base64,${base64}`,
+                    );
+                    await this.currentAudio.play();
+                } else {
+                    this.onToast('⚠️ 发音加载失败，请检查网络');
+                }
+            } catch {
+                this.onToast('⚠️ 发音加载失败');
+            } finally {
+                btn.innerHTML = origHtml;
+            }
+        }
     }
 
     private async handleSingleEnrich(
@@ -829,8 +1159,115 @@ export class VocabPreviewEditorModal {
         }
     }
 
+    public setImportedMode(isImported: boolean): void {
+        this.isImportedMode = isImported;
+        const btnSave = document.getElementById(
+            'btn-curation-save',
+        ) as HTMLButtonElement | null;
+        if (btnSave) {
+            if (isImported) {
+                btnSave.disabled = true;
+                btnSave.style.opacity = '0.45';
+                btnSave.style.cursor = 'not-allowed';
+                btnSave.title =
+                    '外部导入模式仅供临时润色与导出，不可写入剧集词库';
+            } else {
+                btnSave.disabled = false;
+                btnSave.style.opacity = '1';
+                btnSave.style.cursor = 'pointer';
+                btnSave.title = '保存当前修改到本地数据库';
+            }
+        }
+        if (isImported) {
+            const badgeEl = document.getElementById('modal-lang-badge');
+            if (badgeEl) {
+                badgeEl.textContent = '📂 外部导入暂存 (只读不入库)';
+            }
+            const subtitleEl = document.getElementById('modal-episode-subtitle');
+            if (subtitleEl) {
+                subtitleEl.textContent =
+                    '已导入外部词表（除 word 列外其余均允许留空）。可使用【✨ 一键 AI 释义】智能补全，完成后直接导出到 Anki 或 CSV。此模式不写入剧集库。';
+            }
+        }
+    }
+
+    private exportDirectCsv(words: CuratedVocabWord[]): void {
+        const headers: string[] = ['Word'];
+        if (this.exportFields.pos) headers.push('POS');
+        if (this.exportFields.phonetic) headers.push('Phonetic');
+        headers.push('Contextual Meaning');
+        if (this.exportFields.sentence) headers.push('Original Sentence');
+        if (this.exportFields.sentenceTranslation)
+            headers.push('Sentence Translation');
+        if (this.exportFields.audio) headers.push('Audio / TTS');
+
+        const escapeCsv = (str: string | number): string => {
+            const s = String(str || '');
+            return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : `"${s}"`;
+        };
+
+        const ttsMode = localStorage.getItem('ncw_anki_tts_mode') || 'edge';
+        const isTtsMaster =
+            localStorage.getItem('ncw_anki_tts_master') !== 'false';
+
+        const rows: string[][] = words.map((w) => {
+            const row: string[] = [escapeCsv(w.word || '')];
+            if (this.exportFields.pos) row.push(escapeCsv(w.pos || ''));
+            if (this.exportFields.phonetic) row.push(escapeCsv(w.phonetic || ''));
+            row.push(escapeCsv(w.meaning || ''));
+            if (this.exportFields.sentence) row.push(escapeCsv(w.sentence || ''));
+            if (this.exportFields.sentenceTranslation)
+                row.push(escapeCsv(w.sentenceTranslation || ''));
+            if (this.exportFields.audio) {
+                let audioTag = '';
+                if (isTtsMaster) {
+                    if (ttsMode === 'awesome') {
+                        audioTag = `[sound:awesome_tts_${w.word}.mp3]`;
+                    } else if (w.audio) {
+                        audioTag = `[sound:${w.audio}]`;
+                    } else {
+                        audioTag = `[sound:cowatcher_tts_${w.word}.mp3]`;
+                    }
+                }
+                row.push(escapeCsv(audioTag));
+            }
+            return row;
+        });
+
+        const csvContent =
+            '\uFEFF' +
+            [
+                headers.map((h) => `"${h}"`).join(','),
+                ...rows.map((r) => r.join(',')),
+            ].join('\r\n');
+
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cowatcher_imported_vocab_${words.length}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
+
+        this.onToast(`🎉 成功导出 ${words.length} 个词汇为 CSV！`);
+    }
+
     private async handleSaveChanges(showToast: boolean = true): Promise<void> {
         if (!this.session) return;
+        if (this.isImportedMode || this.session.isImported) {
+            if (showToast) {
+                this.onToast(
+                    '⚠️ 外部导入词表为临时暂存模式，不支持保存至剧集库，请直接导出到 Anki 或 CSV',
+                );
+            }
+            return;
+        }
         const btnSave = document.getElementById(
             'btn-curation-save',
         ) as HTMLButtonElement | null;

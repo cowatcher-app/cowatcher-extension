@@ -399,6 +399,16 @@ export class ContentMessageService {
         );
     }
 
+    async getTtsAudio(params: {
+        text: string;
+        lang: string;
+    }): Promise<{ success: boolean; audioBase64?: string; error?: string }> {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_TTS_AUDIO,
+            params,
+        );
+    }
+
     onSettingsChanged(
         callback: (settings: ExtensionSettings) => void,
     ): () => void {
