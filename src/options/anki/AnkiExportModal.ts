@@ -12,6 +12,7 @@ import {
     CoWatcherFieldKey,
     VocabExportItem,
 } from './ankiTypes';
+import { NCW_I18N } from '@shared/utils/i18n';
 import { TtsAudioService } from '@shared/infrastructure/audio/TtsAudioService';
 
 function escapeHtml(str: string): string {
@@ -28,18 +29,46 @@ const COWATCHER_FIELDS: Array<{
     label: string;
     desc: string;
 }> = [
-    { key: 'Word', label: '生词原形 (Word)', desc: '单词或词组' },
-    { key: 'Reading', label: '发音/注音 (Reading)', desc: '读音假名或拼音' },
-    { key: 'Meaning', label: '词条释义 (Meaning)', desc: '语境释义或词典释义' },
-    { key: 'POS', label: '词性分类 (POS)', desc: '词性 (如 noun, verb)' },
-    { key: 'Sentence', label: '语境例句 (Sentence)', desc: '高亮原词的原剧字幕句' },
+    {
+        key: 'Word',
+        label: 'Word (Base / Lemma)',
+        desc: 'Target vocabulary or lemma',
+    },
+    {
+        key: 'Reading',
+        label: 'Pronunciation / Reading',
+        desc: 'Phonetic transcription, kana or pinyin',
+    },
+    {
+        key: 'Meaning',
+        label: 'Definition / Meaning',
+        desc: 'Contextual or dictionary definition',
+    },
+    {
+        key: 'POS',
+        label: 'Part of Speech (POS)',
+        desc: 'Grammatical category (noun, verb, etc.)',
+    },
+    {
+        key: 'Sentence',
+        label: 'Context Sentence',
+        desc: 'Original dialogue line highlighting target word',
+    },
     {
         key: 'SentenceTranslation',
-        label: '例句翻译 (Translation)',
-        desc: '原剧翻译或译文',
+        label: 'Sentence Translation',
+        desc: 'Subtitle translation or notes',
     },
-    { key: 'Audio', label: '音频标签 (Audio)', desc: '[sound:...] 或 [tts:...]' },
-    { key: 'Notes', label: '来源出处 (Notes)', desc: '剧集标题或时间' },
+    {
+        key: 'Audio',
+        label: 'Audio Tag',
+        desc: '[sound:...] or [tts:...]',
+    },
+    {
+        key: 'Notes',
+        label: 'Source & Notes',
+        desc: 'Episode title, context or timestamp',
+    },
 ];
 
 export class AnkiExportModal {
@@ -257,7 +286,7 @@ export class AnkiExportModal {
         btnReset?.addEventListener('click', () => {
             if (
                 confirm(
-                    '确定要将当前模板和 CSS 样式恢复为 CoWatcher 默认排版吗？',
+                    'Reset card layout and CSS styles to CoWatcher defaults?',
                 )
             ) {
                 this.currentFrontTpl = DEFAULT_COWATCHER_FRONT;
@@ -534,7 +563,7 @@ export class AnkiExportModal {
             opt.value = m;
             opt.textContent =
                 m === DEFAULT_COWATCHER_MODEL_NAME
-                    ? `${m} (专属现代卡片模板)`
+                    ? `${m} (Modern Card Template)`
                     : m;
             if (m === lastModel) opt.selected = true;
             modelSelect.appendChild(opt);
@@ -600,7 +629,7 @@ export class AnkiExportModal {
 
             const noneOpt = document.createElement('option');
             noneOpt.value = '';
-            noneOpt.textContent = '(不导出 / 留空)';
+            noneOpt.textContent = '(Do Not Export / Blank)';
             select.appendChild(noneOpt);
 
             const matchedDefault =
@@ -783,7 +812,7 @@ export class AnkiExportModal {
             if (previewBtn) previewBtn.style.display = 'none';
             if (voiceStatusHint) {
                 voiceStatusHint.innerHTML =
-                    '<span style="color: #64748b;">🔇 发音功能已关闭：导出卡片将不包含发音音频或 TTS 标签。</span>';
+                    '<span style="color: #64748b;">🔇 Word audio disabled: Exported cards will not include audio or TTS tags.</span>';
             }
             return;
         }
@@ -793,7 +822,7 @@ export class AnkiExportModal {
             if (previewBtn) previewBtn.style.display = 'none';
             if (voiceStatusHint) {
                 voiceStatusHint.innerHTML =
-                    '<span style="color: #cbd5e1;">✨ <strong>AwesomeTTS / HyperTTS 兼容模式</strong>：卡片保留干净字段，留待 Anki 桌面端插件批量生成音频。</span>';
+                    '<span style="color: #cbd5e1;">✨ <strong>AwesomeTTS / HyperTTS mode</strong>: Clean text fields preserved for batch audio generation in Anki desktop.</span>';
             }
             return;
         }
@@ -815,12 +844,12 @@ export class AnkiExportModal {
             if (match) {
                 if (previewBtn) previewBtn.style.display = 'inline-flex';
                 if (voiceStatusHint) {
-                    voiceStatusHint.innerHTML = `<span style="color: #10b981;">✅ 检测到系统本地语音: <strong>${escapeHtml(match.name)}</strong> (${match.lang})，卡片生成 [tts:${voiceLang}] 标签。</span>`;
+                    voiceStatusHint.innerHTML = `<span style="color: #10b981;">✅ Detected system voice: <strong>${escapeHtml(match.name)}</strong> (${match.lang}). Cards will generate [tts:${voiceLang}] tag.</span>`;
                 }
             } else {
                 if (previewBtn) previewBtn.style.display = 'none';
                 if (voiceStatusHint) {
-                    voiceStatusHint.innerHTML = `<span style="color: #f59e0b;">⚠️ 系统未检测到 <strong>${voiceLang}</strong> 本地语音包。导出后可能无声，建议选用【高保真云端语音】。</span>`;
+                    voiceStatusHint.innerHTML = `<span style="color: #f59e0b;">⚠️ No local voice found for <strong>${voiceLang}</strong>. Voice playback may be silent in Anki; High-Fidelity Cloud Voice recommended.</span>`;
                 }
             }
             return;
@@ -832,12 +861,12 @@ export class AnkiExportModal {
                 if (previewBtn) previewBtn.style.display = 'inline-flex';
                 if (voiceStatusHint) {
                     voiceStatusHint.innerHTML =
-                        '<span style="color: #38bdf8;">✅ 高保真云端语音已就绪：导出时将自动下载 MP3 离线音频并存入 Anki 媒体库，全平台支持。</span>';
+                        '<span style="color: #38bdf8;">✅ High-Fidelity Cloud Voice ready: MP3 audio will be automatically downloaded into Anki media library on export (cross-platform).</span>';
                 }
             } else {
                 if (previewBtn) previewBtn.style.display = 'none';
                 if (voiceStatusHint) {
-                    voiceStatusHint.innerHTML = `<span style="color: #f59e0b;">⚠️ 云端语音引擎暂未覆盖语种【${voiceLang}】，建议切换至其他模式。</span>`;
+                    voiceStatusHint.innerHTML = `<span style="color: #f59e0b;">⚠️ Cloud voice engine does not currently support [<strong>${voiceLang}</strong>]. Please select another voice mode.</span>`;
                 }
             }
             return;
@@ -887,7 +916,7 @@ export class AnkiExportModal {
         if (mode === 'edge') {
             if (!previewBtn) return;
             const origHtml = previewBtn.innerHTML;
-            previewBtn.innerHTML = '<span>⏳ 加载中...</span>';
+            previewBtn.innerHTML = '<span>⏳ Loading...</span>';
             try {
                 const base64 = await TtsAudioService.fetchAudioBase64(
                     sampleWord,
@@ -903,10 +932,12 @@ export class AnkiExportModal {
                     );
                     await this.currentAudio.play();
                 } else {
-                    this.onToast('⚠️ 发音加载失败，请检查网络');
+                    this.onToast(
+                        '⚠️ Audio generation failed. Please check network connection.',
+                    );
                 }
             } catch {
-                this.onToast('⚠️ 发音加载失败');
+                this.onToast('⚠️ Audio loading failed');
             } finally {
                 previewBtn.innerHTML = origHtml;
             }
@@ -1012,7 +1043,9 @@ export class AnkiExportModal {
         if (!previewBox) return;
 
         if (sideLabel) {
-            sideLabel.textContent = this.previewIsBack ? '背面' : '正面';
+            sideLabel.textContent = this.previewIsBack
+                ? NCW_I18N.t('anki.sideBack') || 'Back'
+                : NCW_I18N.t('anki.sideFront') || 'Front';
         }
 
         const firstItem = this.currentItems[0]?.word;
@@ -1022,14 +1055,14 @@ export class AnkiExportModal {
             Meaning:
                 firstItem?.meaning ||
                 firstItem?.dictMeaning ||
-                '密室；幕后；秘密策划的场所',
+                'A room where confidential discussions or negotiations take place',
             POS: firstItem?.pos || 'noun',
             Sentence: firstItem?.sentence
                 ? `The decisions were made in the <b>${firstItem.word || 'backroom'}</b>.`
                 : 'The decisions were made in the <b>backroom</b>.',
             SentenceTranslation:
                 firstItem?.sentenceTranslation ||
-                '那些决策都是在幕后密室里做出的。',
+                'All major decisions were negotiated in backroom meetings.',
             Audio: '🔈 [sound:backroom_audio.mp3]',
             Notes:
                 this.currentItems[0]?.episodeInfo?.showTitle ||
@@ -1038,7 +1071,7 @@ export class AnkiExportModal {
             Back:
                 firstItem?.meaning ||
                 firstItem?.dictMeaning ||
-                '密室；幕后；秘密策划的场所',
+                'A room where confidential discussions or negotiations take place',
         };
 
         const renderMustache = (
@@ -1096,14 +1129,16 @@ export class AnkiExportModal {
             'btn-anki-tpl-save',
         ) as HTMLButtonElement | null;
         if (!this.isConnected) {
-            alert('⚠️ 请确保 Anki 桌面端已启动并连接至 AnkiConnect 后再同步模板。');
+            alert(
+                '⚠️ Please ensure Anki desktop is running with AnkiConnect before syncing templates.',
+            );
             return;
         }
 
         try {
             if (btnSave) {
                 btnSave.disabled = true;
-                btnSave.textContent = '⏳ 同步中...';
+                btnSave.textContent = '⏳ Syncing...';
             }
 
             const codeEditor = document.getElementById(
@@ -1132,7 +1167,7 @@ export class AnkiExportModal {
             );
 
             this.onToast(
-                `🎉 卡片排版与 CSS 样式已同步保存至 Anki [${this.currentEditingModel}]!`,
+                `🎉 Card layout and CSS styles synced to Anki [${this.currentEditingModel}]!`,
             );
 
             if (this.templateModalEl) {
@@ -1140,11 +1175,11 @@ export class AnkiExportModal {
             }
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
-            alert(`❌ 保存模板至 Anki 失败: ${msg}`);
+            alert(`❌ Failed to save template to Anki: ${msg}`);
         } finally {
             if (btnSave) {
                 btnSave.disabled = false;
-                btnSave.textContent = '💾 同步并保存到 Anki';
+                btnSave.textContent = '💾 Sync & Save to Anki';
             }
         }
     }

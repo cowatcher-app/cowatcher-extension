@@ -32,6 +32,7 @@ import {
 import { VocabPreviewEditorModal } from './presentation/VocabPreviewEditorModal';
 import { TtsAudioService } from '@shared/infrastructure/audio/TtsAudioService';
 import { parseVocabCsv } from '@shared/utils/csvParser';
+import { NCW_I18N } from '@shared/utils/i18n';
 import contributorsMarkdown from '../../CONTRIBUTORS.md';
 import creditsMarkdown from '../../CREDITS.md';
 
@@ -41,7 +42,7 @@ interface CachedContextItem extends ContextDTO {
     storageKey: string;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const messageService = OptionsMessageService.getInstance();
     const storage = BrowserStorageFactory.getStorage();
     const cacheRepository = TrackCacheRepositoryFactory.getRepository();
@@ -68,6 +69,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const uiLanguageSelect = document.getElementById(
         'options-ui-language',
     ) as HTMLSelectElement | null;
+    function applyI18n(lang?: string): void {
+        const l = lang || currentSettings.uiLanguage || 'en';
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+            const key = el.getAttribute('data-i18n');
+            if (key) {
+                el.textContent = NCW_I18N.getText(key, l);
+            }
+        });
+
+        document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (key) {
+                el.setAttribute('placeholder', NCW_I18N.getText(key, l));
+            }
+        });
+
+        document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-title');
+            if (key) {
+                el.setAttribute('title', NCW_I18N.getText(key, l));
+            }
+        });
+    }
+
 
     // DOM Elements - Subtitle Cache Pane
     const btnRefreshCache = document.getElementById('btn-refresh-cache');
@@ -1370,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const session = VocabCurationSession.fromMultipleEpisodes(
                     matchingEps,
                     {
-                        title: `${showTitle} · 全剧词汇导出确认 (${matchingEps.length} 集)`,
+                        title: `${showTitle} · Full Show Vocab Export Confirmation (${matchingEps.length} episodes)`,
                         intent: 'csv',
                         onUpdate: () => loadVocabBank(),
                         onExportCsv: (curatedWords) => {
@@ -1429,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const session = VocabCurationSession.fromMultipleEpisodes(
                     matchingEps,
                     {
-                        title: `${showTitle} · 全剧 Anki 导出确认 (${matchingEps.length} 集)`,
+                        title: `${showTitle} · Full Show Anki Export Confirmation (${matchingEps.length} episodes)`,
                         intent: 'anki',
                         onUpdate: () => loadVocabBank(),
                         onExportCsv: (curatedWords) => {
@@ -1595,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const session = VocabCurationSession.fromMultipleEpisodes(
             selectedEpisodes,
             {
-                title: `批量导出确认 · ${selectedEpisodes.length} 个剧集`,
+                title: `Batch Export Confirmation · ${selectedEpisodes.length} Episodes`,
                 intent: 'csv',
                 onUpdate: () => loadVocabBank(),
                 onExportCsv: (curatedWords) => {
@@ -1635,7 +1660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const session = VocabCurationSession.fromMultipleEpisodes(
             selectedEpisodes,
             {
-                title: `批量导出到 Anki 确认 · ${selectedEpisodes.length} 个剧集`,
+                title: `Batch Anki Export Confirmation · ${selectedEpisodes.length} Episodes`,
                 intent: 'anki',
                 onUpdate: () => loadVocabBank(),
                 onExportCsv: (curatedWords) => {
@@ -1681,14 +1706,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!parsed.success || parsed.words.length === 0) {
-                showToast(`❌ ${parsed.error || '导入失败'}`);
+                showToast(`❌ ${parsed.error || 'Import failed'}`);
                 return;
             }
 
             const session = VocabCurationSession.fromImportedCsv(
                 parsed.words,
                 {
-                    title: `外部导入词表: ${file.name}`,
+                    title: `Imported CSV: ${file.name}`,
                     sourceLang: srcLang,
                     intent: 'review',
                     onExportAnki: (curatedWords) => {
@@ -1703,10 +1728,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             vocabEditorModal.open(session);
             showToast(
-                `🎉 成功导入 ${parsed.words.length} 个词条！（除 word 列外其余已允许留空，可点击【一键 AI 释义】补全）`,
+                `🎉 Successfully imported ${parsed.words.length} vocabulary items! (Fields other than word can be left blank; use [✨ Auto Enrich All] to enrich)`,
             );
         } catch {
-            showToast('❌ 读取 CSV 文件失败');
+            showToast('❌ Failed to read CSV file');
         }
     });
 
@@ -1804,7 +1829,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dictM = (w.dictMeaning || '').trim();
         const ctxM = (w.meaning || '').trim();
         if (dictM && ctxM && dictM !== ctxM) {
-            return `${dictM} (语境: ${ctxM})`;
+            return `${dictM} (Context: ${ctxM})`;
         }
         return dictM || ctxM || '';
     }
@@ -1885,4 +1910,1778 @@ document.addEventListener('DOMContentLoaded', () => {
                         ),
                     ),
                     escapeCsv(
+                            typeof w.timestamp === 'number'
+                            ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                            : '',
+                    ),
+                    escapeCsv(w.originEpisodeId || ''),
+                    escapeCsv(w.originShowTitle || ''),
+                    escapeCsv(dateStr),
+                ]);
+            });
+        } else {
+            episodes.forEach((ep) => {
+                const epTitle = ep.showTitle || '';
+                const epMid = ep.movieId || '';
+                ep.words.forEach((w) => {
+                    if (w.source === 'user') {
+                        const dateStr = w.createdAt
+                            ? new Date(w.createdAt).toLocaleString()
+                            : '';
+                        rows.push([
+                            escapeCsv(w.word || ''),
+                            escapeCsv(w.pos || ''),
+                            escapeCsv(w.phonetic || ''),
+                            escapeCsv(formatMergedMeaning(w)),
+                            escapeCsv(w.sentence || ''),
+                            escapeCsv(w.sentenceTranslation || ''),
+                            escapeCsv(
+                                resolveTtsAudioTag(
+                                    w.word,
+                                    ep.sourceLanguage || 'ja',
+                                ),
+                            ),
+                            escapeCsv(
+                                typeof w.timestamp === 'number'
+                                    ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                                    : '',
+                            ),
+                            escapeCsv(epMid),
+                            escapeCsv(epTitle),
+                            escapeCsv(dateStr),
+                        ]);
+                    }
+                });
+            });
+        }
+
+        if (rows.length === 0) {
+            showToast('No user-marked vocabulary found to export.');
+            return;
+        }
+
+        const csvContent =
+            '\uFEFF' +
+            [
+                headers.map((h) => `"${h}"`).join(','),
+                ...rows.map((r) => r.join(',')),
+            ].join('\r\n');
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `user_marked_vocabulary_${rows.length}_words.csv`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
+
+        showToast(`Exported ${rows.length} user-marked vocabulary words!`);
+    }
+
+    function exportMergedVocabCsv(
+        episodes: EpisodeVocabData[],
+        filename: string,
+        wordsOverride?: CuratedVocabWord[],
+    ): void {
+        if (!episodes || episodes.length === 0) return;
+        const headers = [
+            'Word',
+            'Source',
+            'POS',
+            'Phonetic',
+            'Contextual Meaning',
+            'Original Sentence',
+            'Sentence Translation',
+            'Audio / TTS',
+            'Timestamp',
+            'Frequency',
+            'Episode ID',
+            'Show Title',
+        ];
+
+        const escapeCsv = (str: string | number): string => {
+            const s = String(str || '');
+            return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : `"${s}"`;
+        };
+
+        const rows: string[][] = [];
+        if (wordsOverride) {
+            wordsOverride.forEach((w) => {
+                rows.push([
+                    escapeCsv(w.word || ''),
+                    escapeCsv(
+                        w.source === 'user' ? 'User Marked' : 'AI Extracted',
+                    ),
+                    escapeCsv(w.pos || ''),
+                    escapeCsv(w.phonetic || ''),
+                    escapeCsv(formatMergedMeaning(w)),
+                    escapeCsv(w.sentence || ''),
+                    escapeCsv(w.sentenceTranslation || ''),
+                    escapeCsv(
+                        resolveTtsAudioTag(
+                            w.word,
+                            w.sourceLang ||
+                                (episodes[0] && episodes[0].sourceLanguage) ||
+                                'ja',
+                            (w as CuratedVocabWord).audio,
+                        ),
+                    ),
+                    escapeCsv(
                         typeof w.timestamp === 'number'
+                            ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                            : '',
+                    ),
+                    escapeCsv(w.frequency || 1),
+                    escapeCsv(w.originEpisodeId || ''),
+                    escapeCsv(w.originShowTitle || ''),
+                ]);
+            });
+        } else {
+            episodes.forEach((ep) => {
+                const epTitle = ep.showTitle || '';
+                const epMid = ep.movieId || '';
+                ep.words.forEach((w) => {
+                    rows.push([
+                        escapeCsv(w.word || ''),
+                        escapeCsv(
+                            w.source === 'user' ? 'User Marked' : 'AI Extracted',
+                        ),
+                        escapeCsv(w.pos || ''),
+                        escapeCsv(w.phonetic || ''),
+                        escapeCsv(formatMergedMeaning(w)),
+                        escapeCsv(w.sentence || ''),
+                        escapeCsv(w.sentenceTranslation || ''),
+                        escapeCsv(
+                            resolveTtsAudioTag(
+                                w.word,
+                                ep.sourceLanguage || 'ja',
+                            ),
+                        ),
+                        escapeCsv(
+                            typeof w.timestamp === 'number'
+                                ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                                : '',
+                        ),
+                        escapeCsv(w.frequency || 1),
+                        escapeCsv(epMid),
+                        escapeCsv(epTitle),
+                    ]);
+                });
+            });
+        }
+
+        const csvContent =
+            '\uFEFF' +
+            [
+                headers.map((h) => `"${h}"`).join(','),
+                ...rows.map((r) => r.join(',')),
+            ].join('\r\n');
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
+    }
+
+    function exportVocabCsv(
+        data: EpisodeVocabData,
+        wordsOverride?: VocabWordItem[],
+    ): void {
+        const words = wordsOverride || data?.words;
+        if (!data || !Array.isArray(words) || words.length === 0)
+            return;
+
+        const srcLang = data.sourceLanguage || 'Source';
+        const tgtLang = data.targetLanguage || 'Target';
+
+        const headers = [
+            `Word (${srcLang})`,
+            'Source',
+            'POS',
+            'Phonetic',
+            `Contextual Meaning (${tgtLang})`,
+            `Original Sentence (${srcLang})`,
+            `Sentence Translation (${tgtLang})`,
+            'Timestamp',
+            'Frequency',
+        ];
+
+        const escapeCsv = (str: string | number): string => {
+            const s = String(str || '');
+            return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : `"${s}"`;
+        };
+
+        const rows = words.map((w) => [
+            escapeCsv(w.word || ''),
+            escapeCsv(w.source === 'user' ? 'User Marked' : 'AI Extracted'),
+            escapeCsv(w.pos || ''),
+            escapeCsv(w.phonetic || ''),
+            escapeCsv(formatMergedMeaning(w)),
+            escapeCsv(w.sentence || ''),
+            escapeCsv(w.sentenceTranslation || ''),
+            escapeCsv(
+                typeof w.timestamp === 'number'
+                    ? `${Math.floor(w.timestamp / 60)}:${String(Math.floor(w.timestamp % 60)).padStart(2, '0')}`
+                    : '',
+            ),
+            escapeCsv(w.frequency || 1),
+        ]);
+
+        const csvContent =
+            '\uFEFF' +
+            [
+                headers.map((h) => `"${h}"`).join(','),
+                ...rows.map((r) => r.join(',')),
+            ].join('\r\n');
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+        const url = URL.createObjectURL(blob);
+
+        const rawTitle = data.showTitle || `episode_${data.movieId}`;
+        const cleanTitle = rawTitle
+            .replace(/[^\w\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af-]/g, '')
+            .trim()
+            .replace(/\s+/g, '_');
+        const filename = `${cleanTitle}_${data.movieId}_vocab.csv`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
+    }
+
+    // ==========================================
+    // TAB 3: SHOW CONTEXT & MEMORY CONTROLLER
+    // ==========================================
+    async function loadShowContexts(): Promise<void> {
+        const all = await storage.get<Record<string, unknown>>(null);
+        cachedContextList = [];
+        if (all) {
+            for (const [key, val] of Object.entries(all)) {
+                // Only load show-level memory from ncw_show_ keys
+                if (key.startsWith('ncw_show_') && val) {
+                    const dto = val as unknown as ContextDTO;
+                    const langCode = (
+                        Language.resolve(dto.targetLanguage)?.code || 'en'
+                    ).toLowerCase();
+                    const showIdentifier = (
+                        dto.showId ||
+                        dto.mainTitle ||
+                        dto.title ||
+                        ''
+                    )
+                        .trim()
+                        .toLowerCase();
+                    if (!showIdentifier) continue;
+
+                    const existingIndex = cachedContextList.findIndex((c) => {
+                        const cLangCode = (
+                            Language.resolve(c.targetLanguage)?.code || 'en'
+                        ).toLowerCase();
+                        if (cLangCode !== langCode) return false;
+                        if (dto.showId && c.showId)
+                            return c.showId === dto.showId;
+                        const cShowIdentifier = (
+                            c.showId ||
+                            c.mainTitle ||
+                            c.title ||
+                            ''
+                        )
+                            .trim()
+                            .toLowerCase();
+                        return cShowIdentifier === showIdentifier;
+                    });
+
+                    if (existingIndex >= 0) {
+                        if (
+                            (dto.updatedAt || 0) >
+                            (cachedContextList[existingIndex].updatedAt || 0)
+                        ) {
+                            cachedContextList[existingIndex] = {
+                                ...dto,
+                                storageKey: key,
+                            };
+                        }
+                    } else {
+                        cachedContextList.push({ ...dto, storageKey: key });
+                    }
+                }
+            }
+        }
+        cachedContextList.sort(
+            (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0),
+        );
+        renderShowContexts();
+    }
+
+    function renderShowContexts(): void {
+        const query = (contextSearchInput?.value || '').trim().toLowerCase();
+        const filtered = cachedContextList.filter((c) => {
+            if (!query) return true;
+            const titleMatch =
+                (c.title && c.title.toLowerCase().includes(query)) ||
+                (c.mainTitle && c.mainTitle.toLowerCase().includes(query));
+            if (titleMatch) return true;
+            const charMatch = Object.keys(c.characters || {}).some((k) =>
+                k.toLowerCase().includes(query),
+            );
+            const termMatch = Object.keys(c.terms || {}).some((k) =>
+                k.toLowerCase().includes(query),
+            );
+            return charMatch || termMatch;
+        });
+
+        const totalShows = cachedContextList.length;
+        let totalChars = 0;
+        let totalTerms = 0;
+        cachedContextList.forEach((c) => {
+            totalChars += Object.keys(c.characters || {}).length;
+            totalTerms += Object.keys(c.terms || {}).length;
+        });
+
+        if (statContextShows) statContextShows.textContent = String(totalShows);
+        if (statContextChars) statContextChars.textContent = String(totalChars);
+        if (statContextTerms) statContextTerms.textContent = String(totalTerms);
+        if (navContextCount) navContextCount.textContent = String(totalShows);
+        if (contextListCount)
+            contextListCount.textContent = `Showing ${filtered.length} of ${totalShows} shows`;
+
+        if (!contextCardsGrid) return;
+
+        if (filtered.length === 0) {
+            contextCardsGrid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #888;">
+          ${cachedContextList.length === 0 ? 'No show context memory initialized yet. The supervisor model will automatically identify shows and character glossaries during playback.' : 'No matching show memory found.'}
+        </div>
+      `;
+            return;
+        }
+
+        contextCardsGrid.innerHTML = filtered
+            .map((c) => {
+                const titleStr = escapeHtml(
+                    c.mainTitle || c.title || 'Unknown Show',
+                );
+                const charEntries = Object.entries(c.characters || {});
+                const termEntries = Object.entries(c.terms || {});
+                const synopsisStr = c.showSynopsis
+                    ? `<p style="font-size: 12px; color: #aaa; margin-bottom: 8px;">${escapeHtml(c.showSynopsis.slice(0, 140))}${c.showSynopsis.length > 140 ? '...' : ''}</p>`
+                    : '';
+
+                const charTags = charEntries
+                    .slice(0, 8)
+                    .map(([name, val]) => {
+                        const trans =
+                            typeof val === 'string'
+                                ? val
+                                : val?.canonical || name;
+                        return `<span class="term-tag"><strong>${escapeHtml(name)}</strong>: ${escapeHtml(trans)}</span>`;
+                    })
+                    .join('');
+
+                const termTags = termEntries
+                    .slice(0, 6)
+                    .map(([term, trans]) => {
+                        return `<span class="term-tag" style="background:#1e293b;">${escapeHtml(term)} ➔ ${escapeHtml(trans)}</span>`;
+                    })
+                    .join('');
+
+                const langDisplay = escapeHtml(
+                    typeof c.targetLanguage === 'object'
+                        ? c.targetLanguage?.label ||
+                              c.targetLanguage?.name ||
+                              'English'
+                        : c.targetLanguage || 'English',
+                );
+                const resolvedLangCode =
+                    Language.resolve(c.targetLanguage)?.code || 'en';
+
+                return `
+          <div class="card-item">
+            <div>
+              <div class="card-item-header">
+                <div>
+                  <div class="card-item-title">${titleStr}</div>
+                  <div class="card-item-id">Lang: ${langDisplay}</div>
+                </div>
+                <span class="badge ${c.known ? 'badge-green' : 'badge-neutral'}">${c.known ? 'IDENTIFIED' : 'PENDING'}</span>
+              </div>
+
+              ${synopsisStr}
+
+              <div class="card-item-body">
+                <div style="font-size: 11px; color:#888; margin-bottom: 4px;">Characters & Aliases (${charEntries.length}):</div>
+                <div class="tags-cloud">${charTags || '<span style="color:#666; font-size: 11px;">None discovered yet</span>'}</div>
+
+                ${
+                    termEntries.length > 0
+                        ? `
+                  <div style="font-size: 11px; color:#888; margin-top: 10px; margin-bottom: 4px;">Glossary Terms (${termEntries.length}):</div>
+                  <div class="tags-cloud">${termTags}</div>
+                `
+                        : ''
+                }
+              </div>
+            </div>
+
+            <div class="card-item-footer">
+              <span style="font-size: 11px; color:#777;">${formatRelativeTime(c.updatedAt)}</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-primary btn-sm btn-open-glossary-editor"
+                  data-showid="${escapeHtml(c.showId || '')}"
+                  data-title="${escapeHtml(c.mainTitle || c.title || '')}"
+                  data-lang="${escapeHtml(resolvedLangCode)}">
+                  ✏️ Open Glossary Editor
+                </button>
+                <button class="btn-danger btn-sm btn-delete-context"
+                  data-key="${escapeHtml(c.storageKey)}"
+                  data-showid="${escapeHtml(c.showId || '')}"
+                  data-lang="${escapeHtml(resolvedLangCode)}">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+            })
+            .join('');
+    }
+
+    // Handle Context Actions (Open Glossary Editor & Delete)
+    contextCardsGrid?.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement | null;
+
+        // Handle Open Standalone Glossary Editor
+        const editorBtn = target?.closest(
+            '.btn-open-glossary-editor',
+        ) as HTMLButtonElement | null;
+        if (editorBtn) {
+            const showId = editorBtn.dataset.showid || '';
+            const title = editorBtn.dataset.title || '';
+            const langCode = editorBtn.dataset.lang || 'en';
+
+            const params = new URLSearchParams();
+            if (showId) params.set('showId', showId);
+            if (title) params.set('title', title);
+            if (langCode) params.set('targetLang', langCode);
+            if (currentSettings.uiLanguage)
+                params.set('uiLang', currentSettings.uiLanguage);
+
+            const pathWithQuery = `editor/editor.html?${params.toString()}`;
+            const platform = BrowserPlatformFactory.getPlatform();
+            const editorUrl = platform.getURL(pathWithQuery);
+
+            try {
+                platform.openPopupWindow({
+                    url: editorUrl,
+                    width: 780,
+                    height: 820,
+                    title: 'CoWatcher - Glossary Editor',
+                });
+            } catch {
+                window.open(editorUrl, '_blank', 'width=780,height=820');
+            }
+            return;
+        }
+
+        // Handle Context Delete
+        const btn = target?.closest(
+            '.btn-delete-context',
+        ) as HTMLButtonElement | null;
+        if (!btn) return;
+        const key = btn.dataset.key;
+        if (!key) return;
+
+        if (
+            confirm(
+                'Are you sure you want to clear memory for this show? The supervisor will rebuild character context on next playback.',
+            )
+        ) {
+            await storage.remove([key]);
+            const showId = btn.dataset.showid;
+            const langCode = btn.dataset.lang;
+            if (showId && langCode) {
+                messageService
+                    .resetGlossaryContext(showId, Language.resolve(langCode))
+                    .catch(() => {});
+            }
+            showToast('Show context memory cleared');
+            loadShowContexts();
+        }
+    });
+
+    btnClearAllContext?.addEventListener('click', async () => {
+        if (confirm('⚠️ Clear ALL show context and supervisor memories?')) {
+            const all = await storage.get<Record<string, unknown>>(null);
+            const toRemove = Object.keys(all || {}).filter((k) =>
+                k.startsWith('ncw_show_'),
+            );
+            if (toRemove.length > 0) {
+                await storage.remove(toRemove);
+                showToast('All show context memory cleared');
+                loadShowContexts();
+            }
+        }
+    });
+
+    btnRefreshContext?.addEventListener('click', loadShowContexts);
+    contextSearchInput?.addEventListener('input', renderShowContexts);
+
+    // ==========================================
+    // TAB 4: WATCH HISTORY & ANALYTICS CONTROLLER
+    // ==========================================
+    let cachedHistoryShows: ShowWatchSummary[] = [];
+    let cachedHistorySessions: WatchSession[] = [];
+    let cachedHistoryStats: WatchHistoryStats | null = null;
+    const expandedHistoryShows = new Set<string>();
+
+    function formatHoursMinutes(totalSeconds: number): string {
+        const s = Math.max(0, Math.floor(totalSeconds));
+        const hours = Math.floor(s / 3600);
+        const minutes = Math.floor((s % 3600) / 60);
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${minutes}m`;
+    }
+
+    function formatDurationDetailed(seconds: number): string {
+        const s = Math.max(0, Math.floor(seconds));
+        const m = Math.floor(s / 60);
+        const remS = s % 60;
+        if (m >= 60) {
+            const h = Math.floor(m / 60);
+            const remM = m % 60;
+            return `${h}h ${remM}m ${remS}s`;
+        }
+        if (m > 0) {
+            return `${m}m ${remS}s`;
+        }
+        return `${remS}s`;
+    }
+
+    async function loadWatchHistory(): Promise<void> {
+        try {
+            const res = await messageService.getWatchHistory();
+            if (res && res.success) {
+                cachedHistoryShows = res.shows || [];
+                cachedHistorySessions = res.recentSessions || [];
+                cachedHistoryStats = res.stats || null;
+            } else {
+                cachedHistoryShows = [];
+                cachedHistorySessions = [];
+                cachedHistoryStats = null;
+            }
+            renderWatchHistory();
+        } catch (e) {
+            logger.warn('options', 'Failed loading watch history:', e);
+        }
+    }
+
+    function renderWatchHistory(): void {
+        const stats = cachedHistoryStats || {
+            totalWatchSeconds: 0,
+            totalShows: 0,
+            totalEpisodes: 0,
+            totalSessions: 0,
+            dailyStats: [],
+        };
+
+        if (statHistoryTime) {
+            statHistoryTime.textContent = formatHoursMinutes(
+                stats.totalWatchSeconds,
+            );
+        }
+        if (statHistoryShows) {
+            statHistoryShows.textContent = String(stats.totalShows);
+        }
+        if (statHistoryEpisodes) {
+            statHistoryEpisodes.textContent = String(stats.totalEpisodes);
+        }
+        if (statHistorySessions) {
+            statHistorySessions.textContent = String(stats.totalSessions);
+        }
+        if (navHistoryCount) {
+            navHistoryCount.textContent = String(stats.totalShows);
+        }
+
+        renderImmersionHeatmap(stats.dailyStats);
+        renderTrendCanvas(stats.dailyStats);
+        renderHistoryShowsList();
+    }
+
+    function renderImmersionHeatmap(dailyStats: DailyWatchStat[]): void {
+        if (!historyHeatmapContainer) return;
+
+        const statsMap = new Map<string, { seconds: number; count: number }>();
+        dailyStats.forEach((d) => {
+            statsMap.set(d.date, {
+                seconds: d.watchSeconds,
+                count: d.sessionsCount,
+            });
+        });
+
+        const now = new Date();
+        const todayDayOfWeek = now.getDay(); // 0 (Sun) .. 6 (Sat)
+        const totalWeeks = 26;
+        const startDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() - ((totalWeeks - 1) * 7 + todayDayOfWeek),
+        );
+
+        let weeksHtml = '';
+        const nowTime = now.getTime();
+
+        for (let w = 0; w < totalWeeks; w++) {
+            let daysHtml = '';
+            for (let d = 0; d < 7; d++) {
+                const cellDate = new Date(
+                    startDate.getFullYear(),
+                    startDate.getMonth(),
+                    startDate.getDate() + (w * 7 + d),
+                );
+                const isFuture = cellDate.getTime() > nowTime;
+                const year = cellDate.getFullYear();
+                const month = String(cellDate.getMonth() + 1).padStart(2, '0');
+                const day = String(cellDate.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+
+                if (isFuture) {
+                    daysHtml +=
+                        '<div class="heatmap-cell" style="opacity: 0.15; cursor: default;"></div>';
+                } else {
+                    const entry = statsMap.get(dateStr);
+                    const seconds = entry ? entry.seconds : 0;
+                    const count = entry ? entry.count : 0;
+
+                    let level = 0;
+                    if (seconds > 5400)
+                        level = 4; // > 90m
+                    else if (seconds > 2700)
+                        level = 3; // 45m - 90m
+                    else if (seconds > 900)
+                        level = 2; // 15m - 45m
+                    else if (seconds > 0) level = 1; // 1s - 15m
+
+                    daysHtml += `<div class="heatmap-cell level-${level}" data-date="${dateStr}" data-seconds="${seconds}" data-sessions="${count}"></div>`;
+                }
+            }
+            weeksHtml += `<div class="heatmap-week-col">${daysHtml}</div>`;
+        }
+
+        historyHeatmapContainer.innerHTML = `
+      <div class="heatmap-wrapper">
+        <div class="heatmap-calendar-body">
+          <div class="heatmap-day-labels">
+            <div class="heatmap-day-label"></div>
+            <div class="heatmap-day-label">Mon</div>
+            <div class="heatmap-day-label"></div>
+            <div class="heatmap-day-label">Wed</div>
+            <div class="heatmap-day-label"></div>
+            <div class="heatmap-day-label">Fri</div>
+            <div class="heatmap-day-label"></div>
+          </div>
+          <div class="heatmap-weeks-container">
+            ${weeksHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    }
+
+    function renderTrendCanvas(dailyStats: DailyWatchStat[]): void {
+        if (!historyTrendCanvas) return;
+        const canvas = historyTrendCanvas;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Handle high DPI cleanly
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || 360;
+        const height = 130;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        ctx.clearRect(0, 0, width, height);
+
+        const statsMap = new Map<string, number>();
+        dailyStats.forEach((d) => {
+            statsMap.set(d.date, d.watchSeconds);
+        });
+
+        const now = new Date();
+        const daysData: Array<{
+            dateStr: string;
+            label: string;
+            minutes: number;
+            isToday: boolean;
+        }> = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate() - i,
+            );
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const sec = statsMap.get(dateStr) || 0;
+            daysData.push({
+                dateStr,
+                label: `${d.getMonth() + 1}/${d.getDate()}`,
+                minutes: Math.round(sec / 60),
+                isToday: i === 0,
+            });
+        }
+
+        const paddingLeft = 14;
+        const paddingRight = 14;
+        const paddingTop = 22;
+        const paddingBottom = 22;
+        const chartWidth = width - paddingLeft - paddingRight;
+        const chartHeight = height - paddingTop - paddingBottom;
+
+        const maxMinutes = Math.max(30, ...daysData.map((d) => d.minutes));
+
+        // Horizontal grid line at 50%
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(paddingLeft, paddingTop + chartHeight * 0.5);
+        ctx.lineTo(paddingLeft + chartWidth, paddingTop + chartHeight * 0.5);
+        ctx.stroke();
+
+        // Baseline
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.beginPath();
+        ctx.moveTo(paddingLeft, paddingTop + chartHeight);
+        ctx.lineTo(paddingLeft + chartWidth, paddingTop + chartHeight);
+        ctx.stroke();
+
+        const barSlotWidth = chartWidth / daysData.length;
+        const barWidth = Math.max(6, Math.min(16, barSlotWidth * 0.62));
+
+        daysData.forEach((d, idx) => {
+            const xCenter = paddingLeft + idx * barSlotWidth + barSlotWidth / 2;
+            const x = xCenter - barWidth / 2;
+            const barHeight =
+                d.minutes > 0
+                    ? Math.max(3, (d.minutes / maxMinutes) * chartHeight)
+                    : 2;
+            const y = paddingTop + chartHeight - barHeight;
+
+            if (d.minutes > 0) {
+                // Red Netflix gradient
+                const grad = ctx.createLinearGradient(x, y, x, y + barHeight);
+                grad.addColorStop(0, '#e50914');
+                grad.addColorStop(1, '#831843');
+                ctx.fillStyle = grad;
+
+                // Rounded top rect
+                const radius = Math.min(3, barWidth / 2);
+                ctx.beginPath();
+                ctx.moveTo(x, y + barHeight);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.lineTo(x + barWidth - radius, y);
+                ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
+                ctx.lineTo(x + barWidth, y + barHeight);
+                ctx.closePath();
+                ctx.fill();
+
+                // Minutes text above bar
+                ctx.fillStyle = d.isToday ? '#ffffff' : '#d1d5db';
+                ctx.font =
+                    '600 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${d.minutes}m`, xCenter, y - 4);
+            } else {
+                ctx.fillStyle = '#26262d';
+                ctx.fillRect(x, paddingTop + chartHeight - 2, barWidth, 2);
+            }
+
+            // Day label below baseline
+            ctx.fillStyle = d.isToday ? '#e50914' : '#6b7280';
+            ctx.font = d.isToday
+                ? '700 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+                : '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(d.label, xCenter, paddingTop + chartHeight + 14);
+        });
+    }
+
+    function renderHistoryShowsList(): void {
+        const query = (historySearchInput?.value || '').trim().toLowerCase();
+        const platformFilter = historyPlatformFilter?.value || 'all';
+
+        const filtered = cachedHistoryShows.filter((s) => {
+            if (
+                platformFilter !== 'all' &&
+                s.platform.toLowerCase() !== platformFilter
+            ) {
+                return false;
+            }
+            if (!query) return true;
+            const matchTitle = (s.showTitle || '')
+                .toLowerCase()
+                .includes(query);
+            const matchId = (s.showId || '').toLowerCase().includes(query);
+            const matchPlatform = (s.platform || '')
+                .toLowerCase()
+                .includes(query);
+            const matchEp = s.lastEpisode?.episodeTitle
+                ?.toLowerCase()
+                .includes(query);
+            return matchTitle || matchId || matchPlatform || matchEp;
+        });
+
+        if (historyListCount) {
+            historyListCount.textContent = `Showing ${filtered.length} of ${cachedHistoryShows.length} shows`;
+        }
+
+        if (!historyCardsGrid) return;
+
+        if (filtered.length === 0) {
+            historyCardsGrid.innerHTML = `
+        <div class="empty-state" style="text-align: center; padding: 40px; color: #888;">
+          ${cachedHistoryShows.length === 0 ? 'No viewing history recorded yet. Watch any video on Netflix, YouTube, or TVer to start tracking playback immersion.' : 'No matching shows found.'}
+        </div>
+      `;
+            return;
+        }
+
+        historyCardsGrid.innerHTML = filtered
+            .map((show) => {
+                const isExpanded = expandedHistoryShows.has(show.showId);
+                const platformClass = (
+                    show.platform || 'unknown'
+                ).toLowerCase();
+                const showSessions = cachedHistorySessions
+                    .filter((sess) => sess.showId === show.showId)
+                    .sort((a, b) => b.startedAt - a.startedAt);
+
+                // Group sessions by episode/video
+                const epGroupsMap = new Map<
+                    string,
+                    {
+                        epKey: string;
+                        seasonNum?: number;
+                        episodeNum?: number;
+                        episodeTitle?: string;
+                        videoId: string;
+                        totalSeconds: number;
+                        sessions: WatchSession[];
+                    }
+                >();
+
+                showSessions.forEach((sess) => {
+                    const epKey =
+                        sess.videoId ||
+                        `${sess.seasonNum || 1}_${sess.episodeNum || 1}`;
+                    let ep = epGroupsMap.get(epKey);
+                    if (!ep) {
+                        ep = {
+                            epKey,
+                            seasonNum: sess.seasonNum,
+                            episodeNum: sess.episodeNum,
+                            episodeTitle: sess.episodeTitle,
+                            videoId: sess.videoId,
+                            totalSeconds: 0,
+                            sessions: [],
+                        };
+                        epGroupsMap.set(epKey, ep);
+                    }
+                    ep.totalSeconds += sess.effectiveWatchSeconds;
+                    ep.sessions.push(sess);
+                });
+
+                const epGroups = Array.from(epGroupsMap.values());
+
+                const episodesHtml = epGroups
+                    .map((ep) => {
+                        const epLabel =
+                            ep.seasonNum !== undefined &&
+                            ep.episodeNum !== undefined
+                                ? `S${ep.seasonNum}:E${ep.episodeNum}`
+                                : ep.episodeNum !== undefined
+                                  ? `E${ep.episodeNum}`
+                                  : '';
+                        const epFullTitle = [
+                            epLabel,
+                            ep.episodeTitle || ep.videoId,
+                        ]
+                            .filter(Boolean)
+                            .join(' - ');
+
+                        const sessionItemsHtml = ep.sessions
+                            .map((sess) => {
+                                const startStr = formatSecondsToTime(
+                                    sess.fromContentTime,
+                                );
+                                const endStr = formatSecondsToTime(
+                                    sess.toContentTime,
+                                );
+                                const durationStr = formatDurationDetailed(
+                                    sess.effectiveWatchSeconds,
+                                );
+                                const dateStr = new Date(
+                                    sess.startedAt,
+                                ).toLocaleString();
+
+                                return `
+                  <div class="history-session-item">
+                    <div>
+                      <span class="history-session-interval">⏱️ ${startStr} ➔ ${endStr}</span>
+                      <span class="history-session-duration">(${durationStr})</span>
+                    </div>
+                    <span class="history-session-date">${dateStr}</span>
+                  </div>
+                `;
+                            })
+                            .join('');
+
+                        return `
+              <div class="history-ep-row">
+                <div class="history-ep-header">
+                  <span class="history-ep-title">${escapeHtml(epFullTitle)}</span>
+                  <span class="history-ep-time">${formatHoursMinutes(ep.totalSeconds)}</span>
+                </div>
+                <div class="history-session-logs">
+                  ${sessionItemsHtml}
+                </div>
+              </div>
+            `;
+                    })
+                    .join('');
+
+                return `
+          <div class="history-show-card ${isExpanded ? 'expanded' : ''}" data-show-id="${escapeHtml(show.showId)}">
+            <div class="history-show-header" data-show-id="${escapeHtml(show.showId)}">
+              <div class="history-show-left">
+                <span class="history-show-toggle">
+                  <span class="toggle-icon ${isExpanded ? 'expanded' : ''}">▶</span>
+                  <span class="platform-badge ${platformClass}">${escapeHtml(show.platform)}</span>
+                  <span class="history-show-title">${escapeHtml(show.showTitle || show.showId)}</span>
+                </span>
+                <div class="history-show-meta">
+                  <span>📺 ${show.episodesCount} ep</span>
+                  <span>🔄 ${show.sessionsCount} sessions</span>
+                  <span style="color: var(--accent-green); font-weight: 600;">⏱️ ${formatHoursMinutes(show.totalWatchSeconds)}</span>
+                  <span>🕒 Last: ${formatRelativeTime(show.lastWatchedAt)}</span>
+                </div>
+              </div>
+              <div class="history-show-right">
+                <button class="btn-sm btn-danger btn-delete-show" data-show-id="${escapeHtml(show.showId)}" data-title="${escapeHtml(show.showTitle)}" title="Delete this show history">
+                  🗑️
+                </button>
+              </div>
+            </div>
+            ${isExpanded ? `<div class="history-episodes-list">${episodesHtml || '<div style="font-size: 12px; color: #777;">No session intervals recorded.</div>'}</div>` : ''}
+          </div>
+        `;
+            })
+            .join('');
+    }
+
+    // Heatmap Tooltip Interactions
+    historyHeatmapContainer?.addEventListener('mouseover', (e) => {
+        const target = (e.target as HTMLElement)?.closest(
+            '.heatmap-cell',
+        ) as HTMLElement | null;
+        if (!target || !heatmapTooltip) return;
+        const date = target.dataset.date;
+        const seconds = parseInt(target.dataset.seconds || '0', 10);
+        const count = parseInt(target.dataset.sessions || '0', 10);
+        if (date) {
+            const formatted = formatHoursMinutes(seconds);
+            const dateFormatted = new Date(
+                date + 'T00:00:00',
+            ).toLocaleDateString(undefined, {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            });
+            heatmapTooltip.innerHTML = `<span style="color: #fff; font-weight: 600;">${dateFormatted}</span>: ${formatted === '0m' && seconds === 0 ? 'No viewing activity' : `<strong>${formatted}</strong> watched (${count} sessions)`}`;
+        }
+    });
+
+    historyHeatmapContainer?.addEventListener('mouseleave', () => {
+        if (heatmapTooltip) {
+            heatmapTooltip.textContent =
+                'Hover over a day to view watch details.';
+        }
+    });
+
+    // History Show Card Actions (Accordion & Delete Show)
+    historyCardsGrid?.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement | null;
+
+        // Delete Show
+        const deleteBtn = target?.closest(
+            '.btn-delete-show',
+        ) as HTMLButtonElement | null;
+        if (deleteBtn) {
+            const showId =
+                deleteBtn.dataset.showId ||
+                deleteBtn.getAttribute('data-show-id');
+            const title = deleteBtn.dataset.title || showId || 'this show';
+            if (!showId) return;
+            if (
+                confirm(
+                    `Are you sure you want to delete all viewing history for "${title}"?`,
+                )
+            ) {
+                await messageService.deleteShowHistory(showId);
+                showToast('Show viewing history deleted');
+                loadWatchHistory();
+            }
+            return;
+        }
+
+        // Toggle Card Accordion
+        const header = target?.closest(
+            '.history-show-header',
+        ) as HTMLElement | null;
+        if (header) {
+            const showId =
+                header.dataset.showId || header.getAttribute('data-show-id');
+            if (showId) {
+                if (expandedHistoryShows.has(showId)) {
+                    expandedHistoryShows.delete(showId);
+                } else {
+                    expandedHistoryShows.add(showId);
+                }
+                renderHistoryShowsList();
+            }
+        }
+    });
+
+    // Filter & Search
+    historySearchInput?.addEventListener('input', () =>
+        renderHistoryShowsList(),
+    );
+    historyPlatformFilter?.addEventListener('change', () =>
+        renderHistoryShowsList(),
+    );
+
+    // Window resize to redraw trend chart
+    window.addEventListener('resize', () => {
+        if (cachedHistoryStats) {
+            renderTrendCanvas(cachedHistoryStats.dailyStats);
+        }
+    });
+
+    // Buttons
+    btnRefreshHistory?.addEventListener('click', async () => {
+        btnRefreshHistory.textContent = '🔄 Refreshing...';
+        await loadWatchHistory();
+        btnRefreshHistory.textContent = '🔄 Refresh';
+        showToast('Viewing history refreshed');
+    });
+
+    btnClearAllHistory?.addEventListener('click', async () => {
+        if (
+            confirm(
+                '⚠️ Are you sure you want to permanently clear ALL watch history logs? This action cannot be undone.',
+            )
+        ) {
+            await messageService.clearWatchHistory();
+            showToast('All watch history logs cleared');
+            loadWatchHistory();
+        }
+    });
+
+    btnExportHistoryCsv?.addEventListener('click', () => {
+        if (cachedHistorySessions.length === 0) {
+            showToast('No viewing sessions to export.');
+            return;
+        }
+        const headers = [
+            'Session ID',
+            'Platform',
+            'Show ID',
+            'Show Title',
+            'Season',
+            'Episode',
+            'Episode Title',
+            'Video ID',
+            'Started At (ISO)',
+            'Ended At (ISO)',
+            'From Content Time (s)',
+            'From Timecode',
+            'To Content Time (s)',
+            'To Timecode',
+            'Video Duration (s)',
+            'Effective Watch Time (s)',
+            'Effective Watch Time (min)',
+        ];
+
+        const rows = cachedHistorySessions.map((s) => [
+            s.id,
+            s.platform,
+            s.showId,
+            s.showTitle,
+            s.seasonNum ?? '',
+            s.episodeNum ?? '',
+            s.episodeTitle ?? '',
+            s.videoId,
+            new Date(s.startedAt).toISOString(),
+            new Date(s.endedAt).toISOString(),
+            s.fromContentTime,
+            formatSecondsToTime(s.fromContentTime),
+            s.toContentTime,
+            formatSecondsToTime(s.toContentTime),
+            s.videoDuration,
+            s.effectiveWatchSeconds,
+            (s.effectiveWatchSeconds / 60).toFixed(1),
+        ]);
+
+        const csvContent =
+            '\uFEFF' +
+            [headers, ...rows]
+                .map((row) =>
+                    row
+                        .map((cell) => {
+                            const val = String(cell ?? '');
+                            if (
+                                val.includes(',') ||
+                                val.includes('"') ||
+                                val.includes('\n')
+                            ) {
+                                return `"${val.replace(/"/g, '""')}"`;
+                            }
+                            return val;
+                        })
+                        .join(','),
+                )
+                .join('\n');
+
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = new Date().toISOString().slice(0, 10);
+        a.download = `cowatcher-viewing-history-${dateStr}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(
+            `Exported ${cachedHistorySessions.length} viewing sessions to CSV!`,
+        );
+    });
+
+    // ==========================================
+    // TAB 5: SETTINGS CONTROLLER
+    // ==========================================
+    async function loadSettings(): Promise<void> {
+        const res = await storage.get<Record<string, unknown>>([
+            NCW_CONSTANTS.STORAGE_KEYS.SETTINGS,
+        ]);
+        if (res && res[NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]) {
+            currentSettings = {
+                ...NCW_CONSTANTS.DEFAULT_SETTINGS,
+                ...(res[
+                    NCW_CONSTANTS.STORAGE_KEYS.SETTINGS
+                ] as Partial<ExtensionSettings>),
+            };
+        }
+        syncSettingsUI();
+    }
+
+    function syncSettingsUI(): void {
+        if (cfgAiProvider)
+            cfgAiProvider.value = currentSettings.aiProvider || 'google';
+        toggleProviderVisibility(currentSettings.aiProvider || 'google');
+
+        if (cfgOllamaHost)
+            cfgOllamaHost.value =
+                currentSettings.ollamaHost || 'http://localhost:11434';
+        if (cfgTranslationModel)
+            cfgTranslationModel.value =
+                currentSettings.translationModel || 'translategemma:4b';
+        if (cfgSupervisorModel)
+            cfgSupervisorModel.value =
+                currentSettings.supervisorModel || 'translategemma:4b';
+
+        refreshVaultStatus().catch(() => {});
+        if (cfgEnableSupervisor)
+            cfgEnableSupervisor.checked =
+                currentSettings.enableSupervisor !== false;
+        if (cfgTargetLang) {
+            cfgTargetLang.innerHTML = Language.getAll()
+                .map((l) => `<option value="${l.code}">${l.label}</option>`)
+                .join('');
+            const currentLang = Language.resolve(
+                currentSettings.targetLanguage,
+            );
+            cfgTargetLang.value = currentLang.code;
+        }
+        if (cfgDisplayMode)
+            cfgDisplayMode.value = currentSettings.displayMode || 'bilingual';
+        if (cfgPreferNativeSubtitles)
+            cfgPreferNativeSubtitles.checked =
+                currentSettings.preferNativeSubtitles !== false;
+        if (cfgExtractNativeTerms)
+            cfgExtractNativeTerms.checked = Boolean(
+                currentSettings.extractTermsFromNativeSubtitles,
+            );
+        if (cfgHideNative)
+            cfgHideNative.checked =
+                currentSettings.hideNativeSubtitles !== false;
+        if (cfgEnableDomSync)
+            cfgEnableDomSync.checked = Boolean(
+                currentSettings.enableDomSubtitleSync,
+            );
+        if (cfgEnableLearning)
+            cfgEnableLearning.checked = Boolean(
+                currentSettings.enableSubtitleLearning,
+            );
+        if (cfgAutoPauseLearning)
+            cfgAutoPauseLearning.checked =
+                currentSettings.autoPauseOnTokenClick !== false;
+        if (cfgChinesePhoneticSystem)
+            cfgChinesePhoneticSystem.value =
+                currentSettings.chinesePhoneticSystem || 'pinyin';
+        if (cfgKoreanPhoneticSystem)
+            cfgKoreanPhoneticSystem.value =
+                currentSettings.koreanPhoneticSystem || 'default';
+
+        if (cfgVocabEnabled)
+            cfgVocabEnabled.checked = Boolean(
+                currentSettings.vocabExtractorEnabled,
+            );
+        if (cfgRecordVocabAsLemma)
+            cfgRecordVocabAsLemma.checked =
+                currentSettings.recordVocabAsLemma !== false;
+        if (cfgVocabProvider) {
+            cfgVocabProvider.value =
+                currentSettings.vocabExtractorProvider || 'openrouter';
+            updateVocabProviderVisibility(cfgVocabProvider.value);
+        }
+        if (cfgVocabDifficulty)
+            cfgVocabDifficulty.value =
+                currentSettings.vocabExtractorDifficulty || 'medium';
+        if (cfgVocabSourceLang) {
+            const currentSrc = currentSettings.vocabSourceLanguage || 'auto';
+            cfgVocabSourceLang.innerHTML = [
+                '<option value="auto">✨ Auto Detect</option>',
+                ...Language.getAll().map(
+                    (l) => `<option value="${l.code}">${l.label}</option>`,
+                ),
+            ].join('');
+            const matched = Language.get(currentSrc);
+            cfgVocabSourceLang.value = matched
+                ? matched.code
+                : currentSrc === 'auto'
+                  ? 'auto'
+                  : Language.resolve(currentSrc).code;
+        }
+        if (cfgVocabCustomPrompt)
+            cfgVocabCustomPrompt.value =
+                currentSettings.vocabExtractorCustomPrompt || '';
+        if (uiLanguageSelect)
+            uiLanguageSelect.value = currentSettings.uiLanguage || 'en';
+        if (cacheRetentionSelect)
+            cacheRetentionSelect.value = currentSettings.cacheRetention || '1m';
+        if (cfgCacheRetention)
+            cfgCacheRetention.value = currentSettings.cacheRetention || '1m';
+
+        populateOpenRouterOptions();
+    }
+
+    function toggleProviderVisibility(provider: string): void {
+        const isOllama = provider === 'ollama';
+        const isOpenRouter = provider === 'openrouter';
+        if (cfgOllamaSection)
+            cfgOllamaSection.style.display = isOllama ? 'block' : 'none';
+        if (cfgOpenrouterSection)
+            cfgOpenrouterSection.style.display = isOpenRouter
+                ? 'block'
+                : 'none';
+    }
+
+    function updateVocabProviderVisibility(provider: string): void {
+        const isOllama = provider === 'ollama';
+        if (cfgVocabOllamaGroup)
+            cfgVocabOllamaGroup.style.display = isOllama ? 'block' : 'none';
+        if (cfgVocabOpenrouterGroup)
+            cfgVocabOpenrouterGroup.style.display = isOllama ? 'none' : 'block';
+    }
+
+    cfgVocabProvider?.addEventListener('change', () => {
+        if (cfgVocabProvider) {
+            updateVocabProviderVisibility(cfgVocabProvider.value);
+        }
+    });
+
+    cfgAiProvider?.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement | null;
+        if (target) toggleProviderVisibility(target.value);
+    });
+
+    const RECOMMENDED_MODELS = [
+        { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3' },
+        { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+        { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+        { id: 'qwen/qwen-2.5-72b-instruct', name: 'Qwen 2.5 72B Instruct' },
+        {
+            id: 'meta-llama/llama-3.3-70b-instruct',
+            name: 'Llama 3.3 70B Instruct',
+        },
+        { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku' },
+        { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
+    ];
+
+    function populateOpenRouterOptions(): void {
+        if (!cfgOpenrouterTransModel || !cfgOpenrouterSupModel) return;
+
+        cfgOpenrouterTransModel.innerHTML = '';
+        cfgOpenrouterSupModel.innerHTML = '';
+        if (cfgVocabOpenrouterModel) cfgVocabOpenrouterModel.innerHTML = '';
+
+        RECOMMENDED_MODELS.forEach((m) => {
+            const opt1 = document.createElement('option');
+            opt1.value = m.id;
+            opt1.textContent = `${m.name} (${m.id})`;
+            cfgOpenrouterTransModel?.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = m.id;
+            opt2.textContent = `${m.name} (${m.id})`;
+            cfgOpenrouterSupModel?.appendChild(opt2);
+
+            if (cfgVocabOpenrouterModel) {
+                const opt3 = document.createElement('option');
+                opt3.value = m.id;
+                opt3.textContent = `${m.name} (${m.id})`;
+                cfgVocabOpenrouterModel.appendChild(opt3);
+            }
+        });
+
+        if (currentSettings.openrouterTranslationModel) {
+            cfgOpenrouterTransModel.value =
+                currentSettings.openrouterTranslationModel;
+        }
+        if (currentSettings.openrouterSupervisorModel) {
+            cfgOpenrouterSupModel.value =
+                currentSettings.openrouterSupervisorModel;
+        }
+        if (currentSettings.vocabExtractorModel && cfgVocabOpenrouterModel) {
+            cfgVocabOpenrouterModel.value = currentSettings.vocabExtractorModel;
+        }
+
+        if (cfgVocabOllamaModel) {
+            cfgVocabOllamaModel.innerHTML = [
+                'qwen2.5:7b',
+                'qwen2.5:14b',
+                'llama3.1:8b',
+                'gemma2:9b',
+            ]
+                .map((m) => `<option value="${m}">${m}</option>`)
+                .join('');
+            if (currentSettings.vocabExtractorOllamaModel) {
+                cfgVocabOllamaModel.value =
+                    currentSettings.vocabExtractorOllamaModel;
+            }
+        }
+    }
+
+    async function refreshVaultStatus(): Promise<void> {
+        try {
+            const status = await messageService.getCredentialStatus();
+            if (cfgOpenrouterKey) {
+                if (status.hasKey) {
+                    cfgOpenrouterKey.placeholder =
+                        status.maskedKey || 'sk-or-••••••••';
+                    if (
+                        !cfgOpenrouterKey.value ||
+                        cfgOpenrouterKey.value.includes('••')
+                    ) {
+                        cfgOpenrouterKey.value = status.maskedKey;
+                    }
+                    if (cfgBtnClearKey)
+                        cfgBtnClearKey.style.display = 'inline-block';
+                } else {
+                    cfgOpenrouterKey.placeholder = 'sk-or-v1-...';
+                    cfgOpenrouterKey.value = '';
+                    if (cfgBtnClearKey) cfgBtnClearKey.style.display = 'none';
+                }
+            }
+
+            if (cfgEnableMasterPwd) {
+                cfgEnableMasterPwd.checked = status.isEncrypted;
+            }
+
+            if (status.isEncrypted) {
+                if (cfgMasterPwdUnlockRow)
+                    cfgMasterPwdUnlockRow.style.display = 'flex';
+                if (cfgMasterPwdSetupRow)
+                    cfgMasterPwdSetupRow.style.display = 'none';
+                if (status.isUnlocked) {
+                    if (cfgVaultBadge) {
+                        cfgVaultBadge.innerHTML =
+                            '<span style="color: var(--accent-green);">🔓 Unlocked (Active for session)</span>';
+                    }
+                    if (cfgVaultUnlockInput)
+                        cfgVaultUnlockInput.style.display = 'none';
+                    if (cfgBtnVaultUnlock)
+                        cfgBtnVaultUnlock.style.display = 'none';
+                    if (cfgBtnVaultLock)
+                        cfgBtnVaultLock.style.display = 'inline-block';
+                    if (cfgKeyStatusHint) {
+                        cfgKeyStatusHint.textContent =
+                            'API Key stored locally with AES-256 encryption.';
+                    }
+                } else {
+                    if (cfgVaultBadge) {
+                        cfgVaultBadge.innerHTML =
+                            '<span style="color: var(--accent-yellow);">🔒 Locked (Master Password required)</span>';
+                    }
+                    if (cfgVaultUnlockInput) {
+                        cfgVaultUnlockInput.style.display = 'inline-block';
+                        cfgVaultUnlockInput.value = '';
+                    }
+                    if (cfgBtnVaultUnlock)
+                        cfgBtnVaultUnlock.style.display = 'inline-block';
+                    if (cfgBtnVaultLock)
+                        cfgBtnVaultLock.style.display = 'none';
+                    if (cfgKeyStatusHint) {
+                        cfgKeyStatusHint.textContent =
+                            'Key is encrypted. Please unlock to enable OpenRouter AI features.';
+                    }
+                }
+            } else {
+                if (cfgMasterPwdUnlockRow)
+                    cfgMasterPwdUnlockRow.style.display = 'none';
+                if (cfgMasterPwdSetupRow)
+                    cfgMasterPwdSetupRow.style.display = 'none';
+                if (cfgKeyStatusHint) {
+                    cfgKeyStatusHint.textContent = status.hasKey
+                        ? 'API Key stored in local storage (Unencrypted).'
+                        : '';
+                }
+            }
+        } catch (err) {
+            logger.error(
+                'options',
+                'Failed to refresh credential vault status',
+                err,
+            );
+        }
+    }
+
+    cfgOpenrouterKey?.addEventListener('focus', () => {
+        if (cfgOpenrouterKey.value.includes('••')) {
+            cfgOpenrouterKey.value = '';
+        }
+    });
+
+    cfgOpenrouterKey?.addEventListener('blur', () => {
+        if (!cfgOpenrouterKey.value.trim()) {
+            refreshVaultStatus().catch(() => {});
+        }
+    });
+
+    cfgBtnClearKey?.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to remove the stored API key?')) {
+            await messageService.clearCredentials();
+            showToast('API Key removed.');
+            await refreshVaultStatus();
+        }
+    });
+
+    cfgEnableMasterPwd?.addEventListener('change', async () => {
+        const isChecked = cfgEnableMasterPwd.checked;
+        if (isChecked) {
+            if (cfgMasterPwdSetupRow) {
+                cfgMasterPwdSetupRow.style.display = 'block';
+                if (cfgMasterPwdInput) cfgMasterPwdInput.focus();
+            }
+            if (cfgMasterPwdMsg) cfgMasterPwdMsg.textContent = '';
+        } else {
+            const pwd = prompt(
+                'Enter your current Master Password to disable encryption:',
+            );
+            if (!pwd) {
+                cfgEnableMasterPwd.checked = true;
+                return;
+            }
+            const res =
+                await messageService.disableCredentialEncryption(pwd);
+            if (res.success) {
+                showToast('Master password protection disabled.');
+                await refreshVaultStatus();
+            } else {
+                alert('Incorrect master password. Encryption remains active.');
+                cfgEnableMasterPwd.checked = true;
+            }
+        }
+    });
+
+    cfgBtnSaveMasterPwd?.addEventListener('click', async () => {
+        const p1 = cfgMasterPwdInput?.value || '';
+        const p2 = cfgMasterPwdConfirm?.value || '';
+        if (p1.length < 4) {
+            if (cfgMasterPwdMsg) {
+                cfgMasterPwdMsg.style.color = 'var(--accent-red)';
+                cfgMasterPwdMsg.textContent =
+                    'Password must be at least 4 characters.';
+            }
+            return;
+        }
+        if (p1 !== p2) {
+            if (cfgMasterPwdMsg) {
+                cfgMasterPwdMsg.style.color = 'var(--accent-red)';
+                cfgMasterPwdMsg.textContent = 'Passwords do not match.';
+            }
+            return;
+        }
+
+        const rawKey = cfgOpenrouterKey?.value.trim() || '';
+        const keyToSave = rawKey && !rawKey.includes('••') ? rawKey : undefined;
+
+        const res = await messageService.saveCredentials({
+            apiKey: keyToSave,
+            masterPassword: p1,
+            enableEncryption: true,
+        });
+
+        if (res.success) {
+            showToast('Master Password set and key encrypted with AES-256!');
+            if (cfgMasterPwdInput) cfgMasterPwdInput.value = '';
+            if (cfgMasterPwdConfirm) cfgMasterPwdConfirm.value = '';
+            await refreshVaultStatus();
+        } else {
+            if (cfgMasterPwdMsg) {
+                cfgMasterPwdMsg.style.color = 'var(--accent-red)';
+                cfgMasterPwdMsg.textContent =
+                    res.error || 'Failed to save credentials.';
+            }
+        }
+    });
+
+    cfgBtnVaultUnlock?.addEventListener('click', async () => {
+        const pwd = cfgVaultUnlockInput?.value || '';
+        if (!pwd) return;
+        const res = await messageService.unlockCredentials(pwd);
+        if (res.success) {
+            showToast('Vault unlocked successfully!');
+            await refreshVaultStatus();
+        } else {
+            alert('Incorrect master password.');
+        }
+    });
+
+    cfgVaultUnlockInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            cfgBtnVaultUnlock?.click();
+        }
+    });
+
+    cfgBtnVaultLock?.addEventListener('click', async () => {
+        await messageService.lockCredentials();
+        showToast('Vault locked.');
+        await refreshVaultStatus();
+    });
+
+    btnSaveSettings?.addEventListener('click', async () => {
+        const rawKey = cfgOpenrouterKey?.value.trim() || '';
+        if (rawKey && !rawKey.includes('••')) {
+            await messageService.saveCredentials({
+                apiKey: rawKey,
+            });
+        }
+
+        const updated: ExtensionSettings = {
+            ...currentSettings,
+            aiProvider: (cfgAiProvider
+                ? cfgAiProvider.value
+                : currentSettings.aiProvider) as TranslationProvider,
+            ollamaHost: cfgOllamaHost
+                ? cfgOllamaHost.value.trim()
+                : currentSettings.ollamaHost,
+            translationModel: cfgTranslationModel
+                ? cfgTranslationModel.value
+                : currentSettings.translationModel,
+            supervisorModel: cfgSupervisorModel
+                ? cfgSupervisorModel.value
+                : currentSettings.supervisorModel,
+            openrouterTranslationModel: cfgOpenrouterTransModel
+                ? cfgOpenrouterTransModel.value
+                : currentSettings.openrouterTranslationModel,
+            openrouterSupervisorModel: cfgOpenrouterSupModel
+                ? cfgOpenrouterSupModel.value
+                : currentSettings.openrouterSupervisorModel,
+            enableSupervisor: cfgEnableSupervisor
+                ? cfgEnableSupervisor.checked
+                : currentSettings.enableSupervisor,
+            targetLanguage: cfgTargetLang
+                ? Language.resolve(cfgTargetLang.value)
+                : currentSettings.targetLanguage,
+            displayMode: (cfgDisplayMode
+                ? cfgDisplayMode.value
+                : currentSettings.displayMode) as
+                'bilingual' | 'translated' | 'original',
+            preferNativeSubtitles: cfgPreferNativeSubtitles
+                ? cfgPreferNativeSubtitles.checked
+                : currentSettings.preferNativeSubtitles,
+            extractTermsFromNativeSubtitles: cfgExtractNativeTerms
+                ? cfgExtractNativeTerms.checked
+                : currentSettings.extractTermsFromNativeSubtitles,
+            hideNativeSubtitles: cfgHideNative
+                ? cfgHideNative.checked
+                : currentSettings.hideNativeSubtitles,
+            enableDomSubtitleSync: cfgEnableDomSync
+                ? cfgEnableDomSync.checked
+                : currentSettings.enableDomSubtitleSync,
+            enableSubtitleLearning: cfgEnableLearning
+                ? cfgEnableLearning.checked
+                : currentSettings.enableSubtitleLearning,
+            autoPauseOnTokenClick: cfgAutoPauseLearning
+                ? cfgAutoPauseLearning.checked
+                : currentSettings.autoPauseOnTokenClick,
+            chinesePhoneticSystem: cfgChinesePhoneticSystem
+                ? (cfgChinesePhoneticSystem.value as 'pinyin' | 'zhuyin')
+                : currentSettings.chinesePhoneticSystem || 'pinyin',
+            koreanPhoneticSystem: cfgKoreanPhoneticSystem
+                ? (cfgKoreanPhoneticSystem.value as 'default' | 'hyphenated')
+                : currentSettings.koreanPhoneticSystem || 'default',
+            vocabExtractorEnabled: cfgVocabEnabled
+                ? cfgVocabEnabled.checked
+                : currentSettings.vocabExtractorEnabled,
+            recordVocabAsLemma: cfgRecordVocabAsLemma
+                ? cfgRecordVocabAsLemma.checked
+                : currentSettings.recordVocabAsLemma !== false,
+            vocabExtractorProvider: (cfgVocabProvider
+                ? cfgVocabProvider.value
+                : currentSettings.vocabExtractorProvider) as
+                'ollama' | 'openrouter',
+            vocabExtractorModel: cfgVocabOpenrouterModel
+                ? cfgVocabOpenrouterModel.value
+                : currentSettings.vocabExtractorModel,
+            vocabExtractorOllamaModel: cfgVocabOllamaModel
+                ? cfgVocabOllamaModel.value
+                : currentSettings.vocabExtractorOllamaModel,
+            vocabExtractorDifficulty: (cfgVocabDifficulty
+                ? cfgVocabDifficulty.value
+                : currentSettings.vocabExtractorDifficulty) as
+                'easy' | 'medium' | 'hard',
+            vocabSourceLanguage: cfgVocabSourceLang
+                ? cfgVocabSourceLang.value === 'auto'
+                    ? 'auto'
+                    : Language.resolve(cfgVocabSourceLang.value)
+                : currentSettings.vocabSourceLanguage,
+            vocabExtractorCustomPrompt: cfgVocabCustomPrompt
+                ? cfgVocabCustomPrompt.value.trim()
+                : currentSettings.vocabExtractorCustomPrompt,
+            uiLanguage: (uiLanguageSelect
+                ? uiLanguageSelect.value
+                : currentSettings.uiLanguage) as 'en' | 'zh',
+            cacheRetention: (cfgCacheRetention
+                ? cfgCacheRetention.value
+                : cacheRetentionSelect
+                  ? cacheRetentionSelect.value
+                  : currentSettings.cacheRetention || '1m') as
+                | '1w'
+                | '1m'
+                | '1y',
+        };
+
+        currentSettings = updated;
+        delete (updated as Partial<ExtensionSettings>).openrouterApiKey;
+        await messageService.saveSettings(updated);
+        await cacheRepository.cleanExpiredRecords(updated.cacheRetention);
+        showToast('Settings saved successfully!');
+        loadSubtitleCaches();
+        await refreshVaultStatus();
+    });
+
+    uiLanguageSelect?.addEventListener('change', async (e) => {
+        const target = e.target as HTMLSelectElement | null;
+        if (!target) return;
+        const lang = target.value as 'en' | 'zh';
+        currentSettings.uiLanguage = lang;
+        await storage.set({
+            [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
+        });
+    });
+
+    cfgChinesePhoneticSystem?.addEventListener('change', async (e) => {
+        const target = e.target as HTMLSelectElement | null;
+        if (!target) return;
+        const system = (target.value as 'pinyin' | 'zhuyin') || 'pinyin';
+        currentSettings.chinesePhoneticSystem = system;
+        await storage.set({
+            [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
+        });
+        showToast('Phonetic system updated!');
+    });
+
+    cfgKoreanPhoneticSystem?.addEventListener('change', async (e) => {
+        const target = e.target as HTMLSelectElement | null;
+        if (!target) return;
+        const system =
+            (target.value as 'default' | 'hyphenated') || 'default';
+        currentSettings.koreanPhoneticSystem = system;
+        await storage.set({
+            [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
+        });
+        showToast('Phonetic system updated!');
+    });
+
+    // Initial Data Loads
+    // Load settings and initialize UI language
+    storage.get<Record<string, unknown>>(NCW_CONSTANTS.STORAGE_KEYS.SETTINGS).then((stored) => {
+        if (stored && stored[NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]) {
+            currentSettings = {
+                ...NCW_CONSTANTS.DEFAULT_SETTINGS,
+                ...(stored[NCW_CONSTANTS.STORAGE_KEYS.SETTINGS] as Partial<ExtensionSettings>),
+            };
+        }
+        if (uiLanguageSelect) {
+            uiLanguageSelect.value = currentSettings.uiLanguage || 'en';
+            uiLanguageSelect.addEventListener('change', async () => {
+                const val = uiLanguageSelect.value as 'en' | 'zh' | 'ja' | 'ko';
+                currentSettings.uiLanguage = val;
+                await messageService.saveSettings({ uiLanguage: val });
+                applyI18n(val);
+            });
+        }
+        applyI18n(currentSettings.uiLanguage || 'en');
+    });
+
+    loadSubtitleCaches();
+    loadVocabBank();
+    loadShowContexts();
+    loadWatchHistory();
+    loadSettings();
+});

@@ -20,33 +20,33 @@ export interface CurationFieldDefinition {
 export const CURATION_FIELDS: readonly CurationFieldDefinition[] = [
     {
         key: 'lemma',
-        label: '原型 (Lemma)',
-        description: '词汇词元原型或词根形式',
+        label: 'Lemma (Base Form)',
+        description: 'Root lemma or dictionary base form',
     },
     {
         key: 'meaning',
-        label: '释义 (Meaning)',
-        description: '目标语言释义与定义',
+        label: 'Meaning (Definition)',
+        description: 'Contextual definition in target language',
     },
     {
         key: 'phonetic',
-        label: '发音 (Phonetic)',
-        description: '音标、假名读音或拼音',
+        label: 'Phonetic (Reading)',
+        description: 'Pronunciation, furigana reading, or IPA',
     },
     {
         key: 'pos',
-        label: '词性 (POS)',
-        description: '词性或词类属性 (如 n., v., adj.)',
+        label: 'POS (Part of Speech)',
+        description: 'Grammatical category (e.g. noun, verb, adj)',
     },
     {
         key: 'sentence',
-        label: '语境例句 (Sentence)',
-        description: '原视频字幕对话或例句',
+        label: 'Sentence (Context)',
+        description: 'Original dialogue line or context sentence',
     },
     {
         key: 'sentenceTranslation',
-        label: '例句翻译 (Translation)',
-        description: '例句的目标语言翻译',
+        label: 'Translation (Sentence)',
+        description: 'Target language translation of context sentence',
     },
 ] as const;
 

@@ -448,9 +448,7 @@ const logger: Logger = new Logger('content');
     async function toggleEnabledState(showNotification = true): Promise<void> {
         if (!isExtensionValid()) {
             showToast(
-                settings.uiLanguage === 'zh'
-                    ? '⚠️ 插件已在后台更新，请刷新网页 (F5)！'
-                    : '⚠️ Extension updated. Please refresh page (F5)!',
+                NCW_I18N.getText('extensionUpdatedReload', settings.uiLanguage),
             );
             return;
         }
@@ -733,9 +731,7 @@ const logger: Logger = new Logger('content');
     async function adjustSubtitleOffset(delta: number): Promise<void> {
         if (!isExtensionValid()) {
             showToast(
-                settings.uiLanguage === 'zh'
-                    ? '⚠️ 插件已在后台更新，请刷新网页 (F5)！'
-                    : '⚠️ Extension updated. Please refresh page (F5)!',
+                NCW_I18N.getText('extensionUpdatedReload', settings.uiLanguage),
             );
             return;
         }
@@ -764,9 +760,7 @@ const logger: Logger = new Logger('content');
     async function resetSubtitleOffset(): Promise<void> {
         if (!isExtensionValid()) {
             showToast(
-                settings.uiLanguage === 'zh'
-                    ? '⚠️ 插件已在后台更新，请刷新网页 (F5)！'
-                    : '⚠️ Extension updated. Please refresh page (F5)!',
+                NCW_I18N.getText('extensionUpdatedReload', settings.uiLanguage),
             );
             return;
         }

@@ -93,12 +93,12 @@ export class VocabCurationSession {
 
         if (intent === 'csv') {
             subtitle =
-                '导出前确认与筛选：检查词汇、编辑释义或删除无用词条，完成后点击“下载 CSV”。';
-            badge = `导出确认 · CSV · ${src} ➔ ${tgt}`;
+                'Pre-export verification: review words, edit definitions, or remove entries before downloading CSV.';
+            badge = `Export Confirmation · CSV · ${src} ➔ ${tgt}`;
         } else if (intent === 'anki') {
             subtitle =
-                '导出前确认与筛选：检查词汇、补充例句与释义，确认无误后点击“导出到 Anki”。';
-            badge = `导出确认 · Anki · ${src} ➔ ${tgt}`;
+                'Pre-export verification: check definitions and examples before exporting to Anki.';
+            badge = `Export Confirmation · Anki · ${src} ➔ ${tgt}`;
         }
 
         const words: CuratedVocabWord[] = episode.words.map((w) => ({
@@ -148,16 +148,16 @@ export class VocabCurationSession {
         });
 
         const intent = options.intent || 'review';
-        let defaultSubtitle = `聚合了 ${episodes.length} 个剧集的生词。可在导出前进行筛选、深度 AI 释义与修订。`;
+        let defaultSubtitle = `Aggregated vocabulary from ${episodes.length} episodes. Review, refine with AI, and edit before exporting.`;
         if (intent === 'csv') {
-            defaultSubtitle = `聚合了 ${episodes.length} 个剧集共 ${words.length} 个词条。核对无误后点击“下载 CSV”完成导出。`;
+            defaultSubtitle = `Aggregated ${words.length} words from ${episodes.length} episodes. Review before clicking "Download CSV".`;
         } else if (intent === 'anki') {
-            defaultSubtitle = `聚合了 ${episodes.length} 个剧集共 ${words.length} 个词条。检查卡片释义后点击“导出到 Anki”。`;
+            defaultSubtitle = `Aggregated ${words.length} words from ${episodes.length} episodes. Review definitions before clicking "Export to Anki".`;
         }
 
         const badge =
             options.badgeText ||
-            `${episodes.length} 集汇总 · ${words.length} 词`;
+            `${episodes.length} Episodes · ${words.length} Words`;
 
         return new VocabCurationSession({
             title: options.title,
@@ -200,11 +200,11 @@ export class VocabCurationSession {
 
         const intent = options?.intent || 'csv';
         const subtitle =
-            '汇集全剧库中所有由用户主动标记/收藏的生词。可在导出前校对释义或剔除词条。';
-        const badgeText = `⭐ 用户星标收藏 · ${words.length} 词`;
+            'Aggregated all user-starred vocabulary. Review definitions or remove entries before exporting.';
+        const badgeText = `⭐ Starred Words · ${words.length} words`;
 
         return new VocabCurationSession({
-            title: '⭐ 用户收藏生词导出确认',
+            title: '⭐ Starred Vocabulary Export Confirmation',
             subtitle,
             badgeText,
             intent,
@@ -248,10 +248,10 @@ export class VocabCurationSession {
         };
 
         return new VocabCurationSession({
-            title: options?.title || '外部 CSV 词表导入 · 暂存与导出模式',
+            title: options?.title || 'External CSV Import · Staging & Export Mode',
             subtitle:
-                '已导入外部生词。可使用【✨ 一键 AI 释义】智能补全留空列，支持试听与直接导出。此模式不保存入本地剧集词库。',
-            badgeText: `📂 外部导入暂存 · ${src} ➔ ${tgt}`,
+                'Imported external vocabulary. You can use [✨ AI Polish / Enrich] to fill missing fields, preview audio, and export. (Changes are not saved to local episode storage)',
+            badgeText: `📂 External Import · ${src} ➔ ${tgt}`,
             intent: options?.intent || 'review',
             isPartialFilter: false,
             isImported: true,

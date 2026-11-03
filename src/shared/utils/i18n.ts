@@ -245,6 +245,114 @@ const NCW_I18N = {
                 'e.g. Focus on JLPT N1 idioms, medical terms, business slang, ignore character names...',
             vocabCustomPromptHint:
                 'Injected directly into LLM system prompt to guide vocabulary extraction',
+
+            // --- Curation, Vocab Editor & Export ---
+            curationAccordionTitle:
+                '⚙️ AI Prompt & Export Configuration (Prompt Injection / Field Protection / Auxiliary Columns)',
+            curationAccordionHint: '(Click to expand/collapse)',
+            curationPromptLabel:
+                '💡 Supervisor Model Prompt Injection (Custom Instructions):',
+            curationPromptHint:
+                'Uses Supervisor model by default; falls back to Translator if inactive',
+            curationPromptPlaceholder:
+                'Custom instructions, e.g. Include JLPT level & collocations / Target-language definitions only / Mnemonic roots...',
+            curationChipJlpt: '+ JLPT Level & Focus',
+            curationChipTargetOnly: '+ Target-Language Only',
+            curationChipMnemonic: '+ Etymology & Mnemonic',
+            curationChipNuance: '+ Spoken Nuances',
+            curationLockTitle:
+                '🔒 AI Field Protection (Click to toggle 🔓Update / 🔒Protected):',
+            curationLockHint:
+                '🔒 Protected fields will never be overwritten during AI batch or single enrichment',
+            curationTtsEnable: '🔊 Enable Word Audio (TTS)',
+            curationTtsCloud: 'High-Fidelity Cloud Voice (Edge/Cloud)',
+            curationTtsNative: 'System Native Speech (Native)',
+            curationTtsAwesome: 'AwesomeTTS Mode',
+            curationTtsHint:
+                'Click speaker icon to preview audio; exported cards include pronunciation column',
+            curationExportColsTitle: '📤 Export Auxiliary Columns:',
+            curationExportPho: 'Phonetic / Reading',
+            curationExportPos: 'Part of Speech (POS)',
+            curationExportSentence: 'Sentence',
+            curationExportTranslation: 'Sentence Translation',
+            curationExportAudio: 'Audio / TTS',
+            curationExportHint:
+                'Checked columns will be included in Anki and CSV export; unchecked columns will be omitted',
+            curationSelectAll: 'Select All',
+            curationBatchDelete: '🗑️ Delete Selected ({count})',
+            curationImportCsv: '📂 Import CSV',
+            curationEnrichAll: '✨ Auto Enrich All (Supervisor)',
+            curationSave: '💾 Save Changes',
+            curationDownloadCsv: '📥 Download CSV',
+            curationExportAnki: '🎴 Export to Anki',
+            curationConfirmDownloadCsv: '📥 Confirm & Download CSV',
+            curationConfirmExportAnki: '🎴 Confirm & Export to Anki',
+            btnImportExternalCsv: '📂 Import External CSV',
+            btnImportExternalCsvTitle:
+                'Import external CSV wordlist for AI enrichment and direct export (only "Word" column required; no storage pollution)',
+
+            // --- Anki Export Modal ---
+            ankiModalTitle: 'Export Vocabulary to Anki',
+            ankiChecking: '🔄 Checking AnkiConnect...',
+            ankiDestDeck: '📁 Destination Deck:',
+            ankiDefaultDeckOption: 'CoWatcher (Default)',
+            ankiDeckPlaceholder: 'Enter new deck name (e.g. Japanese::Anime)',
+            ankiNoteType: '📋 Note Type (Model):',
+            ankiEditLayoutBtn: '🎨 Card Layout & CSS Editor',
+            ankiModelCowatcher: 'CoWatcher Vocab (Modern Card Template)',
+            ankiModelBasic: 'Basic (Front & Back)',
+            ankiFieldMappingTitle:
+                '🔗 Note Field Mapping (Map CoWatcher Fields to Anki Fields)',
+            ankiFieldMappingExpand: '(Click to expand mapping settings)',
+            ankiFieldMappingHint:
+                'Map extracted CoWatcher fields to target Note Type fields (compatible with any third-party Anki model):',
+            ankiVoiceLang: '🗣️ Pronunciation Language (Voice):',
+            ankiPreviewVoiceBtn: '🔈 Preview Voice',
+            ankiReadingPlacement: '📖 Reading Placement:',
+            ankiPlacementFront: 'Front (Ruby Pronunciation / Furigana)',
+            ankiPlacementBack: 'Back (Prompt only on front)',
+            ankiPlacementNone: 'None (Skip reading field)',
+            ankiPlacementHint:
+                'Choose reading placement: Front for beginners, Back for active recall, None for minimalists.',
+            ankiTtsMaster: '🔊 Enable Word Audio (TTS Master Switch)',
+            ankiTtsEdgeTitle:
+                'High-Fidelity Cloud Voice (Edge/Cloud TTS) - Recommended',
+            ankiTtsEdgeDesc:
+                'Downloads clean high-quality MP3 into Anki collection for offline playback across all devices.',
+            ankiTtsNativeTitle: 'System Native Voice Engine (Native TTS)',
+            ankiTtsNativeDesc:
+                'Generates standard [tts:lang] tag using local voice packages without saving audio files.',
+            ankiTtsAwesomeTitle: 'AwesomeTTS / HyperTTS Compatible Mode',
+            ankiTtsAwesomeDesc:
+                'Leaves sound fields clean for Anki desktop AwesomeTTS / HyperTTS batch generation.',
+            ankiFuriganaRuby: 'Render Japanese reading with Ruby Furigana',
+            ankiBtnCancel: 'Cancel',
+            ankiBtnDownloadTsv: '📥 Download TSV',
+            ankiBtnDirectSync: '🎴 Direct Sync to Anki',
+
+            // --- Anki Template Modal ---
+            ankiTemplateTitle:
+                'Card Layout & CSS Styling Editor ({model})',
+            ankiTemplateSubtitle:
+                'Edit Front/Back HTML & CSS with real-time live preview simulation on the right',
+            ankiTabFront: 'Front (HTML)',
+            ankiTabBack: 'Back (HTML)',
+            ankiTabCss: 'Styling (CSS)',
+            ankiMustacheHint: 'Mustache syntax supported',
+            ankiInsertVar: 'Insert Variable:',
+            ankiSimulatorTitle: 'Live Card Simulation ({side})',
+            ankiSideFront: 'Front',
+            ankiSideBack: 'Back',
+            ankiFlipCard: '🔄 Flip Card',
+            ankiResetLayout: '↺ Reset to Default Layout',
+            ankiSaveSync: '💾 Save & Sync to Anki',
+
+            // --- Subtitle Popover ---
+            popoverBase: '(Base: {lemma})',
+            popoverDict: '📖 Dict: {meaning}',
+            popoverContext: '💡 Context: {meaning}',
+            extensionUpdatedToast:
+                '⚠️ Extension updated in background, please refresh page (F5)!',
         },
         zh: {
             extName: 'CoWatcher AI 字幕翻译',
@@ -468,6 +576,114 @@ const NCW_I18N = {
                 '例如：重点提取 JLPT N1/N2 词汇与惯用句、忽略人名、专攻商务英语或医学术语...',
             vocabCustomPromptHint:
                 '直接注入到大模型系统提示词中，精准控制生词提取偏好',
+
+            // --- Curation, Vocab Editor & Export ---
+            curationAccordionTitle:
+                '⚙️ AI 提示词与导出配置 (提示词注入 / 润色列锁定 / 导出辅助列)',
+            curationAccordionHint: '(点击展开/折叠配置)',
+            curationPromptLabel:
+                '💡 监督模型提示词注入 (定制指令):',
+            curationPromptHint:
+                '优先使用监督模型 (Supervisor)，未启用则回退至翻译模型',
+            curationPromptPlaceholder:
+                '可输入定制指令，例如：附带 JLPT 级别和考点搭配 / 纯目标语释义 / 词根助记法...',
+            curationChipJlpt: '+ JLPT 等级与考点',
+            curationChipTargetOnly: '+ 纯目标语释义',
+            curationChipMnemonic: '+ 词根助记法',
+            curationChipNuance: '+ 口语语境辨析',
+            curationLockTitle:
+                '🔒 AI 润色列锁定 (点击切换 🔓更新 / 🔒保护):',
+            curationLockHint:
+                '🔒 锁定列在 AI 批量/单条润色时受保护，绝不被覆盖',
+            curationTtsEnable: '🔊 启用单词发音 (TTS)',
+            curationTtsCloud: '高保真云端语音 (Edge/Cloud)',
+            curationTtsNative: '系统本地语音 (Native)',
+            curationTtsAwesome: 'AwesomeTTS 模式',
+            curationTtsHint:
+                '词卡小喇叭即点即试听；导出时自动携带发音列',
+            curationExportColsTitle: '📤 导出辅助列包含:',
+            curationExportPho: '注音/发音 (Phonetic)',
+            curationExportPos: '词性 (POS)',
+            curationExportSentence: '例句 (Sentence)',
+            curationExportTranslation: '例句翻译 (Translation)',
+            curationExportAudio: '音频/发音 (Audio)',
+            curationExportHint:
+                '勾选项将在导出到 Anki 与 CSV 时生效；取消勾选将抛弃该字段',
+            curationSelectAll: '全选',
+            curationBatchDelete: '🗑️ 删除选中 ({count})',
+            curationImportCsv: '📂 导入 CSV',
+            curationEnrichAll: '✨ 一键 AI 释义 (监督模型)',
+            curationSave: '💾 保存修改',
+            curationDownloadCsv: '📥 下载 CSV',
+            curationExportAnki: '🎴 导出到 Anki',
+            curationConfirmDownloadCsv: '📥 确认并下载 CSV',
+            curationConfirmExportAnki: '🎴 确认并导出到 Anki',
+            btnImportExternalCsv: '📂 导入外部 CSV',
+            btnImportExternalCsvTitle:
+                '导入外部 CSV 词表进行 AI 润色与直接导出（除 word 列外其余均可留空，不存入剧集库）',
+
+            // --- Anki Export Modal ---
+            ankiModalTitle: '导出生词到 Anki',
+            ankiChecking: '🔄 检查 AnkiConnect 连接中...',
+            ankiDestDeck: '📁 目标牌组 (Destination Deck):',
+            ankiDefaultDeckOption: 'CoWatcher (默认)',
+            ankiDeckPlaceholder: '输入新牌组名称 (如 Japanese::Anime)',
+            ankiNoteType: '📋 笔记卡片类型 (Note Type):',
+            ankiEditLayoutBtn: '🎨 卡片布局与 CSS 编辑器',
+            ankiModelCowatcher: 'CoWatcher Vocab (专属现代卡片模板)',
+            ankiModelBasic: 'Basic (基础两面卡)',
+            ankiFieldMappingTitle:
+                '🔗 自定义字段映射 (Field Mapping)',
+            ankiFieldMappingExpand: '(点击展开映射设置)',
+            ankiFieldMappingHint:
+                '将 CoWatcher 提取的单词各字段对应至该 Note Type 的字段列（支持复用任意第三方 Anki 模板）：',
+            ankiVoiceLang: '🗣️ 发音语言 (Voice / Language):',
+            ankiPreviewVoiceBtn: '🔈 试听发音',
+            ankiReadingPlacement: '📖 注音显示位置 (Reading Placement):',
+            ankiPlacementFront: '卡片正面 Front (Ruby 注音 / 读音)',
+            ankiPlacementBack: '卡片背面 Back (正面仅保留原词)',
+            ankiPlacementNone: '不导出注音 None (抛弃注音字段)',
+            ankiPlacementHint:
+                '选择注音在 Anki 卡片上的呈现位置：正面适合初学认读，背面适合背诵自测，抛弃适合追求极简。',
+            ankiTtsMaster: '🔊 启用单词发音 (TTS 发音总开关)',
+            ankiTtsEdgeTitle:
+                '高保真云端语音 (Edge/Cloud TTS) - 推荐',
+            ankiTtsEdgeDesc:
+                '自动下载高音质 MP3 音频并保存到 Anki 媒体库，全平台离线即点即播。',
+            ankiTtsNativeTitle: '系统原生语音引擎 (Native TTS)',
+            ankiTtsNativeDesc:
+                '生成 Anki 原生 [tts:lang] 标签，调用系统本地语音包，无需下载音频。',
+            ankiTtsAwesomeTitle: 'AwesomeTTS / HyperTTS 兼容模式',
+            ankiTtsAwesomeDesc:
+                '保持单词与发音字段干净，留待 Anki 桌面端 AwesomeTTS/HyperTTS 插件批量发音。',
+            ankiFuriganaRuby: '日文读音使用 Ruby / 振假名 (Furigana) 标注',
+            ankiBtnCancel: '取消',
+            ankiBtnDownloadTsv: '📥 下载 TSV',
+            ankiBtnDirectSync: '🎴 直接同步到 Anki',
+
+            // --- Anki Template Modal ---
+            ankiTemplateTitle:
+                '卡片排版与 CSS 样式编辑器 ({model})',
+            ankiTemplateSubtitle:
+                '在线编辑正面/背面 HTML 与 CSS，右侧实时双向渲染模拟卡片效果',
+            ankiTabFront: '正面模板 (Front HTML)',
+            ankiTabBack: '背面模板 (Back HTML)',
+            ankiTabCss: '样式表 (CSS)',
+            ankiMustacheHint: '支持 Mustache 语法',
+            ankiInsertVar: '插入字段:',
+            ankiSimulatorTitle: '卡片实时渲染模拟 ({side})',
+            ankiSideFront: '正面',
+            ankiSideBack: '背面',
+            ankiFlipCard: '🔄 翻转卡片',
+            ankiResetLayout: '↺ 恢复默认排版',
+            ankiSaveSync: '💾 保存并同步到 Anki',
+
+            // --- Subtitle Popover ---
+            popoverBase: '(原型: {lemma})',
+            popoverDict: '📖 词典: {meaning}',
+            popoverContext: '💡 语境: {meaning}',
+            extensionUpdatedToast:
+                '⚠️ 插件已在后台更新，请刷新网页 (F5)！',
         },
         ja: {
             extName: 'CoWatcher AI 字幕翻訳',
@@ -694,6 +910,114 @@ const NCW_I18N = {
                 '例: JLPT N1の慣用句やビジネス表現に集中、固有名詞は除外...',
             vocabCustomPromptHint:
                 'プロンプトに直接反映され、単語の抽出傾向をカスタマイズできます',
+
+            // --- Curation, Vocab Editor & Export ---
+            curationAccordionTitle:
+                '⚙️ AI プロンプトとエクスポート設定 (プロンプト注入 / カラム保護 / 補助カラム)',
+            curationAccordionHint: '(クリックして開閉)',
+            curationPromptLabel:
+                '💡 監修モデルプロンプト注入 (カスタム指示):',
+            curationPromptHint:
+                '監修モデルを優先使用し、無効な場合は翻訳モデルにフォールバック',
+            curationPromptPlaceholder:
+                'カスタム指示を入力可能、例：JLPTレベルと頻出コロケーション / 目標言語のみの定義 / 語根記憶法...',
+            curationChipJlpt: '+ JLPT レベルと頻出表現',
+            curationChipTargetOnly: '+ 目標言語のみで定義',
+            curationChipMnemonic: '+ 語根・語源記憶法',
+            curationChipNuance: '+ 会話ニュアンス解説',
+            curationLockTitle:
+                '🔒 AI カラム保護 (クリックして 🔓更新 / 🔒保護 を切替):',
+            curationLockHint:
+                '🔒 保護されたカラムは AI 一括/個別更新時に上書きされません',
+            curationTtsEnable: '🔊 単語の発音を有効化 (TTS)',
+            curationTtsCloud: '高音質クラウド音声 (Edge/Cloud)',
+            curationTtsNative: 'システム標準ローカル音声 (Native)',
+            curationTtsAwesome: 'AwesomeTTS モード',
+            curationTtsHint:
+                'スピーカーをクリックして試聴可能。エクスポート時に音声列が自動付与されます',
+            curationExportColsTitle: '📤 エクスポート補助カラム:',
+            curationExportPho: '発音/読み (Phonetic)',
+            curationExportPos: '品詞 (POS)',
+            curationExportSentence: '例文 (Sentence)',
+            curationExportTranslation: '例文訳 (Translation)',
+            curationExportAudio: '音声/発音 (Audio)',
+            curationExportHint:
+                'チェックした項目は Anki や CSV エクスポートに含まれ、解除した項目は除外されます',
+            curationSelectAll: 'すべて選択',
+            curationBatchDelete: '🗑️ 選択した項目を削除 ({count})',
+            curationImportCsv: '📂 CSV をインポート',
+            curationEnrichAll: '✨ 一括 AI 辞書補完 (監修モデル)',
+            curationSave: '💾 変更を保存',
+            curationDownloadCsv: '📥 CSV をダウンロード',
+            curationExportAnki: '🎴 Anki へエクスポート',
+            curationConfirmDownloadCsv: '📥 確認して CSV をダウンロード',
+            curationConfirmExportAnki: '🎴 確認して Anki へエクスポート',
+            btnImportExternalCsv: '📂 外部 CSV をインポート',
+            btnImportExternalCsvTitle:
+                '外部 CSV 単語帳をインポートして AI 補完し直接エクスポート（"Word" 列のみ必須）',
+
+            // --- Anki Export Modal ---
+            ankiModalTitle: '単語を Anki へエクスポート',
+            ankiChecking: '🔄 AnkiConnect 接続確認中...',
+            ankiDestDeck: '📁 保存先デッキ (Destination Deck):',
+            ankiDefaultDeckOption: 'CoWatcher (デフォルト)',
+            ankiDeckPlaceholder: '新しいデッキ名を入力 (例: Japanese::Anime)',
+            ankiNoteType: '📋 ノートタイプ (Note Type):',
+            ankiEditLayoutBtn: '🎨 カードレイアウト・CSS エディタ',
+            ankiModelCowatcher: 'CoWatcher Vocab (モダンカードテンプレート)',
+            ankiModelBasic: 'Basic (表裏基本カード)',
+            ankiFieldMappingTitle:
+                '🔗 フィールドマッピング (CoWatcher の項目を Anki に対応付け)',
+            ankiFieldMappingExpand: '(クリックしてマッピング設定を展開)',
+            ankiFieldMappingHint:
+                'CoWatcher の各フィールドを対象ノートタイプのフィールドに対応付けます:',
+            ankiVoiceLang: '🗣️ 音声言語 (Voice / Language):',
+            ankiPreviewVoiceBtn: '🔈 発音を試聴',
+            ankiReadingPlacement: '📖 ふりがな・発音の位置 (Reading Placement):',
+            ankiPlacementFront: 'カード表面 Front (ふりがな・読み)',
+            ankiPlacementBack: 'カード裏面 Back (表面は単語のみ)',
+            ankiPlacementNone: '含めない None (読みフィールドを除外)',
+            ankiPlacementHint:
+                '表示位置の選択: 表面は初学者向け、裏面はテスト向け、含めないはシンプル向け。',
+            ankiTtsMaster: '🔊 単語発音を有効化 (TTS マスター設定)',
+            ankiTtsEdgeTitle:
+                '高音質クラウド音声 (Edge/Cloud TTS) - 推奨',
+            ankiTtsEdgeDesc:
+                '高音質 MP3 を自動ダウンロードして Anki メディアに保存し、オフライン再生可能。',
+            ankiTtsNativeTitle: 'システム標準音声エンジン (Native TTS)',
+            ankiTtsNativeDesc:
+                'Anki 標準 [tts:lang] タグを生成し、ローカル音声パッケージを利用。',
+            ankiTtsAwesomeTitle: 'AwesomeTTS / HyperTTS 互換モード',
+            ankiTtsAwesomeDesc:
+                '単語と読みをそのまま保持し、Anki デスクトッププラグイン用として空けておく。',
+            ankiFuriganaRuby: '日本語の読みに Ruby ふりがなを使用',
+            ankiBtnCancel: 'キャンセル',
+            ankiBtnDownloadTsv: '📥 TSV をダウンロード',
+            ankiBtnDirectSync: '🎴 Anki へ直接同期',
+
+            // --- Anki Template Modal ---
+            ankiTemplateTitle:
+                'カードレイアウト・CSS スタイルエディタ ({model})',
+            ankiTemplateSubtitle:
+                '表面・裏面 HTML と CSS を編集し、右側でリアルタイムにプレビュー確認',
+            ankiTabFront: '表面テンプレート (Front)',
+            ankiTabBack: '裏面テンプレート (Back)',
+            ankiTabCss: 'スタイルシート (CSS)',
+            ankiMustacheHint: 'Mustache 記法に対応',
+            ankiInsertVar: '変数を挿入:',
+            ankiSimulatorTitle: 'カードシミュレータ ({side})',
+            ankiSideFront: '表面',
+            ankiSideBack: '裏面',
+            ankiFlipCard: '🔄 カードを裏返す',
+            ankiResetLayout: '↺ デフォルトレイアウトに戻す',
+            ankiSaveSync: '💾 保存して Anki に同期',
+
+            // --- Subtitle Popover ---
+            popoverBase: '(原形: {lemma})',
+            popoverDict: '📖 辞書: {meaning}',
+            popoverContext: '💡 文脈: {meaning}',
+            extensionUpdatedToast:
+                '⚠️ 拡張機能が更新されました。ページをリロードしてください (F5)',
         },
         ko: {
             extName: 'CoWatcher AI 자막 번역기',
@@ -920,6 +1244,114 @@ const NCW_I18N = {
                 '예: JLPT N1 관용구, 비즈니스 전문 용어 집중, 인명 제외...',
             vocabCustomPromptHint:
                 '프롬프트에 직접 반영되어 원하는 단어 추출 경향을 맞춤 설정합니다',
+
+            // --- Curation, Vocab Editor & Export ---
+            curationAccordionTitle:
+                '⚙️ AI 프롬프트 및 내보내기 설정 (프롬프트 주입 / 열 잠금 / 보조 열)',
+            curationAccordionHint: '(클릭하여 펼치기/접기)',
+            curationPromptLabel:
+                '💡 감수 모델 프롬프트 주입 (사용자 지정 지시):',
+            curationPromptHint:
+                '감수 모델을 우선 사용하며, 비활성화 시 번역 모델로 대체',
+            curationPromptPlaceholder:
+                '사용자 지정 지시 입력 가능, 예: JLPT 등급 및 빈출 표현 / 목표 언어 전용 정의 / 어근 연상법...',
+            curationChipJlpt: '+ JLPT 등급 및 핵심 표현',
+            curationChipTargetOnly: '+ 목표 언어로만 정의',
+            curationChipMnemonic: '+ 어근·어원 연상법',
+            curationChipNuance: '+ 구어체 뉘앙스 해설',
+            curationLockTitle:
+                '🔒 AI 열 보호 (클릭하여 🔓업데이트 / 🔒보호 전환):',
+            curationLockHint:
+                '🔒 잠긴 열은 AI 일괄/개별 윤문 시 보호되어 덮어쓰이지 않습니다',
+            curationTtsEnable: '🔊 단어 발음 활성화 (TTS)',
+            curationTtsCloud: '고음질 클라우드 음성 (Edge/Cloud)',
+            curationTtsNative: '시스템 기본 음성 (Native)',
+            curationTtsAwesome: 'AwesomeTTS 모드',
+            curationTtsHint:
+                '스피커를 클릭하여 미리 듣기 가능. 내보내기 시 발음 열이 자동 포함됩니다',
+            curationExportColsTitle: '📤 내보내기 보조 열 포함:',
+            curationExportPho: '발음/독음 (Phonetic)',
+            curationExportPos: '품사 (POS)',
+            curationExportSentence: '예문 (Sentence)',
+            curationExportTranslation: '예문 번역 (Translation)',
+            curationExportAudio: '오디오/발음 (Audio)',
+            curationExportHint:
+                '선택한 항목은 Anki 및 CSV 내보내기에 포함되며, 해제된 항목은 제외됩니다',
+            curationSelectAll: '전체 선택',
+            curationBatchDelete: '🗑️ 선택 항목 삭제 ({count})',
+            curationImportCsv: '📂 CSV 가져오기',
+            curationEnrichAll: '✨ AI 일괄 윤문 (감수 모델)',
+            curationSave: '💾 변경사항 저장',
+            curationDownloadCsv: '📥 CSV 다운로드',
+            curationExportAnki: '🎴 Anki로 내보내기',
+            curationConfirmDownloadCsv: '📥 확인 후 CSV 다운로드',
+            curationConfirmExportAnki: '🎴 확인 후 Anki로 내보내기',
+            btnImportExternalCsv: '📂 외부 CSV 가져오기',
+            btnImportExternalCsvTitle:
+                '외부 CSV 단어장을 가져와 AI로 완성하고 직접 내보내기 ("Word" 열만 필수)',
+
+            // --- Anki Export Modal ---
+            ankiModalTitle: '단어장을 Anki로 내보내기',
+            ankiChecking: '🔄 AnkiConnect 연결 확인 중...',
+            ankiDestDeck: '📁 대상 덱 (Destination Deck):',
+            ankiDefaultDeckOption: 'CoWatcher (기본값)',
+            ankiDeckPlaceholder: '새 덱 이름 입력 (예: Japanese::Anime)',
+            ankiNoteType: '📋 노트 유형 (Note Type):',
+            ankiEditLayoutBtn: '🎨 카드 레이아웃 및 CSS 편집기',
+            ankiModelCowatcher: 'CoWatcher Vocab (모던 카드 템플릿)',
+            ankiModelBasic: 'Basic (기본 양면 카드)',
+            ankiFieldMappingTitle:
+                '🔗 필드 매핑 설정 (CoWatcher 필드를 Anki 필드에 매핑)',
+            ankiFieldMappingExpand: '(클릭하여 매핑 설정 펼치기)',
+            ankiFieldMappingHint:
+                'CoWatcher의 각 필드를 대상 노트 유형의 필드에 매핑합니다:',
+            ankiVoiceLang: '🗣️ 발음 언어 (Voice / Language):',
+            ankiPreviewVoiceBtn: '🔈 발음 미리듣기',
+            ankiReadingPlacement: '📖 발음 표시 위치 (Reading Placement):',
+            ankiPlacementFront: '카드 앞면 Front (발음 / 루비)',
+            ankiPlacementBack: '카드 뒷면 Back (앞면은 단어만)',
+            ankiPlacementNone: '포함 안 함 None (발음 필드 제외)',
+            ankiPlacementHint:
+                '표시 위치 선택: 앞면은 초급 학습자용, 뒷면은 테스트용, 없음은 심플용.',
+            ankiTtsMaster: '🔊 단어 발음 활성화 (TTS 마스터 스위치)',
+            ankiTtsEdgeTitle:
+                '고음질 클라우드 음성 (Edge/Cloud TTS) - 권장',
+            ankiTtsEdgeDesc:
+                '고음질 MP3를 자동 다운로드하여 Anki 미디어에 저장하고 오프라인 재생 가능.',
+            ankiTtsNativeTitle: '시스템 기본 음성 엔진 (Native TTS)',
+            ankiTtsNativeDesc:
+                'Anki 표준 [tts:lang] 태그를 생성하여 로컬 음성 패키지 활용.',
+            ankiTtsAwesomeTitle: 'AwesomeTTS / HyperTTS 호환 모드',
+            ankiTtsAwesomeDesc:
+                '단어와 발음 필드를 비워두어 Anki 데스크톱 플러그인 연동용으로 유지.',
+            ankiFuriganaRuby: '일본어 발음에 루비 후리가나 적용',
+            ankiBtnCancel: '취소',
+            ankiBtnDownloadTsv: '📥 TSV 다운로드',
+            ankiBtnDirectSync: '🎴 Anki로 직접 동기화',
+
+            // --- Anki Template Modal ---
+            ankiTemplateTitle:
+                '카드 레이아웃 및 CSS 스타일 편집기 ({model})',
+            ankiTemplateSubtitle:
+                '앞면·뒷면 HTML과 CSS를 편집하고 우측에서 실시간 미리보기 확인',
+            ankiTabFront: '앞면 템플릿 (Front)',
+            ankiTabBack: '뒷면 템플릿 (Back)',
+            ankiTabCss: '스타일시트 (CSS)',
+            ankiMustacheHint: 'Mustache 문법 지원',
+            ankiInsertVar: '변수 삽입:',
+            ankiSimulatorTitle: '카드 시뮬레이터 ({side})',
+            ankiSideFront: '앞면',
+            ankiSideBack: '뒷면',
+            ankiFlipCard: '🔄 카드 뒤집기',
+            ankiResetLayout: '↺ 기본 레이아웃으로 복원',
+            ankiSaveSync: '💾 저장하고 Anki에 동기화',
+
+            // --- Subtitle Popover ---
+            popoverBase: '(원형: {lemma})',
+            popoverDict: '📖 사전: {meaning}',
+            popoverContext: '💡 문맥: {meaning}',
+            extensionUpdatedToast:
+                '⚠️ 확장 프로그램이 업데이트되었습니다. 페이지를 새로고침(F5)하세요!',
         },
     },
 
@@ -930,6 +1362,14 @@ const NCW_I18N = {
         if (lower.startsWith('ja')) return 'ja';
         if (lower.startsWith('ko')) return 'ko';
         return 'en';
+    },
+
+    t(
+        key: string,
+        lang: string = 'en',
+        params: Record<string, string | number> = {},
+    ): string {
+        return this.getText(key, lang, params);
     },
 
     getText(
@@ -956,4 +1396,5 @@ const NCW_I18N = {
     },
 };
 
+export { NCW_I18N };
 export default NCW_I18N;

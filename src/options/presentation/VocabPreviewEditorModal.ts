@@ -16,6 +16,7 @@ import { AnkiExportModal } from '../anki/AnkiExportModal';
 import { VocabExportItem } from '../anki/ankiTypes';
 import { TtsAudioService } from '@shared/infrastructure/audio/TtsAudioService';
 import { parseVocabCsv } from '@shared/utils/csvParser';
+import { NCW_I18N } from '@shared/utils/i18n';
 
 export class VocabPreviewEditorModal {
     private modalEl: HTMLElement | null = null;
@@ -46,7 +47,7 @@ export class VocabPreviewEditorModal {
             const ctxM = (w.meaning || '').trim();
             const combinedMeaning =
                 dictM && ctxM && dictM !== ctxM
-                    ? `${dictM} (语境: ${ctxM})`
+                    ? `${dictM} (Context: ${ctxM})`
                     : dictM || ctxM || '';
 
             let audioVal = '';
@@ -289,13 +290,13 @@ export class VocabPreviewEditorModal {
                 });
 
                 if (!parsed.success || parsed.words.length === 0) {
-                    this.onToast(`❌ ${parsed.error || '导入失败'}`);
+                    this.onToast(`❌ ${parsed.error || 'Import failed'}`);
                     return;
                 }
 
                 if (this.words.length > 0) {
                     const doAppend = confirm(
-                        `成功解析 ${parsed.words.length} 个生词！\n\n点击【确定】追加到当前列表末尾\n点击【取消】清空当前列表并替换`,
+                        `Successfully parsed ${parsed.words.length} vocabulary items!\n\nClick [OK] to append to the current list.\nClick [Cancel] to overwrite the current list.`,
                     );
                     if (doAppend) {
                         this.words = [...this.words, ...parsed.words];
@@ -311,10 +312,10 @@ export class VocabPreviewEditorModal {
                 this.updateSelectionUI();
                 this.renderWordRows();
                 this.onToast(
-                    `🎉 成功导入 ${parsed.words.length} 个生词！（非 word 列允许留空，可点击【一键 AI 释义】智能补全）`,
+                    `🎉 Successfully imported ${parsed.words.length} words! (Fields other than word can be left blank; use [✨ Auto Enrich All] to enrich)`,
                 );
             } catch {
-                this.onToast('❌ 读取 CSV 文件失败');
+                this.onToast('❌ Failed to read CSV file');
             }
         });
 
@@ -445,30 +446,38 @@ export class VocabPreviewEditorModal {
         if (this.session.intent === 'csv') {
             if (btnDownloadCsv) {
                 btnDownloadCsv.className = 'btn-primary';
-                btnDownloadCsv.innerHTML = '📥 确认并下载 CSV';
+                btnDownloadCsv.innerHTML =
+                    NCW_I18N.t('curationConfirmDownloadCsv') ||
+                    '📥 Confirm & Download CSV';
             }
             if (btnAnki) {
                 btnAnki.className = 'btn-secondary';
-                btnAnki.innerHTML = '🎴 导出到 Anki';
+                btnAnki.innerHTML =
+                    NCW_I18N.t('curationExportAnki') || '🎴 Export to Anki';
             }
         } else if (this.session.intent === 'anki') {
             if (btnAnki) {
                 btnAnki.className = 'btn-primary btn-anki';
-                btnAnki.innerHTML = '🎴 确认并导出到 Anki';
+                btnAnki.innerHTML =
+                    NCW_I18N.t('curationConfirmExportAnki') ||
+                    '🎴 Confirm & Export to Anki';
             }
             if (btnDownloadCsv) {
                 btnDownloadCsv.className = 'btn-secondary';
-                btnDownloadCsv.innerHTML = '📥 下载 CSV';
+                btnDownloadCsv.innerHTML =
+                    NCW_I18N.t('curationDownloadCsv') || '📥 Download CSV';
             }
         } else {
             // Standard review / curation intent
             if (btnDownloadCsv) {
                 btnDownloadCsv.className = 'btn-secondary';
-                btnDownloadCsv.innerHTML = '📥 下载 CSV';
+                btnDownloadCsv.innerHTML =
+                    NCW_I18N.t('curationDownloadCsv') || '📥 Download CSV';
             }
             if (btnAnki) {
                 btnAnki.className = 'btn-primary btn-anki';
-                btnAnki.innerHTML = '🎴 导出到 Anki';
+                btnAnki.innerHTML =
+                    NCW_I18N.t('curationExportAnki') || '🎴 Export to Anki';
             }
         }
 
@@ -515,13 +524,13 @@ export class VocabPreviewEditorModal {
             const isLocked = this.fieldLockConfig.isLocked(f.key);
             const stateClass = isLocked ? 'locked' : 'unlocked';
             const icon = isLocked ? '🔒' : '🔓';
-            const labelSuffix = isLocked ? ' (已锁)' : '';
+            const labelSuffix = isLocked ? ' (Locked)' : '';
             return `
                 <button
                     type="button"
                     class="btn-field-lock ${stateClass}"
                     data-key="${f.key}"
-                    title="${this.escapeHtml(f.description)} - 点击锁定/允许AI更新"
+                    title="${this.escapeHtml(f.description)} - Click to lock/unlock field from AI updates"
                 >
                     <span>${icon}</span>
                     <span>${this.escapeHtml(f.label)}${labelSuffix}</span>
@@ -541,7 +550,7 @@ export class VocabPreviewEditorModal {
                     );
                     this.renderColumnLocks();
                     this.renderWordRows();
-                    const action = newLocked ? '🔒 已锁定' : '🔓 已解锁';
+                    const action = newLocked ? '🔒 Locked' : '🔓 Unlocked';
                     const fieldDef = CURATION_FIELDS.find((f) => f.key === key);
                     this.onToast(`${action} ${fieldDef?.label || key}`);
                 });
@@ -628,13 +637,13 @@ export class VocabPreviewEditorModal {
                 if (isTtsMaster) {
                     if (ttsMode === 'edge') {
                         if (TtsAudioService.isLanguageSupported(wordLang)) {
-                            speakBtnHtml = `<button type="button" class="btn-word-speak btn-icon" data-idx="${idx}" title="试听高保真发音 (${this.escapeHtml(wordLang)})" style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; border-radius: 4px; padding: 2px 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; margin-left: 2px;">🔈</button>`;
+                            speakBtnHtml = `<button type="button" class="btn-word-speak btn-icon" data-idx="${idx}" title="Listen to cloud audio (${this.escapeHtml(wordLang)})" style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; border-radius: 4px; padding: 2px 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; margin-left: 2px;">🔈</button>`;
                         }
                     } else if (ttsMode === 'native') {
                         if (this.hasNativeVoice(wordLang)) {
-                            speakBtnHtml = `<button type="button" class="btn-word-speak btn-icon" data-idx="${idx}" title="试听系统发音 (${this.escapeHtml(wordLang)})" style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; border-radius: 4px; padding: 2px 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; margin-left: 2px;">🔈</button>`;
+                            speakBtnHtml = `<button type="button" class="btn-word-speak btn-icon" data-idx="${idx}" title="Listen to system voice (${this.escapeHtml(wordLang)})" style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; border-radius: 4px; padding: 2px 7px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; margin-left: 2px;">🔈</button>`;
                         } else {
-                            speakBtnHtml = `<span title="系统未安装【${this.escapeHtml(wordLang)}】本地语音包" style="font-size: 11px; color: #64748b; cursor: help; padding: 2px 4px; margin-left: 2px;">🔇</span>`;
+                            speakBtnHtml = `<span title="Local system voice for [${this.escapeHtml(wordLang)}] not installed" style="font-size: 11px; color: #64748b; cursor: help; padding: 2px 4px; margin-left: 2px;">🔇</span>`;
                         }
                     }
                 }
@@ -658,7 +667,7 @@ export class VocabPreviewEditorModal {
                   class="form-control input-word-headword"
                   data-idx="${idx}"
                   value="${word}"
-                  title="点击可编辑生词原形 (Headword)"
+                  title="Click to edit headword"
                   placeholder="Word..."
                   style="font-weight: 700; font-size: 15px; color: #fff; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 2px 8px; width: 170px; height: 28px;"
                 />
@@ -668,10 +677,10 @@ export class VocabPreviewEditorModal {
                 ${isUser ? '<span class="badge" style="background:rgba(212,175,55,0.2); color:#ffd700; border:1px solid #d4af37; font-size:10px;">⭐ User</span>' : '<span class="badge" style="background:#222; color:#888; font-size:10px;">🤖 AI</span>'}
               </div>
               <div style="display:flex; gap: 6px;">
-                <button type="button" class="btn-secondary btn-sm btn-word-enrich" data-idx="${idx}" title="使用监督模型润色该词条（受锁定列保护）" style="font-size: 11px; padding: 2px 8px;">
-                  ✨ 润色
+                <button type="button" class="btn-secondary btn-sm btn-word-enrich" data-idx="${idx}" title="Enrich word with supervisor model (respects locked fields)" style="font-size: 11px; padding: 2px 8px;">
+                  ✨ Enrich
                 </button>
-                <button type="button" class="btn-danger btn-sm btn-word-delete" data-idx="${idx}" title="从列表中删除该词条" style="font-size: 11px; padding: 2px 8px;">
+                <button type="button" class="btn-danger btn-sm btn-word-delete" data-idx="${idx}" title="Remove word from list" style="font-size: 11px; padding: 2px 8px;">
                   🗑️
                 </button>
               </div>
@@ -681,8 +690,8 @@ export class VocabPreviewEditorModal {
             <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 0.8fr; gap: 8px; margin-bottom: 8px;">
               <div>
                 <div class="curation-field-label">
-                  <span>原型 (Lemma):</span>
-                  ${isLemmaLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                  <span>Lemma (Base):</span>
+                  ${isLemmaLocked ? '<span class="curation-field-lock-tag">🔒 Locked</span>' : ''}
                 </div>
                 <input
                   type="text"
@@ -696,8 +705,8 @@ export class VocabPreviewEditorModal {
 
               <div>
                 <div class="curation-field-label">
-                  <span>释义 (Meaning):</span>
-                  ${isMeaningLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                  <span>Meaning (Definition):</span>
+                  ${isMeaningLocked ? '<span class="curation-field-lock-tag">🔒 Locked</span>' : ''}
                 </div>
                 <input
                   type="text"
@@ -711,8 +720,8 @@ export class VocabPreviewEditorModal {
 
               <div>
                 <div class="curation-field-label">
-                  <span>发音/读音 (Phonetic):</span>
-                  ${isPhoLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                  <span>Phonetic / Reading:</span>
+                  ${isPhoLocked ? '<span class="curation-field-lock-tag">🔒 Locked</span>' : ''}
                 </div>
                 <input
                   type="text"
@@ -726,8 +735,8 @@ export class VocabPreviewEditorModal {
 
               <div>
                 <div class="curation-field-label">
-                  <span>词性 (POS):</span>
-                  ${isPosLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                  <span>POS:</span>
+                  ${isPosLocked ? '<span class="curation-field-lock-tag">🔒 Locked</span>' : ''}
                 </div>
                 <input
                   type="text"
@@ -744,8 +753,8 @@ export class VocabPreviewEditorModal {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
               <div>
                 <div class="curation-field-label">
-                  <span>语境例句 (Sentence):</span>
-                  ${isSentenceLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                  <span>Context Sentence:</span>
+                  ${isSentenceLocked ? '<span class="curation-field-lock-tag">🔒 Locked</span>' : ''}
                 </div>
                 <textarea
                   class="form-control input-word-sentence"
@@ -758,8 +767,8 @@ export class VocabPreviewEditorModal {
 
               <div>
                 <div class="curation-field-label">
-                  <span>例句翻译 (Translation):</span>
-                  ${isTransLocked ? '<span class="curation-field-lock-tag">🔒 已锁定</span>' : ''}
+                  <span>Translation:</span>
+                  ${isTransLocked ? '<span class="curation-field-lock-tag">🔒 Locked</span>' : ''}
                 </div>
                 <textarea
                   class="form-control input-word-translation"
@@ -935,16 +944,16 @@ export class VocabPreviewEditorModal {
         if (hintEl) {
             if (!isMaster) {
                 hintEl.innerHTML =
-                    '<span style="color: #64748b;">🔇 发音已关闭</span>';
+                    '<span style="color: #64748b;">🔇 TTS Audio Disabled</span>';
             } else if (mode === 'edge') {
                 hintEl.innerHTML =
-                    '<span style="color: #38bdf8;">✅ 云端高保真语音：卡片小喇叭即点即试听，导出附带发音列</span>';
+                    '<span style="color: #38bdf8;">✅ High-Fidelity Cloud Voice: Click speaker icon to listen, exported with audio column</span>';
             } else if (mode === 'native') {
                 hintEl.innerHTML =
-                    '<span style="color: #10b981;">✅ 本地原生语音：调用系统语音包试听与生成 [tts:lang] 标签</span>';
+                    '<span style="color: #10b981;">✅ System Native Speech: Uses browser/OS speech synthesis and generates [tts:lang] tags</span>';
             } else if (mode === 'awesome') {
                 hintEl.innerHTML =
-                    '<span style="color: #cbd5e1;">✨ AwesomeTTS 模式：卡片保持干净字段，供桌面插件批量生成</span>';
+                    '<span style="color: #cbd5e1;">✨ AwesomeTTS Mode: Keeps clean text fields for batch generation in Anki</span>';
             }
         }
     }
@@ -1018,10 +1027,12 @@ export class VocabPreviewEditorModal {
                     );
                     await this.currentAudio.play();
                 } else {
-                    this.onToast('⚠️ 发音加载失败，请检查网络');
+                    this.onToast(
+                        '⚠️ Audio generation failed. Please check network.',
+                    );
                 }
             } catch {
-                this.onToast('⚠️ 发音加载失败');
+                this.onToast('⚠️ Audio loading failed');
             } finally {
                 btn.innerHTML = origHtml;
             }
@@ -1039,7 +1050,7 @@ export class VocabPreviewEditorModal {
         );
         if (allLocked) {
             this.onToast(
-                '⚠️ 所有列均已锁定受保护，请至少解锁一列后再进行 AI 润色',
+                '⚠️ All columns are locked. Unlock at least one column before AI enrichment.',
             );
             return;
         }
@@ -1083,7 +1094,7 @@ export class VocabPreviewEditorModal {
         );
         if (allLocked) {
             this.onToast(
-                '⚠️ 所有列均已锁定受保护，请至少解锁一列后再进行 AI 润色',
+                '⚠️ All columns are locked. Unlock at least one column before AI enrichment.',
             );
             return;
         }
@@ -1151,7 +1162,9 @@ export class VocabPreviewEditorModal {
             this.isEnriching = false;
             if (btnEnrichAll) {
                 btnEnrichAll.disabled = false;
-                btnEnrichAll.innerHTML = '✨ 一键 AI 释义 (监督模型)';
+                btnEnrichAll.innerHTML =
+                    NCW_I18N.t('curationEnrichAll') ||
+                    '✨ Auto Enrich All (Supervisor)';
             }
             if (statusEl) {
                 statusEl.style.display = 'none';
@@ -1170,23 +1183,23 @@ export class VocabPreviewEditorModal {
                 btnSave.style.opacity = '0.45';
                 btnSave.style.cursor = 'not-allowed';
                 btnSave.title =
-                    '外部导入模式仅供临时润色与导出，不可写入剧集词库';
+                    'External import mode is for temporary staging and export only. Cannot write to local library.';
             } else {
                 btnSave.disabled = false;
                 btnSave.style.opacity = '1';
                 btnSave.style.cursor = 'pointer';
-                btnSave.title = '保存当前修改到本地数据库';
+                btnSave.title = 'Save changes to local database';
             }
         }
         if (isImported) {
             const badgeEl = document.getElementById('modal-lang-badge');
             if (badgeEl) {
-                badgeEl.textContent = '📂 外部导入暂存 (只读不入库)';
+                badgeEl.textContent = '📂 External Import (Staging Only)';
             }
             const subtitleEl = document.getElementById('modal-episode-subtitle');
             if (subtitleEl) {
                 subtitleEl.textContent =
-                    '已导入外部词表（除 word 列外其余均允许留空）。可使用【✨ 一键 AI 释义】智能补全，完成后直接导出到 Anki 或 CSV。此模式不写入剧集库。';
+                    'External vocabulary imported. Empty fields can be filled with [✨ Auto Enrich All]. Export directly to Anki or CSV. (Changes will not be stored in local episode library)';
             }
         }
     }
@@ -1255,7 +1268,7 @@ export class VocabPreviewEditorModal {
             URL.revokeObjectURL(url);
         }, 500);
 
-        this.onToast(`🎉 成功导出 ${words.length} 个词汇为 CSV！`);
+        this.onToast(`🎉 Successfully exported ${words.length} words to CSV!`);
     }
 
     private async handleSaveChanges(showToast: boolean = true): Promise<void> {
@@ -1263,7 +1276,7 @@ export class VocabPreviewEditorModal {
         if (this.isImportedMode || this.session.isImported) {
             if (showToast) {
                 this.onToast(
-                    '⚠️ 外部导入词表为临时暂存模式，不支持保存至剧集库，请直接导出到 Anki 或 CSV',
+                    '⚠️ Imported vocabulary is in temporary staging mode and cannot be saved to episode storage. Please export directly to Anki or CSV.',
                 );
             }
             return;
@@ -1293,7 +1306,8 @@ export class VocabPreviewEditorModal {
         } finally {
             if (btnSave && showToast) {
                 btnSave.disabled = false;
-                btnSave.innerHTML = '💾 保存修改';
+                btnSave.innerHTML =
+                    NCW_I18N.t('curationSave') || '💾 Save Changes';
             }
         }
     }

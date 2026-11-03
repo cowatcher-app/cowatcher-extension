@@ -1,4 +1,5 @@
 import { WordLookupResult } from '@shared/domain/entities/SubtitleLearning';
+import { NCW_I18N } from '@shared/utils/i18n';
 import { ContentMessageService } from '../application/services/ContentMessageService';
 
 export interface PopoverOpenParams {
@@ -214,7 +215,8 @@ export class SubtitleLearningPopover {
                 result.lemma.trim().toLowerCase() !==
                     result.word.trim().toLowerCase()
             ) {
-                lemmaEl.textContent = `(原: ${result.lemma.trim()})`;
+                const baseLabel = NCW_I18N.t('popover.basePrefix') || 'Base';
+                lemmaEl.textContent = `(${baseLabel}: ${result.lemma.trim()})`;
                 lemmaEl.title = `Root lemma: ${result.lemma.trim()}`;
                 lemmaEl.style.display = 'inline-block';
             } else {
@@ -251,7 +253,8 @@ export class SubtitleLearningPopover {
 
         if (dictMeaningEl) {
             if (result.dictMeaning) {
-                dictMeaningEl.textContent = `📖 词典: ${result.dictMeaning}`;
+                const dictPrefix = NCW_I18N.t('popover.dictPrefix') || 'Dict';
+                dictMeaningEl.textContent = `📖 ${dictPrefix}: ${result.dictMeaning}`;
                 dictMeaningEl.style.display = 'block';
             } else {
                 dictMeaningEl.style.display = 'none';
@@ -264,7 +267,9 @@ export class SubtitleLearningPopover {
                 result.meaning &&
                 result.meaning !== result.dictMeaning
             ) {
-                meaningEl.textContent = `💡 语境: ${result.meaning}`;
+                const contextPrefix =
+                    NCW_I18N.t('popover.contextPrefix') || 'Context';
+                meaningEl.textContent = `💡 ${contextPrefix}: ${result.meaning}`;
                 meaningEl.style.display = 'block';
             } else {
                 meaningEl.textContent = result.meaning;

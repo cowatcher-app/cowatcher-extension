@@ -256,7 +256,7 @@ export function parseVocabCsv(
             success: false,
             words: [],
             matchedColumns: {},
-            error: 'CSV 文件内容为空',
+            error: 'CSV file is empty',
         };
     }
 
@@ -275,7 +275,7 @@ export function parseVocabCsv(
             success: false,
             words: [],
             matchedColumns: {},
-            error: '未找到生词列。请确保 CSV 首行包含表头，且生词列命名为 "Word"、"单词" 或 "生词"',
+            error: 'Missing required "word" column. Ensure CSV header contains "Word" or equivalent column.',
         };
     }
 
@@ -325,7 +325,7 @@ export function parseVocabCsv(
             success: false,
             words: [],
             matchedColumns: columnMap,
-            error: '未在 CSV 中解析到有效数据行（Word 列不能为空）',
+            error: 'No valid data rows found in CSV (the Word column cannot be empty)',
         };
     }
 

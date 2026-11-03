@@ -407,10 +407,10 @@ async function initEditor(): Promise<void> {
             <input type="text" class="table-input input-char-orig" data-index="${index}" value="${escapeHtml(row.orig)}" placeholder="e.g. Shoko">
           </td>
           <td>
-            <input type="text" class="table-input input-char-canonical" data-index="${index}" value="${escapeHtml(row.canonical)}" placeholder="e.g. 西宫硝子">
+            <input type="text" class="table-input input-char-canonical" data-index="${index}" value="${escapeHtml(row.canonical)}" placeholder="e.g. Shoko Nishimiya">
           </td>
           <td>
-            <input type="text" class="table-input input-char-aliases" data-index="${index}" value="${escapeHtml(row.aliases.join(', '))}" placeholder="e.g. 硝子, 西宫同学">
+            <input type="text" class="table-input input-char-aliases" data-index="${index}" value="${escapeHtml(row.aliases.join(', '))}" placeholder="e.g. Shouko, Nishimiya">
           </td>
           <td style="text-align: center;">
             <button class="btn-icon-del btn-del-char" data-index="${index}" title="Delete character">✕</button>
@@ -436,7 +436,7 @@ async function initEditor(): Promise<void> {
             <input type="text" class="table-input input-term-orig" data-index="${index}" value="${escapeHtml(row.orig)}" placeholder="e.g. Survey Corps">
           </td>
           <td>
-            <input type="text" class="table-input input-term-trans" data-index="${index}" value="${escapeHtml(row.trans)}" placeholder="e.g. 调查兵团">
+            <input type="text" class="table-input input-term-trans" data-index="${index}" value="${escapeHtml(row.trans)}" placeholder="e.g. Scout Regiment">
           </td>
           <td style="text-align: center;">
             <button class="btn-icon-del btn-del-term" data-index="${index}" title="Delete term">✕</button>
