@@ -16,6 +16,7 @@ import {
 } from './ViewingFrictionTemplate';
 
 export interface ViewingFrictionOverlayCallbacks {
+    onTick?: () => Promise<{ remainingSeconds: number; isCompleted: boolean }>;
     onContinue: () => void;
     onDone: () => void;
 }
@@ -162,26 +163,49 @@ export class ViewingFrictionOverlay {
                 (context.reason === 'interval' || screenType === 'screensaver');
 
             if (isCountdownActive) {
-                let remain = context.countdownSeconds || 20;
+                let remain =
+                    context.remainingSeconds !== undefined
+                        ? context.remainingSeconds
+                        : context.countdownSeconds || 20;
                 const timerEl = overlay.querySelector('#ncw-friction-timer-num');
                 if (timerEl) {
                     timerEl.textContent = String(remain);
                 }
-                this.activeTimer = setInterval(() => {
-                    remain--;
-                    if (timerEl) {
-                        timerEl.textContent = String(Math.max(0, remain));
-                    }
-                    if (remain <= 0) {
-                        if (this.activeTimer) {
-                            clearInterval(this.activeTimer);
-                            this.activeTimer = null;
+                this.activeTimer = setInterval(async () => {
+                    if (this.callbacks?.onTick) {
+                        const tickRes = await this.callbacks.onTick();
+                        remain = tickRes.remainingSeconds;
+                        if (timerEl) {
+                            timerEl.textContent = String(Math.max(0, remain));
                         }
-                        if (context.autoResumeOnTimer !== false) {
-                            this.callbacks?.onContinue();
-                        } else if (btnContinue) {
-                            btnContinue.style.animation =
-                                'ncw-pulse-glow 1.5s infinite';
+                        if (tickRes.isCompleted) {
+                            if (this.activeTimer) {
+                                clearInterval(this.activeTimer);
+                                this.activeTimer = null;
+                            }
+                            if (context.autoResumeOnTimer !== false) {
+                                this.callbacks?.onContinue();
+                            } else if (btnContinue) {
+                                btnContinue.style.animation =
+                                    'ncw-pulse-glow 1.5s infinite';
+                            }
+                        }
+                    } else {
+                        remain--;
+                        if (timerEl) {
+                            timerEl.textContent = String(Math.max(0, remain));
+                        }
+                        if (remain <= 0) {
+                            if (this.activeTimer) {
+                                clearInterval(this.activeTimer);
+                                this.activeTimer = null;
+                            }
+                            if (context.autoResumeOnTimer !== false) {
+                                this.callbacks?.onContinue();
+                            } else if (btnContinue) {
+                                btnContinue.style.animation =
+                                    'ncw-pulse-glow 1.5s infinite';
+                            }
                         }
                     }
                 }, 1000);

@@ -26,6 +26,7 @@ import { NCW_MESSAGE_TYPES } from '@shared/domain/constants/MessageTypes';
 
 import { LLMHelperService } from '../application/services/LLMHelperService';
 import { WatchHistoryService } from '../application/services/WatchHistoryService';
+import { ViewingFrictionService } from '../application/services/ViewingFrictionService';
 import { Context } from '@shared/domain/entities/Context';
 import { Logger } from '@shared/utils/logger';
 import { PhoneticAdapterFactory } from '@shared/infrastructure/phonetic/PhoneticAdapterFactory';
@@ -43,6 +44,7 @@ export class BackgroundMessageService {
     private readonly llmService: LlmService;
     private readonly llmHelperService: LLMHelperService;
     private readonly watchHistoryService: WatchHistoryService;
+    private readonly viewingFrictionService: ViewingFrictionService;
     private readonly storage: IBrowserStorage;
     private readonly platform: IBrowserPlatform;
     private readonly cacheRepository: ITrackCacheRepository;
@@ -64,6 +66,7 @@ export class BackgroundMessageService {
         this.llmService = LlmService.getInstance();
         this.llmHelperService = LLMHelperService.getInstance();
         this.watchHistoryService = WatchHistoryService.getInstance();
+        this.viewingFrictionService = ViewingFrictionService.getInstance();
 
         this.storage.onChanged((changes) => {
             if (changes[NCW_STORAGE_KEYS.SETTINGS]?.newValue) {
@@ -987,6 +990,73 @@ export class BackgroundMessageService {
                             success: true,
                         } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.CLOSE_CURRENT_TAB]['response']);
                         return false;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.FRICTION_HEARTBEAT: {
+                        this.viewingFrictionService
+                            .handleHeartbeat(message)
+                            .then((res) => {
+                                sendResponse(res as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.FRICTION_HEARTBEAT]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    shouldPause: false,
+                                    activeBreak: null,
+                                    continuousSeconds: 0,
+                                    todaySeconds: 0,
+                                    todayRestSeconds: 0,
+                                    todayBreakCount: 0,
+                                    isStoppedForToday: false,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.FRICTION_HEARTBEAT]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.TICK_FRICTION_BREAK: {
+                        this.viewingFrictionService
+                            .handleTickBreak(message.breakId)
+                            .then((res) => {
+                                sendResponse(res as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.TICK_FRICTION_BREAK]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    remainingSeconds: 0,
+                                    isCompleted: true,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.TICK_FRICTION_BREAK]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.COMPLETE_FRICTION_BREAK: {
+                        this.viewingFrictionService
+                            .handleCompleteBreak(
+                                message.breakId,
+                                message.passedChallenge,
+                            )
+                            .then((res) => {
+                                sendResponse(res as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.COMPLETE_FRICTION_BREAK]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    success: false,
+                                    canResume: true,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.COMPLETE_FRICTION_BREAK]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.DISMISS_HARD_BLOCK: {
+                        this.viewingFrictionService
+                            .handleDismissHardBlock(message.breakId)
+                            .then((res) => {
+                                sendResponse(res as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.DISMISS_HARD_BLOCK]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    success: false,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.DISMISS_HARD_BLOCK]['response']);
+                            });
+                        return true;
                     }
 
                     // --- LLM Connection Checks ---

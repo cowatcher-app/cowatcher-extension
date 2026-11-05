@@ -11,6 +11,7 @@ import {
 import { MergeAsrCueItem } from '@shared/domain/entities/Subtitle';
 import { LanguageInfo } from '@shared/domain/value-objects/Language';
 import { StreamingPlatformId } from '@shared/domain/constants/StreamingPlatforms';
+import { ActiveFrictionBreak } from '@shared/domain/entities/ViewingFriction';
 import NCW_CONSTANTS from '@shared/utils/constants';
 
 export class ContentMessageService {
@@ -440,6 +441,70 @@ export class ContentMessageService {
         } catch {
             return false;
         }
+    }
+
+    async sendFrictionHeartbeat(params: {
+        isPlaying: boolean;
+        platform: string;
+        showTitle?: string;
+    }): Promise<{
+        shouldPause: boolean;
+        activeBreak: ActiveFrictionBreak | null;
+        continuousSeconds: number;
+        todaySeconds: number;
+        todayRestSeconds: number;
+        todayBreakCount: number;
+        isStoppedForToday: boolean;
+    }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.FRICTION_HEARTBEAT,
+            params,
+        );
+        return {
+            shouldPause: res?.shouldPause ?? false,
+            activeBreak: res?.activeBreak ?? null,
+            continuousSeconds: res?.continuousSeconds ?? 0,
+            todaySeconds: res?.todaySeconds ?? 0,
+            todayRestSeconds: res?.todayRestSeconds ?? 0,
+            todayBreakCount: res?.todayBreakCount ?? 0,
+            isStoppedForToday: res?.isStoppedForToday ?? false,
+        };
+    }
+
+    async tickFrictionBreak(breakId: string): Promise<{
+        remainingSeconds: number;
+        isCompleted: boolean;
+    }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.TICK_FRICTION_BREAK,
+            { breakId },
+        );
+        return {
+            remainingSeconds: res?.remainingSeconds ?? 0,
+            isCompleted: res?.isCompleted ?? true,
+        };
+    }
+
+    async completeFrictionBreak(
+        breakId: string,
+        passedChallenge?: boolean,
+    ): Promise<{ success: boolean; canResume: boolean }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.COMPLETE_FRICTION_BREAK,
+            { breakId, passedChallenge },
+        );
+        return {
+            success: res?.success ?? false,
+            canResume: res?.canResume ?? true,
+        };
+    }
+
+    async dismissHardBlock(breakId: string): Promise<boolean> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.DISMISS_HARD_BLOCK,
+            { breakId },
+        );
+        return res?.success ?? false;
     }
 
     async getPhoneticReading(params: {

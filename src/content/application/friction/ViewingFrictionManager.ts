@@ -1,19 +1,25 @@
 /**
  * ViewingFrictionManager
- * Content-side controller for viewing static friction, break scheduling, and mindful interventions.
+ * Client-side sensor and actuator for Viewing Static Friction (Mindful Viewing).
+ *
+ * Coordinates with Background ViewingFrictionService:
+ * - Emits periodic playback heartbeats.
+ * - Enforces mandatory pause when Background reports an active break.
+ * - Drives tick countdown synchronized with Background remainingSeconds.
+ * - Renders and manages the ViewingFrictionOverlay lifecycle.
  */
 
 import { IStreamingAdapter } from '../../domain/adapters/IStreamingAdapter';
 import { ContentMessageService } from '../services/ContentMessageService';
 import { ExtensionSettings } from '@shared/domain/constants/SettingsDefaults';
 import {
+    ActiveFrictionBreak,
+    FrictionBreakContext,
+} from '@shared/domain/entities/ViewingFriction';
+import {
     ViewingFrictionOverlay,
     ViewingFrictionOverlayCallbacks,
 } from '../../presentation/ViewingFrictionOverlay';
-import {
-    FrictionBreakContext,
-    FrictionTriggerReason,
-} from '@shared/domain/entities/ViewingFriction';
 import { Logger } from '@shared/utils/logger';
 
 export class ViewingFrictionManager {
@@ -27,24 +33,10 @@ export class ViewingFrictionManager {
     private overlay: ViewingFrictionOverlay;
     private boundVideo: HTMLVideoElement | null = null;
 
-    private continuousSeconds: number = 0;
-    private sessionAccumulatedSeconds: number = 0;
-    private lastTickTimestamp: number = 0;
     private isPlaying: boolean = false;
-    private snoozeUntilTimestamp: number = 0;
-
-    private cachedTodaySeconds: number = 0;
-    private cachedTodayRestSeconds: number = 0;
-    private cachedTodayBreakCount: number = 0;
-    private breakStartTime: number = 0;
-    private lastTodayFetchTime: number = 0;
-
-    private lastCurfewTriggerKey: string = '';
-    private lastDailyTriggerKey: string = '';
-    private lastLoggedSecond: number = -1;
     private isStoppedForToday: boolean = false;
-
     private checkInterval: ReturnType<typeof setInterval> | null = null;
+    private isEvaluating: boolean = false;
 
     constructor(
         adapter: IStreamingAdapter,
@@ -82,7 +74,7 @@ export class ViewingFrictionManager {
             }
         });
 
-        // Fast periodic check (every 1 second) to catch thresholds smoothly
+        // Fast periodic heartbeat check (every 1 second)
         this.checkInterval = setInterval(() => {
             this.evaluateTriggers();
         }, 1000);
@@ -126,13 +118,6 @@ export class ViewingFrictionManager {
 
     updateSettings(newSettings: Partial<ExtensionSettings>): void {
         this.settings = { ...this.settings, ...newSettings };
-        this.logger.info(
-            'ViewingFrictionManager',
-            `Settings updated: enabled=${Boolean(this.settings.staticFrictionEnabled)}, interval=${this.settings.frictionIntervalMinutes}m, dailyLimit=${this.settings.frictionDailyLimitMinutes}m`,
-        );
-        this.lastDailyTriggerKey = '';
-        this.lastCurfewTriggerKey = '';
-        this.snoozeUntilTimestamp = 0;
         if (newSettings.uiLanguage) {
             this.overlay.setLanguage(newSettings.uiLanguage);
         }
@@ -147,8 +132,7 @@ export class ViewingFrictionManager {
             return;
         }
         this.isPlaying = true;
-        this.lastTickTimestamp = Date.now();
-        this.refreshTodayStatsAsync();
+        this.evaluateTriggers();
     }
 
     private onPause(): void {
@@ -156,311 +140,164 @@ export class ViewingFrictionManager {
     }
 
     private onTimeUpdate(): void {
-        const video = this.boundVideo || this.adapter.getVideoElement?.();
-        if (!video || video.paused || video.ended) return;
-        if (this.isAdPlaying && this.isAdPlaying()) return;
-
-        const now = Date.now();
-        if (this.lastTickTimestamp > 0) {
-            const deltaSec = (now - this.lastTickTimestamp) / 1000;
-            // Guard against wall-clock leaps or system sleeps
-            if (deltaSec > 0 && deltaSec < 3) {
-                this.continuousSeconds += deltaSec;
-                this.sessionAccumulatedSeconds += deltaSec;
-            }
+        // Fast path: if video is paused, no heartbeat
+        if (this.boundVideo && (this.boundVideo.paused || this.boundVideo.ended)) {
+            return;
         }
-        this.lastTickTimestamp = now;
         this.isPlaying = true;
-
-        // Instant trigger evaluation
-        this.evaluateTriggers();
     }
 
-    private async refreshTodayStatsAsync(): Promise<void> {
-        const now = Date.now();
-        // Throttle background queries to once every 60 seconds
-        if (now - this.lastTodayFetchTime < 60000) return;
-        this.lastTodayFetchTime = now;
+    private async evaluateTriggers(): Promise<void> {
+        if (this.isEvaluating) return;
+        this.isEvaluating = true;
 
         try {
-            const stats = await this.messageService.getTodayWatchTime(
-                this.settings.frictionExcludedPlatforms || [],
-            );
-            this.cachedTodaySeconds = stats.todaySeconds;
-            this.cachedTodayRestSeconds = stats.todayRestSeconds || 0;
-            this.cachedTodayBreakCount = stats.todayBreakCount || 0;
-        } catch {
-            // Ignore background comms error
-        }
-    }
-
-    private evaluateTriggers(): void {
-        const video = this.boundVideo || this.adapter.getVideoElement?.();
-        if (video && !this.boundVideo) {
-            this.attachVideo(video);
-        }
-
-        if (this.isStoppedForToday) {
-            if (video && !video.paused) {
-                video.pause();
+            const video = this.boundVideo || this.adapter.getVideoElement?.();
+            if (video && !this.boundVideo) {
+                this.attachVideo(video);
             }
-            return;
-        }
 
-        const isCurrentlyPlaying = Boolean(
-            video && !video.paused && !video.ended && video.readyState >= 2,
-        );
-
-        // Fallback ticker: accumulate watch time even if timeupdate events are delayed
-        const now = Date.now();
-        if (isCurrentlyPlaying) {
-            if (this.lastTickTimestamp > 0) {
-                const deltaSec = (now - this.lastTickTimestamp) / 1000;
-                if (deltaSec > 0 && deltaSec < 2.5) {
-                    this.continuousSeconds += deltaSec;
-                    this.sessionAccumulatedSeconds += deltaSec;
+            if (this.isStoppedForToday) {
+                if (video && !video.paused) {
+                    video.pause();
                 }
+                return;
             }
-            this.lastTickTimestamp = now;
-            this.isPlaying = true;
-        } else {
-            this.lastTickTimestamp = now;
-            this.isPlaying = false;
-        }
 
-        if (!this.settings.staticFrictionEnabled) {
-            return;
-        }
-        if (!isCurrentlyPlaying) return;
-        if (this.overlay.isVisible()) return;
-        if (this.isAdPlaying && this.isAdPlaying()) return;
-
-        if (now < this.snoozeUntilTimestamp) return;
-
-        const platform = this.adapter.platformName || 'unknown';
-        const platformRules = this.settings.frictionPlatformRules?.[platform];
-        if (platformRules?.enabled === false) {
-            // Friction explicitly disabled for this platform
-            return;
-        }
-
-        const effectiveIntervalMin =
-            typeof platformRules?.intervalMinutes === 'number' &&
-            platformRules.intervalMinutes > 0
-                ? platformRules.intervalMinutes
-                : Number(this.settings.frictionIntervalMinutes) || 45;
-
-        const effectiveDailyLimitMin =
-            typeof platformRules?.dailyLimitMinutes === 'number' &&
-            platformRules.dailyLimitMinutes > 0
-                ? platformRules.dailyLimitMinutes
-                : Number(this.settings.frictionDailyLimitMinutes) || 0;
-
-        // Periodic diagnostic log every 3 seconds so user/developer can inspect state in console
-        const secFloor = Math.floor(this.continuousSeconds);
-        if (secFloor % 3 === 0 && secFloor !== this.lastLoggedSecond) {
-            this.lastLoggedSecond = secFloor;
-            this.logger.info(
-                'ViewingFrictionManager',
-                `Tracking: continuous=${this.continuousSeconds.toFixed(1)}s (target=${(effectiveIntervalMin * 60).toFixed(0)}s), sessionAccum=${this.sessionAccumulatedSeconds.toFixed(1)}s, dailyLimitTarget=${(effectiveDailyLimitMin * 60).toFixed(0)}s`,
+            const isCurrentlyPlaying = Boolean(
+                video && !video.paused && !video.ended && video.readyState >= 2,
             );
-        }
 
-        // 1. Check Late-Night Curfew
-        if (this.settings.frictionCurfewEnabled) {
-            const curfewTimeStr = this.settings.frictionCurfewTime || '23:30';
-            if (this.isPastCurfew(curfewTimeStr)) {
-                const todayKey = new Date().toDateString();
-                if (this.lastCurfewTriggerKey !== todayKey) {
-                    this.lastCurfewTriggerKey = todayKey;
-                    this.triggerBreak('curfew', curfewTimeStr);
-                    return;
-                }
+            if (this.isAdPlaying && this.isAdPlaying()) {
+                return;
             }
-        }
 
-        // 2. Check Daily Cumulative Limit (if configured > 0)
-        if (effectiveDailyLimitMin > 0) {
-            const todayMin =
-                (this.cachedTodaySeconds + this.sessionAccumulatedSeconds) / 60;
-            if (todayMin >= effectiveDailyLimitMin) {
-                const todayKey = new Date().toDateString();
+            const platform = this.adapter.platformName || 'unknown';
+            const showTitle = this.getShowTitle?.() || undefined;
+
+            const res = await this.messageService.sendFrictionHeartbeat({
+                isPlaying: isCurrentlyPlaying,
+                platform,
+                showTitle,
+            });
+
+            if (res.isStoppedForToday) {
+                this.isStoppedForToday = true;
+                if (video && !video.paused) {
+                    video.pause();
+                }
+                return;
+            }
+
+            if (res.shouldPause && res.activeBreak) {
+                // Mandatory break active! Force video pause.
+                if (video && !video.paused) {
+                    video.pause();
+                }
+
+                // If overlay is not visible, or showing a different break, show it
+                const currentContext = this.overlay.getContext();
                 if (
-                    this.lastDailyTriggerKey !== todayKey ||
-                    effectiveDailyLimitMin <= 1
+                    !this.overlay.isVisible() ||
+                    currentContext?.breakId !== res.activeBreak.id
                 ) {
-                    if (effectiveDailyLimitMin > 1) {
-                        this.lastDailyTriggerKey = todayKey;
-                    }
-                    this.triggerBreak(
-                        'daily_limit',
-                        undefined,
-                        effectiveDailyLimitMin,
+                    this.showBreakOverlay(
+                        res.activeBreak,
+                        res.continuousSeconds,
+                        res.todaySeconds,
+                        res.todayRestSeconds,
+                        res.todayBreakCount,
                     );
-                    return;
                 }
+            } else if (
+                !res.shouldPause &&
+                this.overlay.isVisible() &&
+                this.overlay.getContext()?.reason !== 'curfew' &&
+                this.overlay.getContext()?.reason !== 'daily_limit'
+            ) {
+                this.overlay.hide();
             }
-        }
-
-        // 3. Check Continuous Viewing Interval
-        if (
-            effectiveIntervalMin > 0 &&
-            this.continuousSeconds >= effectiveIntervalMin * 60
-        ) {
-            this.triggerBreak(
-                'interval',
-                undefined,
-                effectiveDailyLimitMin,
-            );
-        }
-    }
-
-    private isPastCurfew(curfewTimeStr: string): boolean {
-        const parts = curfewTimeStr.split(':').map(Number);
-        const curfewHour = !isNaN(parts[0]) ? parts[0] : 23;
-        const curfewMinute = !isNaN(parts[1]) ? parts[1] : 30;
-
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
-        // Curfew active from curfew time until 05:00 AM next morning
-        if (currentHour < 5) return true;
-        if (currentHour > curfewHour) return true;
-        if (currentHour === curfewHour && currentMinute >= curfewMinute) {
-            return true;
-        }
-        return false;
-    }
-
-    private triggerBreak(
-        reason: FrictionTriggerReason,
-        curfewTime?: string,
-        effectiveDailyLimitMin?: number,
-    ): void {
-        this.logger.info(
-            'ViewingFrictionManager',
-            `Triggering static friction break: ${reason}`,
-        );
-
-        this.breakStartTime = Date.now();
-
-        // Gracefully pause playback
-        try {
-            this.boundVideo?.pause();
         } catch {
-            // Ignore video pause error
+            // Comms or video error
+        } finally {
+            this.isEvaluating = false;
         }
+    }
 
-        const continuousMinutes = Math.floor(this.continuousSeconds / 60);
-        const todayMinutes = Math.floor(
-            (this.cachedTodaySeconds + this.sessionAccumulatedSeconds) / 60,
-        );
-        const continuousSeconds = Math.round(this.continuousSeconds);
-        const todaySeconds = Math.round(
-            this.cachedTodaySeconds + this.sessionAccumulatedSeconds,
-        );
-        const showTitle = this.getShowTitle?.() || undefined;
-
-        const countdownSeconds =
-            this.settings.frictionBreakDurationSeconds !== undefined
-                ? this.settings.frictionBreakDurationSeconds
-                : 20;
+    private showBreakOverlay(
+        activeBreak: ActiveFrictionBreak,
+        continuousSeconds: number,
+        todaySeconds: number,
+        todayRestSeconds: number,
+        todayBreakCount: number,
+    ): void {
+        const continuousMinutes = Math.floor(continuousSeconds / 60);
+        const todayMinutes = Math.floor(todaySeconds / 60);
 
         const context: FrictionBreakContext = {
-            reason,
+            breakId: activeBreak.id,
+            reason: activeBreak.reason,
             continuousMinutes,
             todayMinutes,
             continuousSeconds,
             todaySeconds,
-            todayRestSeconds: this.cachedTodayRestSeconds,
-            todayBreakCount: this.cachedTodayBreakCount,
-            curfewTime,
-            showTitle,
+            todayRestSeconds,
+            todayBreakCount,
+            curfewTime: activeBreak.curfewTime,
+            showTitle: activeBreak.showTitle || this.getShowTitle?.(),
             platform: this.adapter.platformName,
             unlockDifficulty: this.settings.frictionUnlockDifficulty || 'none',
             autoResumeOnTimer:
-                reason === 'interval'
+                activeBreak.reason === 'interval'
                     ? this.settings.frictionAutoResumeOnTimer !== false
                     : false,
-            countdownSeconds,
+            countdownSeconds: activeBreak.totalSeconds,
+            remainingSeconds: activeBreak.remainingSeconds,
         };
 
         const callbacks: ViewingFrictionOverlayCallbacks = {
-            onContinue: () => {
-                this.overlay.hide();
-                this.isStoppedForToday = false;
-
-                const elapsedRestSec = this.breakStartTime > 0
-                    ? Math.max(1, Math.round((Date.now() - this.breakStartTime) / 1000))
-                    : (context.countdownSeconds || 20);
-                this.breakStartTime = 0;
-                this.cachedTodayRestSeconds += elapsedRestSec;
-                this.cachedTodayBreakCount += 1;
-                this.messageService.recordRestTime(elapsedRestSec).catch(() => {});
-
-                this.continuousSeconds = 0;
-                // Defer triggers by at least 15 min if daily/curfew was dismissed
-                // In testing mode (limit <= 1 min), defer by 15 seconds to allow continuous testing
-                if (reason === 'daily_limit' || reason === 'curfew') {
-                    const deferMs =
-                        effectiveDailyLimitMin !== undefined &&
-                        effectiveDailyLimitMin <= 1
-                            ? 15 * 1000
-                            : 15 * 60 * 1000;
-                    this.snoozeUntilTimestamp = Date.now() + deferMs;
-                }
-                this.boundVideo?.play().catch(() => {});
+            onTick: async () => {
+                return await this.messageService.tickFrictionBreak(activeBreak.id);
             },
-            onDone: () => {
-                const elapsedRestSec = this.breakStartTime > 0
-                    ? Math.max(1, Math.round((Date.now() - this.breakStartTime) / 1000))
-                    : (context.countdownSeconds || 20);
-                this.breakStartTime = 0;
-                this.cachedTodayRestSeconds += elapsedRestSec;
-                this.cachedTodayBreakCount += 1;
-                this.messageService.recordRestTime(elapsedRestSec).catch(() => {});
-
-                this.continuousSeconds = 0;
+            onContinue: async () => {
+                const compRes = await this.messageService.completeFrictionBreak(
+                    activeBreak.id,
+                    true,
+                );
+                this.overlay.hide();
+                if (compRes.canResume) {
+                    this.boundVideo?.play().catch(() => {});
+                }
+            },
+            onDone: async () => {
+                await this.messageService.dismissHardBlock(activeBreak.id);
                 this.isStoppedForToday = true;
-
-                // Stop playback immediately
                 try {
                     this.boundVideo?.pause();
-                } catch {
-                    // Ignore video pause error
-                }
-
-                // Exit fullscreen if active
+                } catch {}
                 if (document.fullscreenElement) {
                     document.exitFullscreen?.().catch(() => {});
                 }
-
-                // Snooze until tomorrow 5:00 AM
-                const tomorrow5AM = new Date();
-                tomorrow5AM.setDate(tomorrow5AM.getDate() + 1);
-                tomorrow5AM.setHours(5, 0, 0, 0);
-                this.snoozeUntilTimestamp = tomorrow5AM.getTime();
             },
         };
 
         const screenType = this.settings.frictionScreenType || 'screensaver';
         this.overlay.show(context, screenType, callbacks);
 
-        // Asynchronously request AI companion advice if enabled
+        // Fetch AI advice asynchronously if enabled
         if (this.settings.frictionEnableLlmAdvice) {
             this.messageService
                 .getFrictionAdvice({
-                    reason,
-                    showTitle,
+                    reason: activeBreak.reason,
+                    showTitle: context.showTitle,
                     watchMinutes: continuousMinutes,
                     todayMinutes,
                     watchSeconds: continuousSeconds,
                     todaySeconds,
-                    todayRestSeconds: this.cachedTodayRestSeconds,
-                    todayBreakCount: this.cachedTodayBreakCount,
+                    todayRestSeconds,
+                    todayBreakCount,
                     platform: this.adapter.platformName,
-                    curfewTime,
+                    curfewTime: activeBreak.curfewTime,
                 })
                 .then((advice) => {
                     if (advice && this.overlay.isVisible()) {

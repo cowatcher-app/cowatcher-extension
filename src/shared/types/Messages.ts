@@ -34,6 +34,7 @@ import {
     ShowEpisodeProgress,
 } from '../domain/entities/WatchHistory';
 import { CredentialVaultStatus } from '../domain/entities/CredentialVault';
+import { ActiveFrictionBreak } from '../domain/entities/ViewingFriction';
 
 export {
     VocabWordItem,
@@ -598,6 +599,49 @@ export type MessagePayloadMap = {
     NCW_CLOSE_CURRENT_TAB: {
         request: {
             tabId?: number;
+        };
+        response: {
+            success: boolean;
+        };
+    };
+    NCW_FRICTION_HEARTBEAT: {
+        request: {
+            isPlaying: boolean;
+            platform: string;
+            showTitle?: string;
+        };
+        response: {
+            shouldPause: boolean;
+            activeBreak: ActiveFrictionBreak | null;
+            continuousSeconds: number;
+            todaySeconds: number;
+            todayRestSeconds: number;
+            todayBreakCount: number;
+            isStoppedForToday: boolean;
+        };
+    };
+    NCW_TICK_FRICTION_BREAK: {
+        request: {
+            breakId: string;
+        };
+        response: {
+            remainingSeconds: number;
+            isCompleted: boolean;
+        };
+    };
+    NCW_COMPLETE_FRICTION_BREAK: {
+        request: {
+            breakId: string;
+            passedChallenge?: boolean;
+        };
+        response: {
+            success: boolean;
+            canResume: boolean;
+        };
+    };
+    NCW_DISMISS_HARD_BLOCK: {
+        request: {
+            breakId: string;
         };
         response: {
             success: boolean;

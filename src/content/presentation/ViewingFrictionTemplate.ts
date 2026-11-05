@@ -234,7 +234,10 @@ export const ViewingFrictionTemplate = {
 
         const isHardBlock =
             context.reason === 'daily_limit' || context.reason === 'curfew';
-        const countdownSeconds = context.countdownSeconds || 20;
+        const countdownSeconds =
+            context.remainingSeconds !== undefined
+                ? context.remainingSeconds
+                : context.countdownSeconds || 20;
         const isInterval = context.reason === 'interval';
 
         const metricPills = this.renderMetrics(context, lang);

@@ -37,7 +37,20 @@ export interface ViewingFrictionSettings {
     frictionPlatformRules: Record<string, FrictionPlatformRule>;
 }
 
+export interface ActiveFrictionBreak {
+    id: string;
+    reason: FrictionTriggerReason;
+    totalSeconds: number;
+    remainingSeconds: number;
+    startedAt: number;
+    isHardBlock: boolean;
+    curfewTime?: string;
+    showTitle?: string;
+    platform?: string;
+}
+
 export interface FrictionBreakContext {
+    breakId?: string;
     reason: FrictionTriggerReason;
     continuousMinutes: number;
     todayMinutes: number;
@@ -53,4 +66,5 @@ export interface FrictionBreakContext {
     unlockDifficulty?: FrictionUnlockDifficulty;
     autoResumeOnTimer?: boolean;
     countdownSeconds?: number;
+    remainingSeconds?: number;
 }
