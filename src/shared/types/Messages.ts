@@ -595,6 +595,14 @@ export type MessagePayloadMap = {
             advice?: string;
         };
     };
+    NCW_CLOSE_CURRENT_TAB: {
+        request: {
+            tabId?: number;
+        };
+        response: {
+            success: boolean;
+        };
+    };
 };
 
 export type MessageType = keyof MessagePayloadMap;

@@ -373,6 +373,17 @@ const NCW_I18N = {
             frictionBtnSnooze: 'Snooze 5 Min (+5m)',
             frictionBtnSnoozeTest: 'Snooze 10s (+10s)',
             frictionBtnDone: 'I\'m Done for Today',
+            frictionBtnCloseTab: 'Close Tab',
+            frictionCurfewNotice:
+                'Bedtime curfew is active. Blue light disrupts melatonin and sleep recovery. Please stop watching and rest.',
+            frictionDailyLimitNotice:
+                'Your daily viewing quota has been reached. Step away from the screen for healthy living.',
+            frictionCurfewRestDesc:
+                'Bedtime curfew. Rest well and have a good night.',
+            frictionLimitRestDesc:
+                'Daily viewing quota completed. Great discipline today!',
+            frictionDoneRestDesc:
+                'Great job taking care of yourself today. The screen is resting.',
             frictionAdviceTitle: 'CoWatcher Health Companion',
             friction2020Rule:
                 '20-20-20 Rule: Look at something 20 feet (6m) away for 20 seconds to relax your eye muscles.',
@@ -774,6 +785,17 @@ const NCW_I18N = {
             frictionBtnSnooze: '宽限 5 分钟 (+5m)',
             frictionBtnSnoozeTest: '稍后 10 秒 (+10s)',
             frictionBtnDone: '今天就看到这',
+            frictionBtnCloseTab: '关闭此标签页',
+            frictionCurfewNotice:
+                '已进入深夜睡眠门禁时间。屏幕蓝光会抑制褪黑素并影响大脑修复，请放下屏幕，早点休息。',
+            frictionDailyLimitNotice:
+                '今日设定的观影配额已用完。适度娱乐有益身心，请离开屏幕活动放松。',
+            frictionCurfewRestDesc:
+                '已进入深夜门禁时间。祝您今晚拥有高质量的好睡眠，晚安。',
+            frictionLimitRestDesc:
+                '今日观影目标达成！感谢自律的你，明天再继续吧。',
+            frictionDoneRestDesc:
+                '今天辛苦了！屏幕已进入休眠，好好享受现实生活吧。',
             frictionAdviceTitle: 'CoWatcher 健康伴侣关怀',
             friction2020Rule:
                 '20-20-20 护眼法则：眺望 20 英尺（约 6 米）外的远处 20 秒，让睫状肌彻底放松。',
@@ -1177,6 +1199,17 @@ const NCW_I18N = {
             frictionBtnSnooze: 'あと5分延長 (+5m)',
             frictionBtnSnoozeTest: '10秒後に再通知 (+10s)',
             frictionBtnDone: '今日はここまで',
+            frictionBtnCloseTab: 'タブを閉じる',
+            frictionCurfewNotice:
+                '深夜の就寝時間です。画面のブルーライトは睡眠の妨げになります。視聴を終了して休みましょう。',
+            frictionDailyLimitNotice:
+                '本日の視聴制限時間に達しました。健康的な生活のために画面から離れましょう。',
+            frictionCurfewRestDesc:
+                '就寝時間です。良い夢を、おやすみなさい。',
+            frictionLimitRestDesc:
+                '本日の目標達成です！素晴らしい自己管理ですね。また明日。',
+            frictionDoneRestDesc:
+                '今日はお疲れ様でした！画面は休止中です。',
             frictionAdviceTitle: 'CoWatcher ヘルスケア',
             friction2020Rule:
                 '20-20-20 ルール：20フィート（約6m）先を20秒間眺めて、目の毛様体筋をリラックスさせましょう。',
@@ -1581,6 +1614,17 @@ const NCW_I18N = {
             frictionBtnSnooze: '5분 미루기 (+5m)',
             frictionBtnSnoozeTest: '10초 미루기 (+10초)',
             frictionBtnDone: '오늘은 여기까지',
+            frictionBtnCloseTab: '탭 닫기',
+            frictionCurfewNotice:
+                '심야 취침 시간입니다. 화면의 블루라이트는 수면을 방해합니다. 시청을 종료하고 휴식을 취하세요.',
+            frictionDailyLimitNotice:
+                '오늘의 일일 시청 제한에 도달했습니다. 건강한 일상을 위해 화면에서 벗어나 휴식하세요.',
+            frictionCurfewRestDesc:
+                '취침 시간입니다. 푹 쉬고 좋은 꿈 꾸세요.',
+            frictionLimitRestDesc:
+                '오늘의 목표 달성! 자기 관리가 훌륭합니다. 내일 다시 만나요.',
+            frictionDoneRestDesc:
+                '오늘 수고하셨습니다! 화면이 휴식 모드로 전환되었습니다.',
             frictionAdviceTitle: 'CoWatcher 건강 알림',
             friction2020Rule:
                 '20-20-20 규칙: 20피트(약 6m) 떨어진 곳을 20초간 바라보며 눈의 피로를 풀어주세요.',

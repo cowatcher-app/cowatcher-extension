@@ -6,8 +6,10 @@
 import {
     FrictionBreakContext,
     FrictionScreenType,
+    FrictionTriggerReason,
 } from '@shared/domain/entities/ViewingFriction';
 import { NCW_I18N } from '@shared/utils/i18n';
+import { ContentMessageService } from '../application/services/ContentMessageService';
 import {
     RhythmBeatItem,
     ViewingFrictionTemplate,
@@ -107,16 +109,24 @@ export class ViewingFrictionOverlay {
         }
     }
 
-    setRestingMode(): void {
+    setRestingMode(reason?: FrictionTriggerReason): void {
         if (!this.element) return;
         const card = this.element.querySelector('.ncw-friction-card');
         if (card) {
             card.innerHTML = ViewingFrictionTemplate.renderRestingCard(
                 this.uiLang,
+                reason,
             );
             const wakeBtn = card.querySelector('#ncw-friction-wake-btn');
             wakeBtn?.addEventListener('click', () => {
                 this.callbacks?.onContinue();
+            });
+            const closeTabBtn = card.querySelector('#ncw-friction-close-tab-btn');
+            closeTabBtn?.addEventListener('click', () => {
+                try {
+                    window.close();
+                } catch {}
+                ContentMessageService.getInstance().closeCurrentTab().catch(() => {});
             });
         }
     }
@@ -144,9 +154,12 @@ export class ViewingFrictionOverlay {
         const startActivityTimer = () => {
             if (this.activeTimer) return;
 
-            // Countdown timer for interval breaks or screensaver
+            // Countdown timer for interval breaks or screensaver when NOT a hard block
+            const isHardBlock =
+                context.reason === 'daily_limit' || context.reason === 'curfew';
             const isCountdownActive =
-                context.reason === 'interval' || screenType === 'screensaver';
+                !isHardBlock &&
+                (context.reason === 'interval' || screenType === 'screensaver');
 
             if (isCountdownActive) {
                 let remain = context.countdownSeconds || 20;
@@ -248,7 +261,7 @@ export class ViewingFrictionOverlay {
         }, 3200);
 
         btnDone?.addEventListener('click', () => {
-            this.setRestingMode();
+            this.setRestingMode(context.reason);
             this.callbacks?.onDone();
         });
 

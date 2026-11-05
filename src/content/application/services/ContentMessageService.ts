@@ -430,9 +430,64 @@ export class ContentMessageService {
         }
     }
 
+    async closeCurrentTab(): Promise<boolean> {
+        try {
+            const res = await ContentBackgroundBus.send(
+                NCW_CONSTANTS.MESSAGE_TYPES.CLOSE_CURRENT_TAB,
+                {},
+            );
+            return res?.success ?? false;
+        } catch {
+            return false;
+        }
+    }
+
     async getPhoneticReading(params: {
         word: string;
         lang: string;
         system?: string;
     }): Promise<{ success: boolean; reading: string; error?: string }> {
         return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING,
+            params,
+        );
+    }
+
+    async getPhoneticBatch(params: {
+        words: string[];
+        lang: string;
+        system?: string;
+    }): Promise<{
+        success: boolean;
+        readings: Record<string, string>;
+        error?: string;
+    }> {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH,
+            params,
+        );
+    }
+
+    async getTtsAudio(params: {
+        text: string;
+        lang: string;
+    }): Promise<{ success: boolean; audioBase64?: string; error?: string }> {
+        return await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_TTS_AUDIO,
+            params,
+        );
+    }
+
+    onSettingsChanged(
+        callback: (settings: ExtensionSettings) => void,
+    ): () => void {
+        return ContentBackgroundBus.onMessage(
+            NCW_CONSTANTS.MESSAGE_TYPES.PUSH_SETTINGS_CHANGED,
+            (payload) => {
+                if (payload && payload.settings) {
+                    callback(payload.settings);
+                }
+            },
+        );
+    }
+}

@@ -973,6 +973,22 @@ export class BackgroundMessageService {
                         return true;
                     }
 
+                    case NCW_CONSTANTS.MESSAGE_TYPES.CLOSE_CURRENT_TAB: {
+                        const tabId = message.tabId ?? sender.tab?.id;
+                        if (
+                            tabId !== undefined &&
+                            typeof chrome !== 'undefined' &&
+                            chrome.tabs &&
+                            chrome.tabs.remove
+                        ) {
+                            chrome.tabs.remove(tabId);
+                        }
+                        sendResponse({
+                            success: true,
+                        } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.CLOSE_CURRENT_TAB]['response']);
+                        return false;
+                    }
+
                     // --- LLM Connection Checks ---
                     case NCW_CONSTANTS.MESSAGE_TYPES.CHECK_OLLAMA: {
                         this.llmService

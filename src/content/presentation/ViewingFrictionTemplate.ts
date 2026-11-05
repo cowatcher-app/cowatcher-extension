@@ -6,6 +6,7 @@
 import {
     FrictionBreakContext,
     FrictionScreenType,
+    FrictionTriggerReason,
 } from '@shared/domain/entities/ViewingFriction';
 import { NCW_I18N } from '@shared/utils/i18n';
 
@@ -54,7 +55,24 @@ export const ViewingFrictionTemplate = {
         lang: string,
         countdownSeconds: number = 20,
         isInterval: boolean = false,
+        isHardBlock: boolean = false,
+        reason?: FrictionTriggerReason,
     ): string {
+        if (isHardBlock) {
+            const notice =
+                reason === 'curfew'
+                    ? NCW_I18N.getText('frictionCurfewNotice', lang)
+                    : NCW_I18N.getText('frictionDailyLimitNotice', lang);
+            return `
+                <div class="ncw-friction-activity ncw-friction-hardblock-wrap" style="padding: 18px 24px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px; max-width: 480px; margin: 12px auto; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🛑</div>
+                    <div style="font-size: 14px; color: #fca5a5; line-height: 1.6;">
+                        ${this.escapeHtml(notice)}
+                    </div>
+                </div>
+            `;
+        }
+
         const countdownBadge = isInterval && screenType !== 'screensaver'
             ? `
                 <div class="ncw-friction-countdown-badge">
@@ -214,6 +232,8 @@ export const ViewingFrictionTemplate = {
         const introQuote = quotes[Math.floor(Math.random() * quotes.length)];
         const introHtml = this.renderIntro(title, introQuote, lang);
 
+        const isHardBlock =
+            context.reason === 'daily_limit' || context.reason === 'curfew';
         const countdownSeconds = context.countdownSeconds || 20;
         const isInterval = context.reason === 'interval';
 
@@ -223,6 +243,8 @@ export const ViewingFrictionTemplate = {
             lang,
             countdownSeconds,
             isInterval,
+            isHardBlock,
+            context.reason,
         );
 
         const adviceHtml = `
@@ -253,29 +275,67 @@ export const ViewingFrictionTemplate = {
                 ${adviceHtml}
 
                 <div class="ncw-friction-actions">
-                    <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-continue-btn">
-                        ${NCW_I18N.getText('frictionBtnContinue', lang)}
-                    </button>
-                    <button type="button" class="ncw-friction-btn ncw-friction-btn-ghost" id="ncw-friction-done-btn">
-                        ${NCW_I18N.getText('frictionBtnDone', lang)}
-                    </button>
+                    ${
+                        !isHardBlock
+                            ? `
+                            <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-continue-btn">
+                                ${NCW_I18N.getText('frictionBtnContinue', lang)}
+                            </button>
+                            <button type="button" class="ncw-friction-btn ncw-friction-btn-ghost" id="ncw-friction-done-btn">
+                                ${NCW_I18N.getText('frictionBtnDone', lang)}
+                            </button>
+                            `
+                            : `
+                            <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-done-btn" style="width: 100%; max-width: 280px; padding: 12px 24px;">
+                                ${NCW_I18N.getText('frictionBtnDone', lang)}
+                            </button>
+                            `
+                    }
                 </div>
             </div>
         `;
     },
 
-    renderRestingCard(lang: string): string {
+    renderRestingCard(lang: string, reason?: FrictionTriggerReason): string {
+        const isCurfew = reason === 'curfew';
+        const isLimit = reason === 'daily_limit';
+        const isHardBlock = isCurfew || isLimit;
+
+        const icon = isCurfew ? '🌙' : isLimit ? '📊' : '🍵';
+        const title = isCurfew
+            ? NCW_I18N.getText('frictionCurfewTitle', lang)
+            : isLimit
+              ? NCW_I18N.getText('frictionDailyTitle', lang)
+              : NCW_I18N.getText('frictionBtnDone', lang);
+
+        const desc = isCurfew
+            ? NCW_I18N.getText('frictionCurfewRestDesc', lang)
+            : isLimit
+              ? NCW_I18N.getText('frictionLimitRestDesc', lang)
+              : NCW_I18N.getText('frictionDoneRestDesc', lang);
+
         return `
-            <div style="font-size: 48px; margin-bottom: 16px;">🌙</div>
+            <div style="font-size: 48px; margin-bottom: 16px;">${icon}</div>
             <h2 style="font-size: 24px; font-weight: 700; color: #f8fafc; margin: 0 0 10px 0;">
-                ${NCW_I18N.getText('frictionBtnDone', lang)}
+                ${this.escapeHtml(title)}
             </h2>
             <p style="font-size: 14px; color: #94a3b8; max-width: 420px; line-height: 1.6; margin: 0 0 24px 0;">
-                Great job taking care of yourself today. The screen is resting.
+                ${this.escapeHtml(desc)}
             </p>
-            <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-wake-btn">
-                ${NCW_I18N.getText('frictionBtnContinue', lang)}
-            </button>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" class="ncw-friction-btn ncw-friction-btn-ghost" id="ncw-friction-close-tab-btn">
+                    🚪 ${NCW_I18N.getText('frictionBtnCloseTab', lang)}
+                </button>
+                ${
+                    !isHardBlock
+                        ? `
+                        <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-wake-btn">
+                            ${NCW_I18N.getText('frictionBtnContinue', lang)}
+                        </button>
+                        `
+                        : ''
+                }
+            </div>
         `;
     },
 

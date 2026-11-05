@@ -42,6 +42,7 @@ export class ViewingFrictionManager {
     private lastCurfewTriggerKey: string = '';
     private lastDailyTriggerKey: string = '';
     private lastLoggedSecond: number = -1;
+    private isStoppedForToday: boolean = false;
 
     private checkInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -141,6 +142,10 @@ export class ViewingFrictionManager {
     }
 
     private onPlay(): void {
+        if (this.isStoppedForToday) {
+            this.boundVideo?.pause();
+            return;
+        }
         this.isPlaying = true;
         this.lastTickTimestamp = Date.now();
         this.refreshTodayStatsAsync();
@@ -193,6 +198,13 @@ export class ViewingFrictionManager {
         const video = this.boundVideo || this.adapter.getVideoElement?.();
         if (video && !this.boundVideo) {
             this.attachVideo(video);
+        }
+
+        if (this.isStoppedForToday) {
+            if (video && !video.paused) {
+                video.pause();
+            }
+            return;
         }
 
         const isCurrentlyPlaying = Boolean(
@@ -369,14 +381,15 @@ export class ViewingFrictionManager {
             unlockDifficulty: this.settings.frictionUnlockDifficulty || 'none',
             autoResumeOnTimer:
                 reason === 'interval'
-                    ? true
-                    : this.settings.frictionAutoResumeOnTimer !== false,
+                    ? this.settings.frictionAutoResumeOnTimer !== false
+                    : false,
             countdownSeconds,
         };
 
         const callbacks: ViewingFrictionOverlayCallbacks = {
             onContinue: () => {
                 this.overlay.hide();
+                this.isStoppedForToday = false;
 
                 const elapsedRestSec = this.breakStartTime > 0
                     ? Math.max(1, Math.round((Date.now() - this.breakStartTime) / 1000))
@@ -409,8 +422,25 @@ export class ViewingFrictionManager {
                 this.messageService.recordRestTime(elapsedRestSec).catch(() => {});
 
                 this.continuousSeconds = 0;
-                this.snoozeUntilTimestamp = Date.now() + 60 * 60 * 1000;
-                // Keeps video paused
+                this.isStoppedForToday = true;
+
+                // Stop playback immediately
+                try {
+                    this.boundVideo?.pause();
+                } catch {
+                    // Ignore video pause error
+                }
+
+                // Exit fullscreen if active
+                if (document.fullscreenElement) {
+                    document.exitFullscreen?.().catch(() => {});
+                }
+
+                // Snooze until tomorrow 5:00 AM
+                const tomorrow5AM = new Date();
+                tomorrow5AM.setDate(tomorrow5AM.getDate() + 1);
+                tomorrow5AM.setHours(5, 0, 0, 0);
+                this.snoozeUntilTimestamp = tomorrow5AM.getTime();
             },
         };
 
