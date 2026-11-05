@@ -1,0 +1,315 @@
+/**
+ * ViewingFrictionTemplate
+ * Pure HTML templates and markup generators for ViewingFrictionOverlay.
+ */
+
+import {
+    FrictionBreakContext,
+    FrictionScreenType,
+} from '@shared/domain/entities/ViewingFriction';
+import { NCW_I18N } from '@shared/utils/i18n';
+
+export interface RhythmBeatItem {
+    target: number;
+    label: string;
+}
+
+export const ViewingFrictionTemplate = {
+    escapeHtml(str: string): string {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    getCuratedQuotes(): Array<{ text: string; author: string }> {
+        return [
+            {
+                text: 'Almost everything will work again if you unplug it for a few minutes, including you.',
+                author: 'Anne Lamott',
+            },
+            {
+                text: 'Rest is not idleness, and to lie sometimes on the grass under trees is by no means a waste of time.',
+                author: 'John Lubbock',
+            },
+            {
+                text: 'Take rest; a field that has rested gives a bountiful crop.',
+                author: 'Ovid',
+            },
+            {
+                text: 'In this fast-paced world, stepping away from the screen is an act of self-care and wisdom.',
+                author: 'Mindful Viewing',
+            },
+            {
+                text: 'Your eyes and mind deserve quiet moments to consolidate all the stories you have experienced.',
+                author: 'CoWatcher Health',
+            },
+        ];
+    },
+
+    renderActivity(
+        screenType: FrictionScreenType,
+        lang: string,
+        countdownSeconds: number = 20,
+        isInterval: boolean = false,
+    ): string {
+        const countdownBadge = isInterval && screenType !== 'screensaver'
+            ? `
+                <div class="ncw-friction-countdown-badge">
+                    <span class="ncw-countdown-pulse">⏱️</span>
+                    <span>${NCW_I18N.getText('frictionAutoResumeCountdown', lang, {
+                        sec: `<strong id="ncw-friction-timer-num">${countdownSeconds}</strong>`,
+                    })}</span>
+                </div>
+            `
+            : '';
+
+        if (screenType === 'breathing') {
+            return `
+                <div class="ncw-friction-activity ncw-friction-breathing-wrap">
+                    <div class="ncw-friction-breathing-orb">
+                        <span id="ncw-breathing-phase-text">${NCW_I18N.getText('frictionBreathingInhale', lang)}</span>
+                    </div>
+                    <div class="ncw-friction-hint">
+                        4-7-8 Breathing: Inhale 4s ➔ Hold 7s ➔ Exhale 8s
+                    </div>
+                    ${countdownBadge}
+                </div>
+            `;
+        }
+
+        if (screenType === 'quote') {
+            const quotes = this.getCuratedQuotes();
+            const chosen = quotes[Math.floor(Math.random() * quotes.length)];
+            return `
+                <div class="ncw-friction-activity ncw-friction-quote-wrap">
+                    <blockquote class="ncw-friction-quote">
+                        "${this.escapeHtml(chosen.text)}"
+                    </blockquote>
+                    <div class="ncw-friction-author">— ${this.escapeHtml(chosen.author)}</div>
+                    ${countdownBadge}
+                </div>
+            `;
+        }
+
+        if (screenType === 'puzzle') {
+            return `
+                <div class="ncw-friction-activity ncw-friction-puzzle-wrap">
+                    <div class="ncw-friction-puzzle-title">🧠 ${NCW_I18N.getText('frictionPuzzlePrompt', lang)}</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #38bdf8; margin: 10px 0;">
+                        Focus & Refresh: Take 3 deep breaths and look away from the screen.
+                    </div>
+                    <div class="ncw-friction-hint">
+                        ${NCW_I18N.getText('friction2020Rule', lang)}
+                    </div>
+                    ${countdownBadge}
+                </div>
+            `;
+        }
+
+        // Default: 'screensaver' with 20-20-20 eye rest rule & countdown
+        return `
+            <div class="ncw-friction-activity ncw-friction-screensaver-wrap">
+                <div class="ncw-friction-countdown-circle">
+                    <span id="ncw-friction-timer-num">${countdownSeconds}</span>
+                    <span style="font-size: 11px; text-transform: uppercase; color: #94a3b8;">seconds</span>
+                </div>
+                <div class="ncw-friction-hint" style="max-width: 440px; margin: 12px auto 0 auto;">
+                    👁️ ${NCW_I18N.getText('friction2020Rule', lang)}
+                </div>
+            </div>
+        `;
+    },
+
+    renderMetrics(context: FrictionBreakContext, lang: string): string {
+        const hours = Math.floor(context.todayMinutes / 60);
+        const mins = Math.floor(context.todayMinutes % 60);
+
+        const continuousDisplay =
+            context.continuousMinutes < 1 &&
+            context.continuousSeconds !== undefined
+                ? NCW_I18N.getText('frictionMetricSeconds', lang, {
+                      sec: context.continuousSeconds,
+                  })
+                : NCW_I18N.getText('frictionMetricMinutes', lang, {
+                      min: context.continuousMinutes,
+                  });
+
+        const todayDisplay =
+            context.todayMinutes < 1 && context.todaySeconds !== undefined
+                ? NCW_I18N.getText('frictionMetricSeconds', lang, {
+                      sec: context.todaySeconds,
+                  })
+                : NCW_I18N.getText('frictionMetricHoursMinutes', lang, {
+                      hours,
+                      min: mins,
+                  });
+
+        const restSeconds = context.todayRestSeconds || 0;
+        const restMins = Math.floor(restSeconds / 60);
+        const restSecRem = restSeconds % 60;
+        const restDisplay =
+            restSeconds < 60
+                ? NCW_I18N.getText('frictionMetricSeconds', lang, { sec: restSeconds })
+                : NCW_I18N.getText('frictionMetricMinutesSeconds', lang, {
+                      min: restMins,
+                      sec: restSecRem,
+                  });
+
+        return `
+            <div class="ncw-friction-metrics">
+                <span class="ncw-friction-pill">
+                    ⏱️ ${NCW_I18N.getText('frictionContinuousMetric', lang, { time: continuousDisplay, min: continuousDisplay })}
+                </span>
+                <span class="ncw-friction-pill">
+                    📅 ${NCW_I18N.getText('frictionTodayMetric', lang, { time: todayDisplay, hours, min: mins })}
+                </span>
+                <span class="ncw-friction-pill ncw-friction-pill-rest">
+                    🌿 ${(context.todayBreakCount || 0) > 0 ? NCW_I18N.getText('frictionRestTodayMetricWithCount', lang, { time: restDisplay, count: context.todayBreakCount || 0 }) : NCW_I18N.getText('frictionRestTodayMetric', lang, { time: restDisplay })}
+                </span>
+                ${
+                    context.curfewTime
+                        ? `<span class="ncw-friction-pill">🌙 ${NCW_I18N.getText('frictionCurfewMetric', lang, { time: context.curfewTime })}</span>`
+                        : ''
+                }
+            </div>
+        `;
+    },
+
+    renderIntro(
+        title: string,
+        quote: { text: string; author: string },
+        lang: string,
+    ): string {
+        return `
+            <div class="ncw-friction-intro" id="ncw-friction-intro">
+                <div class="ncw-friction-intro-title">${this.escapeHtml(title)}</div>
+                <div class="ncw-friction-intro-body">
+                    <div class="ncw-friction-intro-quote">"${this.escapeHtml(quote.text)}"</div>
+                    <div class="ncw-friction-intro-author">— ${this.escapeHtml(quote.author)}</div>
+                </div>
+                <div class="ncw-friction-intro-hint">${NCW_I18N.getText('frictionSkipIntro', lang)}</div>
+            </div>
+        `;
+    },
+
+    renderMainContent(
+        context: FrictionBreakContext,
+        screenType: FrictionScreenType,
+        lang: string,
+    ): string {
+        let title = NCW_I18N.getText('frictionBreakTitle', lang);
+        let headerIcon = '🍵';
+        if (context.reason === 'daily_limit') {
+            title = NCW_I18N.getText('frictionDailyTitle', lang);
+            headerIcon = '📊';
+        } else if (context.reason === 'curfew') {
+            title = NCW_I18N.getText('frictionCurfewTitle', lang);
+            headerIcon = '🌙';
+        }
+
+        const quotes = this.getCuratedQuotes();
+        const introQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        const introHtml = this.renderIntro(title, introQuote, lang);
+
+        const countdownSeconds = context.countdownSeconds || 20;
+        const isInterval = context.reason === 'interval';
+
+        const metricPills = this.renderMetrics(context, lang);
+        const activityHtml = this.renderActivity(
+            screenType,
+            lang,
+            countdownSeconds,
+            isInterval,
+        );
+
+        const adviceHtml = `
+            <div class="ncw-friction-advice-box" style="${context.llmAdvice ? 'display: block;' : 'display: none;'}">
+                <div class="ncw-friction-advice-header">
+                    <span>✨ ${NCW_I18N.getText('frictionAdviceTitle', lang)}</span>
+                </div>
+                <div class="ncw-friction-advice-text">${this.escapeHtml(context.llmAdvice || '')}</div>
+            </div>
+        `;
+
+        return `
+            <div class="ncw-friction-backdrop"></div>
+            ${introHtml}
+            <div class="ncw-friction-card" id="ncw-friction-card">
+                <div class="ncw-friction-header">
+                    <span class="ncw-friction-icon">${headerIcon}</span>
+                    <h2 class="ncw-friction-title">${this.escapeHtml(title)}</h2>
+                    ${
+                        context.showTitle
+                            ? `<div class="ncw-friction-show-title">🎬 ${this.escapeHtml(context.showTitle)}</div>`
+                            : ''
+                    }
+                </div>
+
+                ${metricPills}
+                ${activityHtml}
+                ${adviceHtml}
+
+                <div class="ncw-friction-actions">
+                    <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-continue-btn">
+                        ${NCW_I18N.getText('frictionBtnContinue', lang)}
+                    </button>
+                    <button type="button" class="ncw-friction-btn ncw-friction-btn-ghost" id="ncw-friction-done-btn">
+                        ${NCW_I18N.getText('frictionBtnDone', lang)}
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    renderRestingCard(lang: string): string {
+        return `
+            <div style="font-size: 48px; margin-bottom: 16px;">🌙</div>
+            <h2 style="font-size: 24px; font-weight: 700; color: #f8fafc; margin: 0 0 10px 0;">
+                ${NCW_I18N.getText('frictionBtnDone', lang)}
+            </h2>
+            <p style="font-size: 14px; color: #94a3b8; max-width: 420px; line-height: 1.6; margin: 0 0 24px 0;">
+                Great job taking care of yourself today. The screen is resting.
+            </p>
+            <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-wake-btn">
+                ${NCW_I18N.getText('frictionBtnContinue', lang)}
+            </button>
+        `;
+    },
+
+    renderRhythmStage(difficulty: 'easy' | 'hard', lang: string): string {
+        const modeBadge =
+            difficulty === 'hard' ? '🧠 Arithmetic Beat' : '🎵 Rhythm Beat';
+
+        return `
+            <div class="ncw-rhythm-header">
+                <span id="ncw-rhythm-progress"></span>
+                <span style="color: #38bdf8;">${modeBadge}</span>
+            </div>
+            <div class="ncw-rhythm-track" id="ncw-rhythm-track"></div>
+            <div class="ncw-rhythm-beat-box">
+                <div class="ncw-rhythm-target-expr" id="ncw-rhythm-expr">...</div>
+                <div class="ncw-rhythm-target-hint" id="ncw-rhythm-hint"></div>
+            </div>
+            <div class="ncw-rhythm-timer-wrap">
+                <div class="ncw-rhythm-timer-bar" id="ncw-rhythm-bar" style="width: 100%;"></div>
+            </div>
+            <button type="button" class="ncw-rhythm-tap-pad" id="ncw-rhythm-tap-btn">
+                ${NCW_I18N.getText('frictionRhythmTapBtn', lang)}
+            </button>
+            <div class="ncw-rhythm-counter" id="ncw-rhythm-counter">Clicks: 0</div>
+            <div class="ncw-rhythm-msg" id="ncw-rhythm-msg"></div>
+        `;
+    },
+
+    renderRhythmPills(beats: RhythmBeatItem[]): string {
+        return beats
+            .map(
+                (b, idx) =>
+                    `<span class="ncw-rhythm-pill" data-idx="${idx}">${this.escapeHtml(b.label)}</span>`,
+            )
+            .join('');
+    },
+};

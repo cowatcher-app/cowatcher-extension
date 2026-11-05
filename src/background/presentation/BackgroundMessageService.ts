@@ -915,6 +915,64 @@ export class BackgroundMessageService {
                         return true;
                     }
 
+                    // --- Viewing Static Friction ---
+                    case NCW_CONSTANTS.MESSAGE_TYPES.GET_TODAY_WATCH_TIME: {
+                        this.watchHistoryService
+                            .getTodayWatchStats(message.excludedPlatforms || [])
+                            .then((stats) => {
+                                sendResponse({
+                                    success: true,
+                                    ...stats,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_TODAY_WATCH_TIME]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    success: false,
+                                    todaySeconds: 0,
+                                    todaySessions: 0,
+                                    platformSeconds: {},
+                                    todayRestSeconds: 0,
+                                    todayBreakCount: 0,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_TODAY_WATCH_TIME]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.RECORD_REST_TIME: {
+                        this.watchHistoryService
+                            .recordRestTime(message.restSeconds)
+                            .then((stats) => {
+                                sendResponse({
+                                    success: true,
+                                    ...stats,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.RECORD_REST_TIME]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    success: false,
+                                    totalRestSeconds: 0,
+                                    breakCount: 0,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.RECORD_REST_TIME]['response']);
+                            });
+                        return true;
+                    }
+
+                    case NCW_CONSTANTS.MESSAGE_TYPES.GET_FRICTION_ADVICE: {
+                        this.generateFrictionAdvice(message)
+                            .then((advice) => {
+                                sendResponse({
+                                    success: true,
+                                    advice,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_FRICTION_ADVICE]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    success: false,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.GET_FRICTION_ADVICE]['response']);
+                            });
+                        return true;
+                    }
+
                     // --- LLM Connection Checks ---
                     case NCW_CONSTANTS.MESSAGE_TYPES.CHECK_OLLAMA: {
                         this.llmService
@@ -1268,5 +1326,63 @@ export class BackgroundMessageService {
                 }
             },
         );
+    }
+
+    private async generateFrictionAdvice(params: {
+        reason: string;
+        showTitle?: string;
+        watchMinutes: number;
+        todayMinutes: number;
+        watchSeconds?: number;
+        todaySeconds?: number;
+        todayRestSeconds?: number;
+        todayBreakCount?: number;
+        curfewTime?: string;
+    }): Promise<string | undefined> {
+        const isSupervisorActive = await this.llmService.isSupervisorActive();
+        if (!isSupervisorActive) return undefined;
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+
+        try {
+            const durationStr =
+                params.watchSeconds && params.watchSeconds < 60
+                    ? `${params.watchSeconds} seconds`
+                    : `${params.watchMinutes} minutes`;
+            const todayStr =
+                params.todaySeconds && params.todaySeconds < 60
+                    ? `${params.todaySeconds} seconds`
+                    : `${params.todayMinutes} minutes`;
+
+            const reasonDesc =
+                params.reason === 'curfew'
+                    ? `it is late at night (past curfew ${params.curfewTime || 'midnight'})`
+                    : params.reason === 'daily_limit'
+                      ? `daily viewing limit reached (${todayStr} today)`
+                      : `they have been watching continuously for ${durationStr}`;
+
+            const restContext =
+                params.todayRestSeconds && params.todayRestSeconds > 0
+                    ? ` The viewer has already taken ${params.todayBreakCount || 1} mindful eye-rest breaks totaling ${Math.round(params.todayRestSeconds)} seconds today.`
+                    : '';
+
+            const prompt = `You are a supportive digital wellness and eye health companion in a video player.
+The viewer was just paused for a health micro-break because: ${reasonDesc}.${restContext}
+${params.showTitle ? `Current show: "${params.showTitle}".` : ''}
+
+Give a single, concise, warm 1-2 sentence tip or encouragement. You may praise them for prioritizing eye health, reference the show playfully, or suggest eye rest (20-20-20 rule), hydration, posture stretching, or sleep. Maximum 40 words.`;
+
+            const reply = await this.llmService.callChat('supervisor', {
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            return reply?.trim() || undefined;
+        } catch {
+            clearTimeout(timeout);
+            return undefined;
+        }
     }
 }

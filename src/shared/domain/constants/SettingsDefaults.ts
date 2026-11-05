@@ -8,6 +8,11 @@ export interface PipelineConfig {
 import { LLMProvider, TranslationProvider } from '../entities/PipelineTypes';
 import { Language, LanguageInfo } from '../value-objects/Language';
 import { STREAMING_PLATFORMS, StreamingPlatformId } from './StreamingPlatforms';
+import {
+    FrictionScreenType,
+    FrictionUnlockDifficulty,
+    FrictionPlatformRule,
+} from '../entities/ViewingFriction';
 
 export type CacheRetentionPeriod = '1w' | '1m' | '1y';
 
@@ -80,6 +85,20 @@ export interface ExtensionSettings {
     koreanPhoneticSystem: KoreanPhoneticSystem;
     recordVocabAsLemma: boolean;
     cacheRetention: CacheRetentionPeriod;
+
+    // Viewing Static Friction & Health Guard
+    staticFrictionEnabled: boolean;
+    frictionIntervalMinutes: number;
+    frictionDailyLimitMinutes: number;
+    frictionCurfewEnabled: boolean;
+    frictionCurfewTime: string;
+    frictionScreenType: FrictionScreenType;
+    frictionBreakDurationSeconds: number;
+    frictionUnlockDifficulty: FrictionUnlockDifficulty;
+    frictionAutoResumeOnTimer: boolean;
+    frictionEnableLlmAdvice: boolean;
+    frictionExcludedPlatforms: string[];
+    frictionPlatformRules: Record<string, FrictionPlatformRule>;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -151,6 +170,20 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     koreanPhoneticSystem: 'default',
     recordVocabAsLemma: true,
     cacheRetention: '1m',
+
+    // Viewing Static Friction & Health Guard (default: disabled)
+    staticFrictionEnabled: false,
+    frictionIntervalMinutes: 45,
+    frictionDailyLimitMinutes: 180,
+    frictionCurfewEnabled: false,
+    frictionCurfewTime: '23:30',
+    frictionScreenType: 'screensaver',
+    frictionBreakDurationSeconds: 20,
+    frictionUnlockDifficulty: 'none',
+    frictionAutoResumeOnTimer: true,
+    frictionEnableLlmAdvice: true,
+    frictionExcludedPlatforms: [],
+    frictionPlatformRules: {},
 };
 
 export const PROVIDER_PRESETS: Record<string, PipelineConfig> = {

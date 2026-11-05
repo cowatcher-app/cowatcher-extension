@@ -5,6 +5,9 @@ import {
     DailyWatchStat,
 } from '@shared/domain/entities/WatchHistory';
 import { Logger } from '@shared/utils/logger';
+import { IBrowserStorage } from '@shared/infrastructure/storage/IBrowserStorage';
+import { BrowserStorageFactory } from '@shared/infrastructure/storage/BrowserStorageFactory';
+import { NCW_STORAGE_KEYS } from '@shared/domain/constants/StorageKeys';
 
 export class WatchHistoryService {
     private static instance: WatchHistoryService | null = null;
@@ -16,6 +19,10 @@ export class WatchHistoryService {
     private static STORE_SHOWS = 'show_summaries';
 
     private dbPromise: Promise<IDBDatabase | null> | null = null;
+
+    constructor(
+        private readonly storage: IBrowserStorage = BrowserStorageFactory.getStorage(),
+    ) {}
 
     static getInstance(): WatchHistoryService {
         if (!WatchHistoryService.instance) {
@@ -446,5 +453,138 @@ export class WatchHistoryService {
                 resolve(false);
             }
         });
+    }
+
+    /**
+     * Fast aggregation of today's watch time, sessions, and platform breakdown, along with mindful rest stats.
+     */
+    async getTodayWatchStats(excludedPlatforms: string[] = []): Promise<{
+        todaySeconds: number;
+        todaySessions: number;
+        platformSeconds: Record<string, number>;
+        todayRestSeconds: number;
+        todayBreakCount: number;
+    }> {
+        const restStats = await this.getTodayRestStats();
+        const db = await this.getDB();
+        if (!db) {
+            return {
+                todaySeconds: 0,
+                todaySessions: 0,
+                platformSeconds: {},
+                todayRestSeconds: restStats.totalRestSeconds,
+                todayBreakCount: restStats.breakCount,
+            };
+        }
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const minTimestamp = todayStart.getTime();
+
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction(
+                    WatchHistoryService.STORE_SESSIONS,
+                    'readonly',
+                );
+                const store = tx.objectStore(WatchHistoryService.STORE_SESSIONS);
+                const index = store.index('startedAt');
+                const range = IDBKeyRange.lowerBound(minTimestamp);
+                const req = index.getAll(range);
+
+                req.onsuccess = () => {
+                    const sessions: WatchSession[] = req.result || [];
+                    let todaySeconds = 0;
+                    let todaySessions = 0;
+                    const platformSeconds: Record<string, number> = {};
+                    const excludedSet = new Set(excludedPlatforms);
+
+                    for (const s of sessions) {
+                        const sec = s.effectiveWatchSeconds || 0;
+                        const p = s.platform || 'unknown';
+                        platformSeconds[p] = (platformSeconds[p] || 0) + sec;
+                        if (!excludedSet.has(p)) {
+                            todaySeconds += sec;
+                            todaySessions += 1;
+                        }
+                    }
+
+                    resolve({
+                        todaySeconds,
+                        todaySessions,
+                        platformSeconds,
+                        todayRestSeconds: restStats.totalRestSeconds,
+                        todayBreakCount: restStats.breakCount,
+                    });
+                };
+
+                req.onerror = () => {
+                    resolve({
+                        todaySeconds: 0,
+                        todaySessions: 0,
+                        platformSeconds: {},
+                        todayRestSeconds: restStats.totalRestSeconds,
+                        todayBreakCount: restStats.breakCount,
+                    });
+                };
+            } catch {
+                resolve({
+                    todaySeconds: 0,
+                    todaySessions: 0,
+                    platformSeconds: {},
+                    todayRestSeconds: restStats.totalRestSeconds,
+                    todayBreakCount: restStats.breakCount,
+                });
+            }
+        });
+    }
+
+    /**
+     * Record completed mindful break rest time.
+     */
+    async recordRestTime(seconds: number): Promise<{
+        totalRestSeconds: number;
+        breakCount: number;
+    }> {
+        if (!seconds || seconds <= 0) {
+            return this.getTodayRestStats();
+        }
+
+        const d = new Date();
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const storageKey = `${NCW_STORAGE_KEYS.DAILY_REST_PREFIX}${dateKey}`;
+
+        const res = await this.storage.get<{ totalRestSeconds?: number; breakCount?: number }>(storageKey);
+        const raw = res[storageKey];
+        const stats = {
+            totalRestSeconds: (raw?.totalRestSeconds || 0) + seconds,
+            breakCount: (raw?.breakCount || 0) + 1,
+        };
+
+        await this.storage.set({ [storageKey]: stats });
+        this.logger.info(
+            'Rest',
+            `Recorded mindful rest: +${seconds}s (Today total: ${stats.totalRestSeconds}s, ${stats.breakCount} breaks)`,
+        );
+        return stats;
+    }
+
+    /**
+     * Get today's mindful break rest stats.
+     */
+    async getTodayRestStats(): Promise<{
+        totalRestSeconds: number;
+        breakCount: number;
+    }> {
+        const d = new Date();
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const storageKey = `${NCW_STORAGE_KEYS.DAILY_REST_PREFIX}${dateKey}`;
+
+        const res = await this.storage.get<{ totalRestSeconds?: number; breakCount?: number }>(storageKey);
+        const raw = res[storageKey];
+        return {
+            totalRestSeconds: raw?.totalRestSeconds || 0,
+            breakCount: raw?.breakCount || 0,
+        };
     }
 }

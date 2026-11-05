@@ -204,6 +204,26 @@ export class OptionsMessageService {
 
     // --- Watch History & Analytics ---
 
+    async getTodayWatchTime(excludedPlatforms: string[] = []): Promise<{
+        todaySeconds: number;
+        todaySessions: number;
+        platformSeconds: Record<string, number>;
+        todayRestSeconds: number;
+        todayBreakCount: number;
+    }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_TODAY_WATCH_TIME,
+            { excludedPlatforms },
+        );
+        return {
+            todaySeconds: res?.todaySeconds || 0,
+            todaySessions: res?.todaySessions || 0,
+            platformSeconds: res?.platformSeconds || {},
+            todayRestSeconds: res?.todayRestSeconds || 0,
+            todayBreakCount: res?.todayBreakCount || 0,
+        };
+    }
+
     async getWatchHistory() {
         return await ContentBackgroundBus.send(
             NCW_CONSTANTS.MESSAGE_TYPES.GET_WATCH_HISTORY,

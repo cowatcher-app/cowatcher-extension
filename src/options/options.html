@@ -936,6 +936,151 @@
               </small>
             </div>
           </div>
+
+          <!-- Col 5: Mindful Viewing & Static Friction -->
+          <div class="settings-card" id="card-friction-settings">
+            <h3 class="card-title" data-i18n="frictionSectionTitle">🍵 Mindful Viewing & Static Friction</h3>
+            <p style="color: #94a3b8; font-size: 12px; margin: -4px 0 16px 0; line-height: 1.5;" data-i18n="frictionSectionDesc">
+              Introduce intentional pauses to break binge-watching loops, protect eye health, and prevent late-night fatigue.
+            </p>
+
+            <div class="form-group checkbox-row">
+              <label>
+                <input type="checkbox" id="cfg-friction-enabled" />
+                <span data-i18n="frictionEnableLabel">Enable Viewing Static Friction</span>
+              </label>
+            </div>
+
+            <div id="cfg-friction-detail-group" style="display: none; flex-direction: column; gap: 14px; margin-top: 12px;">
+              <div id="friction-today-stats-banner" style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #4ade80; display: flex; align-items: center; justify-content: space-between;">
+                <span>🌿 <span data-i18n="frictionStatsBanner">Today's Mindful Rest:</span> <strong id="friction-today-rest-val">0s</strong></span>
+                <span style="color: #86efac; font-size: 12px;"><span id="friction-today-breaks-val">0</span> <span data-i18n="frictionBreaksTaken">breaks taken</span></span>
+              </div>
+
+              <div class="form-group">
+                <label for="cfg-friction-interval" data-i18n="frictionIntervalLabel">Continuous Session Interval</label>
+                <select id="cfg-friction-interval">
+                  <option value="0.1" data-i18n="frictionInterval6s">⚡ 6 seconds (Testing)</option>
+                  <option value="25">25 minutes (Pomodoro)</option>
+                  <option value="35">35 minutes</option>
+                  <option value="45" selected>45 minutes (1 Standard Episode)</option>
+                  <option value="60">60 minutes (1 Hour)</option>
+                  <option value="90">90 minutes (Feature Length)</option>
+                </select>
+                <small class="form-text text-muted" data-i18n="frictionIntervalHint">
+                  Pause playback automatically after continuous viewing duration (e.g. 45 min)
+                </small>
+              </div>
+
+              <div class="form-group" id="cfg-friction-break-duration-group">
+                <label for="cfg-friction-break-duration" data-i18n="frictionBreakDurationLabel">Micro-Break Countdown Duration</label>
+                <select id="cfg-friction-break-duration">
+                  <option value="5">⚡ 5s (Testing)</option>
+                  <option value="10">10s</option>
+                  <option value="15">15s</option>
+                  <option value="20" selected>20s (Recommended / 20-20-20 Rule)</option>
+                  <option value="30">30s</option>
+                  <option value="60">1 min (60s)</option>
+                  <option value="120">2 min</option>
+                  <option value="300">5 min</option>
+                </select>
+                <small class="form-text text-muted" data-i18n="frictionBreakDurationHint">
+                  Duration of the countdown before playback automatically resumes
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label for="cfg-friction-daily-limit" data-i18n="frictionDailyLimitLabel">Daily Total Viewing Limit</label>
+                <select id="cfg-friction-daily-limit">
+                  <option value="0">Off (No daily limit)</option>
+                  <option value="0.6" data-i18n="frictionLimit36s">⚡ 36 seconds (Testing)</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                  <option value="180" selected>3 hours</option>
+                  <option value="240">4 hours</option>
+                  <option value="300">5 hours</option>
+                </select>
+                <small class="form-text text-muted" data-i18n="frictionDailyLimitHint">
+                  Trigger daily summary when total watch time reaches this threshold (0 to disable)
+                </small>
+              </div>
+
+              <div class="form-group checkbox-row">
+                <label>
+                  <input type="checkbox" id="cfg-friction-curfew-enabled" />
+                  <span data-i18n="frictionCurfewLabel">Enable Late-Night Curfew</span>
+                </label>
+                <small class="form-text text-muted" data-i18n="frictionCurfewHint" style="display: block; margin-top: 3px;">
+                  Trigger late-night reminder when watching past configured time
+                </small>
+              </div>
+
+              <div class="form-group" id="cfg-friction-curfew-time-group" style="display: none;">
+                <label for="cfg-friction-curfew-time" data-i18n="frictionCurfewTimeLabel">Curfew Start Time</label>
+                <input type="time" id="cfg-friction-curfew-time" value="23:30" class="form-control" style="width: 140px; height: 32px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 2px 8px;" />
+              </div>
+
+              <div class="form-group">
+                <label for="cfg-friction-screen-type" data-i18n="frictionScreenTypeLabel">Micro-Break Screen Type</label>
+                <select id="cfg-friction-screen-type">
+                  <option value="screensaver" selected data-i18n="frictionScreenScreensaver">Serene Screensaver & 20-20-20 Eye Rest</option>
+                  <option value="breathing" data-i18n="frictionScreenBreathing">Guided 4-7-8 Breathing Exercise</option>
+                  <option value="quote" data-i18n="frictionScreenQuote">Mindful Wisdom Quotes</option>
+                  <option value="puzzle" data-i18n="frictionScreenPuzzle">Vocabulary Recall Challenge</option>
+                </select>
+              </div>
+
+              <div class="form-group checkbox-row">
+                <label>
+                  <input type="checkbox" id="cfg-friction-auto-resume" checked />
+                  <span data-i18n="frictionAutoResumeLabel">Auto-resume playback when countdown finishes</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label for="cfg-friction-unlock-difficulty" data-i18n="frictionUnlockDiffLabel">Continue Watching Challenge</label>
+                <select id="cfg-friction-unlock-difficulty">
+                  <option value="none" selected data-i18n="frictionUnlockDiffNone">None (Single Click)</option>
+                  <option value="easy" data-i18n="frictionUnlockDiffEasy">Easy (Rhythm Beat Numbers: e.g. 0, 1, 1, 4, 2)</option>
+                  <option value="hard" data-i18n="frictionUnlockDiffHard">Hard (Rhythm Arithmetic Beats: e.g. 4*3/4, 1+1)</option>
+                </select>
+              </div>
+
+              <div class="form-group checkbox-row">
+                <label>
+                  <input type="checkbox" id="cfg-friction-llm-advice" checked />
+                  <span data-i18n="frictionLlmAdviceLabel">AI Contextual Health Recommendations</span>
+                </label>
+                <small class="form-text text-muted" data-i18n="frictionLlmAdviceHint" style="display: block; margin-top: 3px;">
+                  Generate tailored, supportive tips based on current show and duration
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label data-i18n="frictionExclusionsLabel">Exclude Platforms from Total Time</label>
+                <div style="display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" class="chk-friction-exclude-platform" value="youtube" />
+                    <span>YouTube</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" class="chk-friction-exclude-platform" value="netflix" />
+                    <span>Netflix</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" class="chk-friction-exclude-platform" value="tver" />
+                    <span>TVer</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+                <button type="button" id="btn-save-friction-settings" class="btn-primary" style="padding: 7px 16px; font-size: 13px;">
+                  💾 Save Mindful Viewing Settings
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -554,6 +554,47 @@ export type MessagePayloadMap = {
             error?: string;
         };
     };
+    NCW_GET_TODAY_WATCH_TIME: {
+        request: {
+            excludedPlatforms?: string[];
+        };
+        response: {
+            success: boolean;
+            todaySeconds: number;
+            todaySessions: number;
+            platformSeconds: Record<string, number>;
+            todayRestSeconds: number;
+            todayBreakCount: number;
+        };
+    };
+    NCW_RECORD_REST_TIME: {
+        request: {
+            restSeconds: number;
+        };
+        response: {
+            success: boolean;
+            totalRestSeconds: number;
+            breakCount: number;
+        };
+    };
+    NCW_GET_FRICTION_ADVICE: {
+        request: {
+            reason: string;
+            showTitle?: string;
+            watchMinutes: number;
+            todayMinutes: number;
+            watchSeconds?: number;
+            todaySeconds?: number;
+            todayRestSeconds?: number;
+            todayBreakCount?: number;
+            platform?: string;
+            curfewTime?: string;
+        };
+        response: {
+            success: boolean;
+            advice?: string;
+        };
+    };
 };
 
 export type MessageType = keyof MessagePayloadMap;

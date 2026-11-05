@@ -14,6 +14,7 @@ import { SubtitleCue } from '@shared/domain/entities/Subtitle';
 import { Logger } from '@shared/utils/logger';
 import { SubtitleLearningManager } from './learning/SubtitleLearningManager';
 import { WatchHistoryTracker } from './history/WatchHistoryTracker';
+import { ViewingFrictionManager } from './friction/ViewingFrictionManager';
 
 import { SubtitleStore } from './store/SubtitleStore';
 import { AsrStreamMerger } from './pipeline/AsrStreamMerger';
@@ -40,6 +41,7 @@ export class SubtitleManager {
     readonly platform: IBrowserPlatform;
     readonly learningManager?: SubtitleLearningManager;
     readonly historyTracker?: WatchHistoryTracker;
+    readonly frictionManager?: ViewingFrictionManager;
 
     readonly store: SubtitleStore;
     readonly asrMerger: AsrStreamMerger;
@@ -82,6 +84,16 @@ export class SubtitleManager {
                 this.adapter,
                 this.messageService,
                 () => Boolean(this.adDetector?.isAdPlaying),
+            );
+            this.frictionManager = new ViewingFrictionManager(
+                this.adapter,
+                this.messageService,
+                this.settings as ExtensionSettings,
+                {
+                    isAdPlaying: () => Boolean(this.adDetector?.isAdPlaying),
+                    getShowTitle: () =>
+                        this.contextManager?.currentContext?.title,
+                },
             );
         }
 
@@ -148,8 +160,14 @@ export class SubtitleManager {
                 onPipelineTick: (t) => this.checkPipeline(t),
                 onSeeked: (t) => this.handleSeeked(t),
                 getCurrentMovieId: () => this.contextManager.currentMovieId,
-                onVideoAttached: (v) => this.historyTracker?.attachVideo(v),
-                onVideoDetached: () => this.historyTracker?.detachVideo(),
+                onVideoAttached: (v) => {
+                    this.historyTracker?.attachVideo(v);
+                    this.frictionManager?.attachVideo(v);
+                },
+                onVideoDetached: () => {
+                    this.historyTracker?.detachVideo();
+                    this.frictionManager?.detachVideo();
+                },
             },
             () => this.settings,
         );
@@ -572,6 +590,9 @@ export class SubtitleManager {
         this.learningManager?.updateSettings(
             this.settings as ExtensionSettings,
         );
+        this.frictionManager?.updateSettings(
+            this.settings as ExtensionSettings,
+        );
         this.overlay.updateSettings(this.settings);
         this.applySettingsOffsetChanges(newSettings);
 
@@ -691,6 +712,7 @@ export class SubtitleManager {
         this.unsubscribeCuesStale?.();
         this.syncer.detachVideo();
         this.historyTracker?.destroy();
+        this.frictionManager?.dispose();
         this.pipeline.stopNativePollingInterval();
         this.clearCues();
         this.logger.info(

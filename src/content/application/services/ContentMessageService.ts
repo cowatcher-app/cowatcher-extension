@@ -373,52 +373,66 @@ export class ContentMessageService {
         );
     }
 
+    async getTodayWatchTime(excludedPlatforms: string[] = []): Promise<{
+        todaySeconds: number;
+        todaySessions: number;
+        platformSeconds: Record<string, number>;
+        todayRestSeconds: number;
+        todayBreakCount: number;
+    }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.GET_TODAY_WATCH_TIME,
+            { excludedPlatforms },
+        );
+        return {
+            todaySeconds: res?.todaySeconds || 0,
+            todaySessions: res?.todaySessions || 0,
+            platformSeconds: res?.platformSeconds || {},
+            todayRestSeconds: res?.todayRestSeconds || 0,
+            todayBreakCount: res?.todayBreakCount || 0,
+        };
+    }
+
+    async recordRestTime(restSeconds: number): Promise<{
+        totalRestSeconds: number;
+        breakCount: number;
+    }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.RECORD_REST_TIME,
+            { restSeconds },
+        );
+        return {
+            totalRestSeconds: res?.totalRestSeconds || 0,
+            breakCount: res?.breakCount || 0,
+        };
+    }
+
+    async getFrictionAdvice(params: {
+        reason: string;
+        showTitle?: string;
+        watchMinutes: number;
+        todayMinutes: number;
+        watchSeconds?: number;
+        todaySeconds?: number;
+        todayRestSeconds?: number;
+        todayBreakCount?: number;
+        platform?: string;
+        curfewTime?: string;
+    }): Promise<string | undefined> {
+        try {
+            const res = await ContentBackgroundBus.send(
+                NCW_CONSTANTS.MESSAGE_TYPES.GET_FRICTION_ADVICE,
+                params,
+            );
+            return res?.success ? res.advice : undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
     async getPhoneticReading(params: {
         word: string;
         lang: string;
         system?: string;
     }): Promise<{ success: boolean; reading: string; error?: string }> {
         return await ContentBackgroundBus.send(
-            NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_READING,
-            params,
-        );
-    }
-
-    async getPhoneticBatch(params: {
-        words: string[];
-        lang: string;
-        system?: string;
-    }): Promise<{
-        success: boolean;
-        readings: Record<string, string>;
-        error?: string;
-    }> {
-        return await ContentBackgroundBus.send(
-            NCW_CONSTANTS.MESSAGE_TYPES.GET_PHONETIC_BATCH,
-            params,
-        );
-    }
-
-    async getTtsAudio(params: {
-        text: string;
-        lang: string;
-    }): Promise<{ success: boolean; audioBase64?: string; error?: string }> {
-        return await ContentBackgroundBus.send(
-            NCW_CONSTANTS.MESSAGE_TYPES.GET_TTS_AUDIO,
-            params,
-        );
-    }
-
-    onSettingsChanged(
-        callback: (settings: ExtensionSettings) => void,
-    ): () => void {
-        return ContentBackgroundBus.onMessage(
-            NCW_CONSTANTS.MESSAGE_TYPES.PUSH_SETTINGS_CHANGED,
-            (payload) => {
-                if (payload && payload.settings) {
-                    callback(payload.settings);
-                }
-            },
-        );
-    }
-}

@@ -604,3 +604,608 @@ body.ncw-hide-native-subs .caption-window {
         transform: translate(-50%, 0);
     }
 }
+
+/* ==========================================================================
+   Viewing Static Friction (Mindful Viewing & Health Guard) Overlay
+   ========================================================================== */
+.ncw-friction-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.ncw-friction-backdrop {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.65) 0%, rgba(8, 12, 22, 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: ncw-friction-backdrop-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ncw-friction-backdrop-in {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+}
+
+/* Cinematic Intro Stage */
+.ncw-friction-intro {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.ncw-friction-intro.ncw-intro-dissolve {
+    opacity: 0 !important;
+    filter: blur(14px) !important;
+    transform: scale(1.05) !important;
+    pointer-events: none !important;
+}
+
+.ncw-friction-intro-title {
+    font-size: 40px;
+    font-weight: 900;
+    color: #ffffff;
+    -webkit-text-stroke: 1.5px #ef4444;
+    text-shadow: 0 0 25px rgba(239, 68, 68, 0.7), 0 0 50px rgba(239, 68, 68, 0.4);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    animation: ncw-intro-title-anim 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ncw-intro-title-anim {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.94);
+        filter: blur(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.ncw-friction-intro-body {
+    max-width: 680px;
+    padding: 0 20px;
+    animation: ncw-intro-quote-anim 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+}
+
+@keyframes ncw-intro-quote-anim {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ncw-friction-intro-quote {
+    font-size: 20px;
+    line-height: 1.65;
+    color: #f1f5f9;
+    font-style: italic;
+    font-weight: 500;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9);
+    margin-bottom: 12px;
+}
+
+.ncw-friction-intro-author {
+    font-size: 13px;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+}
+
+.ncw-friction-intro-hint {
+    position: absolute;
+    bottom: 40px;
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: ncw-friction-fade 0.8s ease-out 1.2s both;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ncw-friction-card {
+    position: relative;
+    z-index: 5;
+    max-width: 560px;
+    width: 90%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 24px;
+    padding: 32px 28px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.65), 
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+                0 0 40px rgba(56, 189, 248, 0.08);
+    text-align: center;
+    color: #f8fafc;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.96) translateY(14px);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ncw-friction-card.ncw-card-revealed {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: scale(1) translateY(0) !important;
+}
+
+.ncw-friction-icon {
+    font-size: 40px;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.ncw-friction-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+}
+
+.ncw-friction-show-title {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.ncw-friction-metrics {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.ncw-friction-pill {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.ncw-friction-pill-rest {
+    background: rgba(34, 197, 94, 0.12) !important;
+    border-color: rgba(34, 197, 94, 0.35) !important;
+    color: #4ade80 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.15) !important;
+}
+
+.ncw-friction-activity {
+    margin: 16px 0 20px 0;
+}
+
+/* Screensaver Mode */
+.ncw-friction-countdown-circle {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(14, 165, 233, 0.05) 70%);
+    border: 2px solid rgba(56, 189, 248, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+    animation: ncw-pulse-soft 2s infinite ease-in-out;
+}
+
+.ncw-friction-countdown-circle span:first-child {
+    font-size: 32px;
+    font-weight: 700;
+    color: #38bdf8;
+    line-height: 1;
+}
+
+.ncw-friction-countdown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px auto 4px auto;
+    padding: 6px 16px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 9999px;
+    color: #38bdf8;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
+}
+
+.ncw-friction-countdown-badge strong {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    min-width: 18px;
+    display: inline-block;
+}
+
+.ncw-countdown-pulse {
+    display: inline-block;
+    animation: ncw-pulse-soft 1.5s infinite ease-in-out;
+}
+
+/* Breathing Mode */
+.ncw-friction-breathing-orb {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.05) 70%);
+    border: 2px solid rgba(16, 185, 129, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+    color: #10b981;
+    font-size: 14px;
+    font-weight: 600;
+    animation: ncw-breathing-scale 19s infinite ease-in-out;
+}
+
+/* Quote Mode */
+.ncw-friction-quote-wrap {
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border-left: 3px solid #38bdf8;
+}
+
+.ncw-friction-quote {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #e2e8f0;
+    font-style: italic;
+}
+
+.ncw-friction-author {
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: right;
+}
+
+/* Advice Box */
+.ncw-friction-advice-box {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.ncw-friction-advice-header {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 4px;
+}
+
+.ncw-friction-advice-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.ncw-friction-hint {
+    font-size: 12.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+/* Action Buttons */
+.ncw-friction-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.ncw-friction-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 10px 18px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+}
+
+.ncw-friction-btn-primary {
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+}
+
+.ncw-friction-btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+    transform: translateY(-1px);
+}
+
+.ncw-friction-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.ncw-friction-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.ncw-friction-btn-ghost {
+    background: transparent;
+    color: #94a3b8;
+}
+
+.ncw-friction-btn-ghost:hover {
+    color: #e2e8f0;
+    text-decoration: underline;
+}
+
+@keyframes ncw-friction-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ncw-friction-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes ncw-pulse-soft {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 35px rgba(56, 189, 248, 0.45);
+    }
+}
+
+@keyframes ncw-breathing-scale {
+    0% { transform: scale(1); }
+    21% { transform: scale(1.25); } /* 4s inhale */
+    58% { transform: scale(1.25); } /* 7s hold */
+    100% { transform: scale(1); }    /* 8s exhale */
+}
+
+@keyframes ncw-pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(2, 132, 199, 0);
+    }
+}
+
+.ncw-rhythm-stage {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.05);
+    animation: ncw-friction-fade 0.25s ease-out;
+}
+
+.ncw-rhythm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.ncw-rhythm-track {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.ncw-rhythm-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.2s ease;
+}
+
+.ncw-rhythm-pill.ncw-pill-passed {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: #22c55e;
+    color: #4ade80;
+}
+
+.ncw-rhythm-pill.ncw-pill-active {
+    background: rgba(56, 189, 248, 0.25);
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    transform: scale(1.08);
+}
+
+.ncw-rhythm-beat-box {
+    margin-bottom: 14px;
+}
+
+.ncw-rhythm-target-expr {
+    font-size: 28px;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+.ncw-rhythm-target-hint {
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+.ncw-rhythm-timer-wrap {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 12px auto;
+    max-width: 320px;
+}
+
+.ncw-rhythm-timer-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    border-radius: 3px;
+    transition: width 1s linear;
+}
+
+.ncw-rhythm-tap-pad {
+    width: 100%;
+    max-width: 280px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.ncw-rhythm-tap-pad:active,
+.ncw-rhythm-tap-pad.ncw-tap-active {
+    transform: scale(0.94);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.6);
+}
+
+.ncw-rhythm-tap-pad.ncw-tap-fail {
+    background: #ef4444 !important;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.7) !important;
+}
+
+.ncw-rhythm-counter {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-top: 8px;
+}
+
+.ncw-rhythm-msg {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 18px;
+}
+
+.ncw-rhythm-msg.ncw-msg-fail {
+    color: #f87171;
+}
+
+.ncw-rhythm-msg.ncw-msg-success {
+    color: #4ade80;
+}
+
+@keyframes ncw-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.ncw-shake {
+    animation: ncw-shake 0.4s ease-in-out;
+}
+
+@media (max-width: 640px) {
+    .ncw-friction-intro-title {
+        font-size: 26px !important;
+        letter-spacing: 0.06em !important;
+    }
+    .ncw-friction-intro-quote {
+        font-size: 16px !important;
+    }
+    .ncw-friction-card {
+        padding: 24px 18px !important;
+    }
+}
+
