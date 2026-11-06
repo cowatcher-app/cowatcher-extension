@@ -507,6 +507,19 @@ export class ContentMessageService {
         return res?.success ?? false;
     }
 
+    async updateFrictionPenalty(params: {
+        breakId: string;
+        consecutiveFailures: number;
+        sequenceLength: number;
+        lockoutUntil?: number;
+    }): Promise<boolean> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.UPDATE_FRICTION_PENALTY,
+            params,
+        );
+        return res?.success ?? false;
+    }
+
     async getPhoneticReading(params: {
         word: string;
         lang: string;

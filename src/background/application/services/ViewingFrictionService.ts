@@ -355,16 +355,32 @@ export class ViewingFrictionService {
             this.activeBreak.remainingSeconds - 1,
         );
 
-        if (this.activeBreak.remainingSeconds <= 0 && !this.activeBreak.isHardBlock) {
-            await this.handleCompleteBreak(breakId);
-            return { remainingSeconds: 0, isCompleted: true };
-        }
-
         this.persistState().catch(() => {});
         return {
             remainingSeconds: this.activeBreak.remainingSeconds,
-            isCompleted: false,
+            isCompleted:
+                this.activeBreak.remainingSeconds <= 0 &&
+                !this.activeBreak.isHardBlock,
         };
+    }
+
+    /**
+     * Update challenge failure count, sequence length, and button lockout timestamp.
+     */
+    async handleUpdatePenalty(params: {
+        breakId: string;
+        consecutiveFailures: number;
+        sequenceLength: number;
+        lockoutUntil?: number;
+    }): Promise<{ success: boolean }> {
+        if (!this.activeBreak || this.activeBreak.id !== params.breakId) {
+            return { success: false };
+        }
+        this.activeBreak.consecutiveFailures = params.consecutiveFailures;
+        this.activeBreak.sequenceLength = params.sequenceLength;
+        this.activeBreak.lockoutUntil = params.lockoutUntil;
+        await this.persistState();
+        return { success: true };
     }
 
     /**

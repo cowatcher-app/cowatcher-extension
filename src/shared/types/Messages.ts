@@ -647,6 +647,17 @@ export type MessagePayloadMap = {
             success: boolean;
         };
     };
+    NCW_UPDATE_FRICTION_PENALTY: {
+        request: {
+            breakId: string;
+            consecutiveFailures: number;
+            sequenceLength: number;
+            lockoutUntil?: number;
+        };
+        response: {
+            success: boolean;
+        };
+    };
 };
 
 export type MessageType = keyof MessagePayloadMap;

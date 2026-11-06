@@ -47,6 +47,9 @@ export interface ActiveFrictionBreak {
     curfewTime?: string;
     showTitle?: string;
     platform?: string;
+    consecutiveFailures?: number;
+    sequenceLength?: number;
+    lockoutUntil?: number;
 }
 
 export interface FrictionBreakContext {
@@ -67,4 +70,7 @@ export interface FrictionBreakContext {
     autoResumeOnTimer?: boolean;
     countdownSeconds?: number;
     remainingSeconds?: number;
+    consecutiveFailures?: number;
+    sequenceLength?: number;
+    lockoutUntil?: number;
 }

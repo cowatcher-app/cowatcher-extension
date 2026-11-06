@@ -1059,6 +1059,20 @@ export class BackgroundMessageService {
                         return true;
                     }
 
+                    case NCW_CONSTANTS.MESSAGE_TYPES.UPDATE_FRICTION_PENALTY: {
+                        this.viewingFrictionService
+                            .handleUpdatePenalty(message)
+                            .then((res) => {
+                                sendResponse(res as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.UPDATE_FRICTION_PENALTY]['response']);
+                            })
+                            .catch(() => {
+                                sendResponse({
+                                    success: false,
+                                } as MessagePayloadMap[typeof NCW_CONSTANTS.MESSAGE_TYPES.UPDATE_FRICTION_PENALTY]['response']);
+                            });
+                        return true;
+                    }
+
                     // --- LLM Connection Checks ---
                     case NCW_CONSTANTS.MESSAGE_TYPES.CHECK_OLLAMA: {
                         this.llmService

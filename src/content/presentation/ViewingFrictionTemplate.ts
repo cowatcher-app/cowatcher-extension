@@ -277,6 +277,8 @@ export const ViewingFrictionTemplate = {
                 ${activityHtml}
                 ${adviceHtml}
 
+                <div class="ncw-friction-penalty-banner" id="ncw-friction-penalty-banner" style="display: none;"></div>
+
                 <div class="ncw-friction-actions">
                     ${
                         !isHardBlock

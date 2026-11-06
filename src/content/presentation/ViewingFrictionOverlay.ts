@@ -17,6 +17,11 @@ import {
 
 export interface ViewingFrictionOverlayCallbacks {
     onTick?: () => Promise<{ remainingSeconds: number; isCompleted: boolean }>;
+    onPenaltyUpdate?: (penalty: {
+        consecutiveFailures: number;
+        sequenceLength: number;
+        lockoutUntil?: number;
+    }) => void;
     onContinue: () => void;
     onDone: () => void;
 }
@@ -28,9 +33,13 @@ export class ViewingFrictionOverlay {
     private activeTimer: ReturnType<typeof setInterval> | null = null;
     private rhythmActiveTimer: ReturnType<typeof setTimeout> | null = null;
     private introTimer: ReturnType<typeof setTimeout> | null = null;
+    private lockoutTimer: ReturnType<typeof setInterval> | null = null;
     private callbacks: ViewingFrictionOverlayCallbacks | null = null;
     private currentContext: FrictionBreakContext | null = null;
     private currentSequenceLength: number = 4;
+    private consecutiveFailures: number = 0;
+    private lockoutRemainingSeconds: number = 0;
+    private isInChallenge: boolean = false;
 
     constructor(containerResolver: () => HTMLElement | null) {
         this.containerResolver = containerResolver;
@@ -48,6 +57,9 @@ export class ViewingFrictionOverlay {
         this.hide();
         this.currentContext = context;
         this.callbacks = callbacks;
+        this.consecutiveFailures = context.consecutiveFailures || 0;
+        this.currentSequenceLength = context.sequenceLength || 4;
+        this.isInChallenge = false;
 
         const container = this.containerResolver() || document.body;
         const overlay = document.createElement('div');
@@ -82,7 +94,14 @@ export class ViewingFrictionOverlay {
             clearTimeout(this.introTimer);
             this.introTimer = null;
         }
+        if (this.lockoutTimer) {
+            clearInterval(this.lockoutTimer);
+            this.lockoutTimer = null;
+        }
         this.currentSequenceLength = 4;
+        this.consecutiveFailures = 0;
+        this.lockoutRemainingSeconds = 0;
+        this.isInChallenge = false;
         if (this.element && this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
         }
@@ -151,6 +170,21 @@ export class ViewingFrictionOverlay {
         ) as HTMLElement | null;
 
         let isCardRevealed = false;
+        const difficulty = context.unlockDifficulty || 'none';
+
+        const handleTimerComplete = () => {
+            const canAutoResume =
+                context.autoResumeOnTimer !== false &&
+                difficulty === 'none' &&
+                !this.isInChallenge &&
+                this.consecutiveFailures === 0 &&
+                this.lockoutRemainingSeconds <= 0;
+            if (canAutoResume) {
+                this.callbacks?.onContinue();
+            } else if (btnContinue && this.lockoutRemainingSeconds <= 0) {
+                btnContinue.style.animation = 'ncw-pulse-glow 1.5s infinite';
+            }
+        };
 
         const startActivityTimer = () => {
             if (this.activeTimer) return;
@@ -183,12 +217,7 @@ export class ViewingFrictionOverlay {
                                 clearInterval(this.activeTimer);
                                 this.activeTimer = null;
                             }
-                            if (context.autoResumeOnTimer !== false) {
-                                this.callbacks?.onContinue();
-                            } else if (btnContinue) {
-                                btnContinue.style.animation =
-                                    'ncw-pulse-glow 1.5s infinite';
-                            }
+                            handleTimerComplete();
                         }
                     } else {
                         remain--;
@@ -200,12 +229,7 @@ export class ViewingFrictionOverlay {
                                 clearInterval(this.activeTimer);
                                 this.activeTimer = null;
                             }
-                            if (context.autoResumeOnTimer !== false) {
-                                this.callbacks?.onContinue();
-                            } else if (btnContinue) {
-                                btnContinue.style.animation =
-                                    'ncw-pulse-glow 1.5s infinite';
-                            }
+                            handleTimerComplete();
                         }
                     }
                 }, 1000);
@@ -239,9 +263,9 @@ export class ViewingFrictionOverlay {
                         step = 0;
                         cycleCount++;
                         if (cycleCount >= 1 && context.autoResumeOnTimer !== false) {
-                            // After one full calming breath cycle (19s), auto-resume
+                            // After one full calming breath cycle (19s), auto-resume if eligible
                             this.activeTimer = setTimeout(() => {
-                                this.callbacks?.onContinue();
+                                handleTimerComplete();
                             }, 2000);
                         } else {
                             this.activeTimer = setTimeout(updatePhase, 8000);
@@ -279,29 +303,205 @@ export class ViewingFrictionOverlay {
             revealCard();
         });
 
-        // Auto transition after 3.2s
-        this.introTimer = setTimeout(() => {
+        // If returning from a page refresh with prior failures/lockout, skip intro immediately
+        if (this.consecutiveFailures > 0 || (context.lockoutUntil && context.lockoutUntil > Date.now())) {
+            if (introEl) {
+                introEl.style.display = 'none';
+            }
             revealCard();
-        }, 3200);
+        } else {
+            // Auto transition after 3.2s
+            this.introTimer = setTimeout(() => {
+                revealCard();
+            }, 3200);
+        }
+
+        // Restore penalty banner / lockout state if persisted across refresh
+        if (context.lockoutUntil && context.lockoutUntil > Date.now()) {
+            const remainLock = Math.ceil((context.lockoutUntil - Date.now()) / 1000);
+            this.startButtonLockout(overlay, remainLock);
+        } else if (this.consecutiveFailures >= 3) {
+            this.updatePenaltyBanner(
+                overlay,
+                NCW_I18N.getText('frictionPenaltyUnlockedBanner', this.uiLang, {
+                    len: this.currentSequenceLength,
+                }),
+                false,
+            );
+        } else if (this.consecutiveFailures > 0) {
+            this.updatePenaltyBanner(
+                overlay,
+                NCW_I18N.getText('frictionPenaltyRetryWarning', this.uiLang, {
+                    count: this.consecutiveFailures,
+                    len: this.currentSequenceLength,
+                }),
+                false,
+            );
+        }
 
         btnDone?.addEventListener('click', () => {
             this.setRestingMode(context.reason);
             this.callbacks?.onDone();
         });
 
-        // Continue Watching interaction difficulty
-        const difficulty = context.unlockDifficulty || 'none';
-
-        if (difficulty === 'none') {
-            btnContinue?.addEventListener('click', () => {
+        btnContinue?.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (this.lockoutRemainingSeconds > 0) {
+                this.applyImpatientClickPenalty(overlay);
+                return;
+            }
+            if (difficulty === 'none') {
                 this.callbacks?.onContinue();
-            });
-        } else {
-            btnContinue?.addEventListener('click', (e) => {
-                e.preventDefault();
+            } else {
                 this.startRhythmChallenge(overlay, difficulty);
-            });
+            }
+        });
+    }
+
+    private updatePenaltyBanner(
+        overlay: HTMLElement,
+        text: string,
+        isLockout: boolean,
+    ): void {
+        const banner = overlay.querySelector(
+            '#ncw-friction-penalty-banner',
+        ) as HTMLElement | null;
+        if (!banner) return;
+        if (!text) {
+            banner.style.display = 'none';
+            banner.textContent = '';
+            banner.classList.remove('ncw-penalty-lockout');
+            return;
         }
+        banner.textContent = text;
+        banner.style.display = 'block';
+        if (isLockout) {
+            banner.classList.add('ncw-penalty-lockout');
+        } else {
+            banner.classList.remove('ncw-penalty-lockout');
+        }
+    }
+
+    private startButtonLockout(overlay: HTMLElement, seconds: number): void {
+        if (this.lockoutTimer) {
+            clearInterval(this.lockoutTimer);
+            this.lockoutTimer = null;
+        }
+
+        const btnContinue = overlay.querySelector(
+            '#ncw-friction-continue-btn',
+        ) as HTMLButtonElement | null;
+        const btnDone = overlay.querySelector(
+            '#ncw-friction-done-btn',
+        ) as HTMLButtonElement | null;
+
+        this.lockoutRemainingSeconds = Math.max(1, seconds);
+
+        if (btnContinue) {
+            btnContinue.classList.add('ncw-friction-btn-locked');
+            btnContinue.style.animation = 'none';
+            btnContinue.textContent = NCW_I18N.getText(
+                'frictionBtnLocked',
+                this.uiLang,
+                { sec: this.lockoutRemainingSeconds },
+            );
+        }
+
+        if (btnDone) {
+            btnDone.className = 'ncw-friction-btn ncw-friction-btn-secondary';
+        }
+
+        this.updatePenaltyBanner(
+            overlay,
+            NCW_I18N.getText('frictionPenaltyLockoutBanner', this.uiLang, {
+                count: this.consecutiveFailures,
+                sec: this.lockoutRemainingSeconds,
+            }),
+            true,
+        );
+
+        this.lockoutTimer = setInterval(() => {
+            this.lockoutRemainingSeconds--;
+            if (this.lockoutRemainingSeconds <= 0) {
+                if (this.lockoutTimer) {
+                    clearInterval(this.lockoutTimer);
+                    this.lockoutTimer = null;
+                }
+                this.lockoutRemainingSeconds = 0;
+                if (btnContinue) {
+                    btnContinue.classList.remove('ncw-friction-btn-locked');
+                    btnContinue.textContent = NCW_I18N.getText(
+                        'frictionBtnContinue',
+                        this.uiLang,
+                    );
+                }
+                this.updatePenaltyBanner(
+                    overlay,
+                    NCW_I18N.getText(
+                        'frictionPenaltyUnlockedBanner',
+                        this.uiLang,
+                        { len: this.currentSequenceLength },
+                    ),
+                    false,
+                );
+            } else {
+                if (btnContinue) {
+                    btnContinue.textContent = NCW_I18N.getText(
+                        'frictionBtnLocked',
+                        this.uiLang,
+                        { sec: this.lockoutRemainingSeconds },
+                    );
+                }
+                this.updatePenaltyBanner(
+                    overlay,
+                    NCW_I18N.getText(
+                        'frictionPenaltyLockoutBanner',
+                        this.uiLang,
+                        {
+                            count: this.consecutiveFailures,
+                            sec: this.lockoutRemainingSeconds,
+                        },
+                    ),
+                    true,
+                );
+            }
+        }, 1000);
+    }
+
+    private applyImpatientClickPenalty(overlay: HTMLElement): void {
+        const penaltyAdd = 5;
+        this.lockoutRemainingSeconds += penaltyAdd;
+        const lockoutUntil = Date.now() + this.lockoutRemainingSeconds * 1000;
+
+        this.callbacks?.onPenaltyUpdate?.({
+            consecutiveFailures: this.consecutiveFailures,
+            sequenceLength: this.currentSequenceLength,
+            lockoutUntil,
+        });
+
+        const btnContinue = overlay.querySelector(
+            '#ncw-friction-continue-btn',
+        ) as HTMLButtonElement | null;
+        if (btnContinue) {
+            btnContinue.classList.remove('ncw-shake');
+            void btnContinue.offsetWidth;
+            btnContinue.classList.add('ncw-shake');
+            setTimeout(() => btnContinue.classList.remove('ncw-shake'), 400);
+            btnContinue.textContent = NCW_I18N.getText(
+                'frictionBtnLockedAdded',
+                this.uiLang,
+                { sec: this.lockoutRemainingSeconds, add: penaltyAdd },
+            );
+        }
+
+        this.updatePenaltyBanner(
+            overlay,
+            NCW_I18N.getText('frictionPenaltyLockoutBanner', this.uiLang, {
+                count: this.consecutiveFailures,
+                sec: this.lockoutRemainingSeconds,
+            }),
+            true,
+        );
     }
 
     private generateBeat(difficulty: 'easy' | 'hard'): RhythmBeatItem {
@@ -342,6 +542,9 @@ export class ViewingFrictionOverlay {
         ) as HTMLElement | null;
 
         if (!card || !actionsEl) return;
+
+        this.isInChallenge = true;
+        this.updatePenaltyBanner(overlay, '', false);
 
         // Hide Continue button while in rhythm challenge
         if (btnContinue) {
@@ -425,11 +628,27 @@ export class ViewingFrictionOverlay {
             stageEl.classList.add('ncw-shake');
             tapBtn.classList.add('ncw-tap-fail');
 
+            this.consecutiveFailures++;
             this.currentSequenceLength = Math.min(
                 8,
                 this.currentSequenceLength + 1,
             );
             const penaltyLen = this.currentSequenceLength;
+
+            // Lock button after 3rd consecutive failure: 15s -> 30s -> 60s -> 120s
+            const lockoutSec =
+                this.consecutiveFailures >= 3
+                    ? 15 *
+                      Math.pow(2, Math.min(3, this.consecutiveFailures - 3))
+                    : 0;
+            const lockoutUntil =
+                lockoutSec > 0 ? Date.now() + lockoutSec * 1000 : undefined;
+
+            this.callbacks?.onPenaltyUpdate?.({
+                consecutiveFailures: this.consecutiveFailures,
+                sequenceLength: this.currentSequenceLength,
+                lockoutUntil,
+            });
 
             msgEl.textContent = NCW_I18N.getText(
                 'frictionRhythmFailed',
@@ -439,10 +658,24 @@ export class ViewingFrictionOverlay {
             msgEl.className = 'ncw-rhythm-msg ncw-msg-fail';
 
             this.rhythmActiveTimer = setTimeout(() => {
-                stageEl.classList.remove('ncw-shake');
-                tapBtn.classList.remove('ncw-tap-fail');
-                startRound();
-            }, 1200);
+                this.isInChallenge = false;
+                stageEl.remove();
+                if (btnContinue) {
+                    btnContinue.style.display = '';
+                }
+                if (lockoutSec > 0) {
+                    this.startButtonLockout(overlay, lockoutSec);
+                } else {
+                    this.updatePenaltyBanner(
+                        overlay,
+                        NCW_I18N.getText('frictionPenaltyRetryWarning', lang, {
+                            count: this.consecutiveFailures,
+                            len: penaltyLen,
+                        }),
+                        false,
+                    );
+                }
+            }, 1000);
         };
 
         const runBeat = (idx: number) => {

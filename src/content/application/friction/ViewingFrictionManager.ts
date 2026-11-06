@@ -253,11 +253,24 @@ export class ViewingFrictionManager {
                     : false,
             countdownSeconds: activeBreak.totalSeconds,
             remainingSeconds: activeBreak.remainingSeconds,
+            consecutiveFailures: activeBreak.consecutiveFailures,
+            sequenceLength: activeBreak.sequenceLength,
+            lockoutUntil: activeBreak.lockoutUntil,
         };
 
         const callbacks: ViewingFrictionOverlayCallbacks = {
             onTick: async () => {
                 return await this.messageService.tickFrictionBreak(activeBreak.id);
+            },
+            onPenaltyUpdate: (penalty) => {
+                this.messageService
+                    .updateFrictionPenalty({
+                        breakId: activeBreak.id,
+                        consecutiveFailures: penalty.consecutiveFailures,
+                        sequenceLength: penalty.sequenceLength,
+                        lockoutUntil: penalty.lockoutUntil,
+                    })
+                    .catch(() => {});
             },
             onContinue: async () => {
                 const compRes = await this.messageService.completeFrictionBreak(

@@ -1002,6 +1002,35 @@ body.ncw-hide-native-subs .caption-window {
     text-decoration: underline;
 }
 
+.ncw-friction-btn-locked,
+.ncw-friction-btn-locked:hover {
+    background: rgba(239, 68, 68, 0.14) !important;
+    border: 1px solid rgba(239, 68, 68, 0.45) !important;
+    color: #fca5a5 !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.ncw-friction-penalty-banner {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    padding: 9px 14px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #fcd34d;
+    text-align: center;
+    animation: ncw-friction-fade 0.2s ease-out;
+}
+
+.ncw-friction-penalty-banner.ncw-penalty-lockout {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
 @keyframes ncw-friction-fade {
     from { opacity: 0; }
     to { opacity: 1; }
