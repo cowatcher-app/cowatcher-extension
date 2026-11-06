@@ -25,27 +25,27 @@ export const ViewingFrictionTemplate = {
             .replace(/'/g, '&#39;');
     },
 
-    getCuratedQuotes(): Array<{ text: string; author: string }> {
+    getCuratedQuotes(lang: string): Array<{ text: string; author: string }> {
         return [
             {
-                text: 'Almost everything will work again if you unplug it for a few minutes, including you.',
-                author: 'Anne Lamott',
+                text: NCW_I18N.getText('frictionQuote1Text', lang),
+                author: NCW_I18N.getText('frictionQuote1Author', lang),
             },
             {
-                text: 'Rest is not idleness, and to lie sometimes on the grass under trees is by no means a waste of time.',
-                author: 'John Lubbock',
+                text: NCW_I18N.getText('frictionQuote2Text', lang),
+                author: NCW_I18N.getText('frictionQuote2Author', lang),
             },
             {
-                text: 'Take rest; a field that has rested gives a bountiful crop.',
-                author: 'Ovid',
+                text: NCW_I18N.getText('frictionQuote3Text', lang),
+                author: NCW_I18N.getText('frictionQuote3Author', lang),
             },
             {
-                text: 'In this fast-paced world, stepping away from the screen is an act of self-care and wisdom.',
-                author: 'Mindful Viewing',
+                text: NCW_I18N.getText('frictionQuote4Text', lang),
+                author: NCW_I18N.getText('frictionQuote4Author', lang),
             },
             {
-                text: 'Your eyes and mind deserve quiet moments to consolidate all the stories you have experienced.',
-                author: 'CoWatcher Health',
+                text: NCW_I18N.getText('frictionQuote5Text', lang),
+                author: NCW_I18N.getText('frictionQuote5Author', lang),
             },
         ];
     },
@@ -91,7 +91,7 @@ export const ViewingFrictionTemplate = {
                         <span id="ncw-breathing-phase-text">${NCW_I18N.getText('frictionBreathingInhale', lang)}</span>
                     </div>
                     <div class="ncw-friction-hint">
-                        4-7-8 Breathing: Inhale 4s ➔ Hold 7s ➔ Exhale 8s
+                        ${this.escapeHtml(NCW_I18N.getText('frictionBreathingFormula', lang))}
                     </div>
                     ${countdownBadge}
                 </div>
@@ -99,7 +99,7 @@ export const ViewingFrictionTemplate = {
         }
 
         if (screenType === 'quote') {
-            const quotes = this.getCuratedQuotes();
+            const quotes = this.getCuratedQuotes(lang);
             const chosen = quotes[Math.floor(Math.random() * quotes.length)];
             return `
                 <div class="ncw-friction-activity ncw-friction-quote-wrap">
@@ -117,7 +117,7 @@ export const ViewingFrictionTemplate = {
                 <div class="ncw-friction-activity ncw-friction-puzzle-wrap">
                     <div class="ncw-friction-puzzle-title">🧠 ${NCW_I18N.getText('frictionPuzzlePrompt', lang)}</div>
                     <div style="font-size: 18px; font-weight: 700; color: #38bdf8; margin: 10px 0;">
-                        Focus & Refresh: Take 3 deep breaths and look away from the screen.
+                        ${this.escapeHtml(NCW_I18N.getText('frictionPuzzleFocusHint', lang))}
                     </div>
                     <div class="ncw-friction-hint">
                         ${NCW_I18N.getText('friction2020Rule', lang)}
@@ -132,7 +132,7 @@ export const ViewingFrictionTemplate = {
             <div class="ncw-friction-activity ncw-friction-screensaver-wrap">
                 <div class="ncw-friction-countdown-circle">
                     <span id="ncw-friction-timer-num">${countdownSeconds}</span>
-                    <span style="font-size: 11px; text-transform: uppercase; color: #94a3b8;">seconds</span>
+                    <span style="font-size: 11px; text-transform: uppercase; color: #94a3b8;">${this.escapeHtml(NCW_I18N.getText('frictionSecondsUnit', lang))}</span>
                 </div>
                 <div class="ncw-friction-hint" style="max-width: 440px; margin: 12px auto 0 auto;">
                     👁️ ${NCW_I18N.getText('friction2020Rule', lang)}
@@ -228,7 +228,7 @@ export const ViewingFrictionTemplate = {
             headerIcon = '🌙';
         }
 
-        const quotes = this.getCuratedQuotes();
+        const quotes = this.getCuratedQuotes(lang);
         const introQuote = quotes[Math.floor(Math.random() * quotes.length)];
         const introHtml = this.renderIntro(title, introQuote, lang);
 
@@ -346,12 +346,14 @@ export const ViewingFrictionTemplate = {
 
     renderRhythmStage(difficulty: 'easy' | 'hard', lang: string): string {
         const modeBadge =
-            difficulty === 'hard' ? '🧠 Arithmetic Beat' : '🎵 Rhythm Beat';
+            difficulty === 'hard'
+                ? NCW_I18N.getText('frictionModeArithmetic', lang)
+                : NCW_I18N.getText('frictionModeRhythm', lang);
 
         return `
             <div class="ncw-rhythm-header">
                 <span id="ncw-rhythm-progress"></span>
-                <span style="color: #38bdf8;">${modeBadge}</span>
+                <span style="color: #38bdf8;">${this.escapeHtml(modeBadge)}</span>
             </div>
             <div class="ncw-rhythm-track" id="ncw-rhythm-track"></div>
             <div class="ncw-rhythm-beat-box">
@@ -364,7 +366,7 @@ export const ViewingFrictionTemplate = {
             <button type="button" class="ncw-rhythm-tap-pad" id="ncw-rhythm-tap-btn">
                 ${NCW_I18N.getText('frictionRhythmTapBtn', lang)}
             </button>
-            <div class="ncw-rhythm-counter" id="ncw-rhythm-counter">Clicks: 0</div>
+            <div class="ncw-rhythm-counter" id="ncw-rhythm-counter">${this.escapeHtml(NCW_I18N.getText('frictionRhythmClicksInit', lang))}</div>
             <div class="ncw-rhythm-msg" id="ncw-rhythm-msg"></div>
         `;
     },

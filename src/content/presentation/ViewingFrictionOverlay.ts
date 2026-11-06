@@ -608,7 +608,14 @@ export class ViewingFrictionOverlay {
             if (!isAcceptingClicks || isRoundTerminated) return;
 
             currentClicks++;
-            counterEl.textContent = `Clicks: ${currentClicks} / ${currentTarget}`;
+            counterEl.textContent = NCW_I18N.getText(
+                'frictionRhythmClicksCounter',
+                lang,
+                {
+                    current: currentClicks,
+                    target: currentTarget,
+                },
+            );
             tapBtn.classList.add('ncw-tap-active');
             setTimeout(() => tapBtn.classList.remove('ncw-tap-active'), 70);
 
@@ -734,7 +741,14 @@ export class ViewingFrictionOverlay {
                     : NCW_I18N.getText('frictionRhythmClicksGoal', lang, {
                           target: beat.target,
                       });
-            counterEl.textContent = `Clicks: 0 / ${beat.target}`;
+            counterEl.textContent = NCW_I18N.getText(
+                'frictionRhythmClicksCounter',
+                lang,
+                {
+                    current: 0,
+                    target: beat.target,
+                },
+            );
 
             // Reset and trigger smooth 1s timer bar animation
             barEl.style.transition = 'none';
