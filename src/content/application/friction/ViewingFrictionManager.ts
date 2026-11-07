@@ -15,6 +15,7 @@ import { ExtensionSettings } from '@shared/domain/constants/SettingsDefaults';
 import {
     ActiveFrictionBreak,
     FrictionBreakContext,
+    FrictionTriggerReason,
 } from '@shared/domain/entities/ViewingFriction';
 import {
     ViewingFrictionOverlay,
@@ -121,14 +122,26 @@ export class ViewingFrictionManager {
         if (newSettings.uiLanguage) {
             this.overlay.setLanguage(newSettings.uiLanguage);
         }
-        if (!this.settings.staticFrictionEnabled && this.overlay.isVisible()) {
-            this.overlay.hide();
+        if (!this.settings.staticFrictionEnabled) {
+            this.isStoppedForToday = false;
+            if (this.overlay.isVisible()) {
+                this.overlay.hide();
+            }
         }
     }
 
     private onPlay(): void {
+        if (!this.settings.staticFrictionEnabled) {
+            this.isStoppedForToday = false;
+            this.isPlaying = true;
+            this.evaluateTriggers();
+            return;
+        }
         if (this.isStoppedForToday) {
             this.boundVideo?.pause();
+            if (!this.overlay.isVisible()) {
+                this.showRestingOverlay();
+            }
             return;
         }
         this.isPlaying = true;
@@ -157,9 +170,20 @@ export class ViewingFrictionManager {
                 this.attachVideo(video);
             }
 
+            if (!this.settings.staticFrictionEnabled) {
+                this.isStoppedForToday = false;
+                if (this.overlay.isVisible()) {
+                    this.overlay.hide();
+                }
+                return;
+            }
+
             if (this.isStoppedForToday) {
                 if (video && !video.paused) {
                     video.pause();
+                }
+                if (!this.overlay.isVisible()) {
+                    this.showRestingOverlay();
                 }
                 return;
             }
@@ -185,6 +209,15 @@ export class ViewingFrictionManager {
                 this.isStoppedForToday = true;
                 if (video && !video.paused) {
                     video.pause();
+                }
+                if (!this.overlay.isVisible()) {
+                    this.showRestingOverlay(
+                        res.activeBreak?.reason,
+                        res.continuousSeconds,
+                        res.todaySeconds,
+                        res.todayRestSeconds,
+                        res.todayBreakCount,
+                    );
                 }
                 return;
             }
@@ -291,6 +324,7 @@ export class ViewingFrictionManager {
                 if (document.fullscreenElement) {
                     document.exitFullscreen?.().catch(() => {});
                 }
+                this.overlay.setRestingMode(activeBreak.reason);
             },
         };
 
@@ -319,6 +353,55 @@ export class ViewingFrictionManager {
                 })
                 .catch(() => {});
         }
+    }
+
+    private showRestingOverlay(
+        reason?: FrictionTriggerReason,
+        continuousSeconds: number = 0,
+        todaySeconds: number = 0,
+        todayRestSeconds: number = 0,
+        todayBreakCount: number = 0,
+    ): void {
+        const dummyBreak: ActiveFrictionBreak = {
+            id: `rest_${Date.now()}`,
+            reason:
+                reason === 'curfew' || reason === 'daily_limit'
+                    ? reason
+                    : 'interval',
+            totalSeconds: 0,
+            remainingSeconds: 0,
+            startedAt: Date.now(),
+            isHardBlock: reason === 'curfew' || reason === 'daily_limit',
+        };
+
+        const callbacks: ViewingFrictionOverlayCallbacks = {
+            onContinue: async () => {
+                const wakeRes = await this.messageService.wakeUpFriction();
+                if (wakeRes.canResume) {
+                    this.isStoppedForToday = false;
+                    this.overlay.hide();
+                    this.boundVideo?.play().catch(() => {});
+                }
+            },
+            onDone: () => {},
+        };
+
+        const context: FrictionBreakContext = {
+            breakId: dummyBreak.id,
+            reason: dummyBreak.reason,
+            continuousMinutes: Math.floor(continuousSeconds / 60),
+            todayMinutes: Math.floor(todaySeconds / 60),
+            continuousSeconds,
+            todaySeconds,
+            todayRestSeconds,
+            todayBreakCount,
+            platform: this.adapter.platformName,
+            unlockDifficulty: 'none',
+            autoResumeOnTimer: false,
+        };
+
+        this.overlay.show(context, 'screensaver', callbacks);
+        this.overlay.setRestingMode(reason);
     }
 
     isPlaybackActive(): boolean {

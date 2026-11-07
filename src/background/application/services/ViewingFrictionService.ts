@@ -150,7 +150,40 @@ export class ViewingFrictionService {
             await this.persistState();
         }
 
-        // If user already clicked "I'm Done for Today", lock playback
+        // 1. If static friction is globally disabled, do not pause or enforce breaks
+        if (!settings.staticFrictionEnabled) {
+            if (this.isStoppedForToday || this.activeBreak) {
+                this.isStoppedForToday = false;
+                this.activeBreak = null;
+                this.globalContinuousSeconds = 0;
+                await this.persistState();
+            }
+            return {
+                shouldPause: false,
+                activeBreak: null,
+                continuousSeconds: 0,
+                todaySeconds: todayStats.todaySeconds,
+                todayRestSeconds: todayStats.todayRestSeconds,
+                todayBreakCount: todayStats.todayBreakCount,
+                isStoppedForToday: false,
+            };
+        }
+
+        // 2. If platform is specifically disabled in rules
+        const platformRules = settings.frictionPlatformRules?.[params.platform];
+        if (platformRules?.enabled === false) {
+            return {
+                shouldPause: false,
+                activeBreak: null,
+                continuousSeconds: Math.round(this.globalContinuousSeconds),
+                todaySeconds: todayStats.todaySeconds,
+                todayRestSeconds: todayStats.todayRestSeconds,
+                todayBreakCount: todayStats.todayBreakCount,
+                isStoppedForToday: false,
+            };
+        }
+
+        // 3. If user already clicked "I'm Done for Today", lock playback
         if (this.isStoppedForToday) {
             return {
                 shouldPause: true,
@@ -163,36 +196,11 @@ export class ViewingFrictionService {
             };
         }
 
-        // If an active mandatory break is already pending, player MUST pause and serve the break!
+        // 4. If an active mandatory break is already pending, player MUST pause and serve the break!
         if (this.activeBreak) {
             return {
                 shouldPause: true,
                 activeBreak: this.activeBreak,
-                continuousSeconds: Math.round(this.globalContinuousSeconds),
-                todaySeconds: todayStats.todaySeconds,
-                todayRestSeconds: todayStats.todayRestSeconds,
-                todayBreakCount: todayStats.todayBreakCount,
-                isStoppedForToday: false,
-            };
-        }
-
-        if (!settings.staticFrictionEnabled) {
-            return {
-                shouldPause: false,
-                activeBreak: null,
-                continuousSeconds: 0,
-                todaySeconds: todayStats.todaySeconds,
-                todayRestSeconds: todayStats.todayRestSeconds,
-                todayBreakCount: todayStats.todayBreakCount,
-                isStoppedForToday: false,
-            };
-        }
-
-        const platformRules = settings.frictionPlatformRules?.[params.platform];
-        if (platformRules?.enabled === false) {
-            return {
-                shouldPause: false,
-                activeBreak: null,
                 continuousSeconds: Math.round(this.globalContinuousSeconds),
                 todaySeconds: todayStats.todaySeconds,
                 todayRestSeconds: todayStats.todayRestSeconds,
@@ -219,7 +227,8 @@ export class ViewingFrictionService {
         if (params.isPlaying) {
             if (this.lastHeartbeatTimestamp > 0) {
                 const deltaSec = (now - this.lastHeartbeatTimestamp) / 1000;
-                if (deltaSec > 0 && deltaSec < 3) {
+                // Allow up to 30s delta to properly support browser background tab throttling
+                if (deltaSec > 0 && deltaSec <= 30) {
                     this.globalContinuousSeconds += deltaSec;
                 } else {
                     this.globalContinuousSeconds += 1;
@@ -233,6 +242,9 @@ export class ViewingFrictionService {
             if (Math.round(this.globalContinuousSeconds) % 5 === 0) {
                 this.persistState().catch(() => {});
             }
+        } else {
+            // When playback is paused or inactive, reset timestamp to prevent gap overcrediting
+            this.lastHeartbeatTimestamp = 0;
         }
 
         // 1. Check Late-Night Curfew
@@ -429,6 +441,19 @@ export class ViewingFrictionService {
         await this.persistState();
 
         return { success: true };
+    }
+
+    /**
+     * User clicked "Continue Watching" from a stopped / resting state.
+     * Clears isStoppedForToday and resets continuous timer.
+     */
+    async handleWakeUp(): Promise<{ success: boolean; canResume: boolean }> {
+        this.isStoppedForToday = false;
+        this.activeBreak = null;
+        this.globalContinuousSeconds = 0;
+        this.lastHeartbeatTimestamp = Date.now();
+        await this.persistState();
+        return { success: true, canResume: true };
     }
 
     private isPastCurfew(curfewTimeStr: string): boolean {

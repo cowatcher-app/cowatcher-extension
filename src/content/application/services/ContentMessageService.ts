@@ -520,6 +520,14 @@ export class ContentMessageService {
         return res?.success ?? false;
     }
 
+    async wakeUpFriction(): Promise<{ success: boolean; canResume: boolean }> {
+        const res = await ContentBackgroundBus.send(
+            NCW_CONSTANTS.MESSAGE_TYPES.WAKE_UP_FRICTION,
+            {},
+        );
+        return res ?? { success: false, canResume: true };
+    }
+
     async getPhoneticReading(params: {
         word: string;
         lang: string;

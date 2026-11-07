@@ -658,6 +658,13 @@ export type MessagePayloadMap = {
             success: boolean;
         };
     };
+    NCW_WAKE_UP_FRICTION: {
+        request: Record<string, never>;
+        response: {
+            success: boolean;
+            canResume: boolean;
+        };
+    };
 };
 
 export type MessageType = keyof MessagePayloadMap;

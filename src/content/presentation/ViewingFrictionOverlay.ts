@@ -61,11 +61,27 @@ export class ViewingFrictionOverlay {
         this.currentSequenceLength = context.sequenceLength || 4;
         this.isInChallenge = false;
 
-        const container = this.containerResolver() || document.body;
+        let container = this.containerResolver() || null;
+        if (
+            !container ||
+            !document.body.contains(container) ||
+            container === document.body ||
+            container.offsetWidth === 0 ||
+            container.offsetHeight === 0
+        ) {
+            container = (document.fullscreenElement as HTMLElement) || document.body;
+        }
+
         const overlay = document.createElement('div');
         overlay.className = 'ncw-friction-overlay';
         if (container === document.body) {
             overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+        } else {
+            const compPos = window.getComputedStyle(container).position;
+            if (compPos === 'static') {
+                container.style.position = 'relative';
+            }
         }
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
@@ -137,6 +153,15 @@ export class ViewingFrictionOverlay {
                 this.uiLang,
                 reason,
             );
+            card.classList.add('ncw-card-revealed');
+            (card as HTMLElement).style.opacity = '1';
+            (card as HTMLElement).style.pointerEvents = 'auto';
+
+            const intro = this.element.querySelector('#ncw-friction-intro');
+            if (intro) {
+                (intro as HTMLElement).style.display = 'none';
+            }
+
             const wakeBtn = card.querySelector('#ncw-friction-wake-btn');
             wakeBtn?.addEventListener('click', () => {
                 this.callbacks?.onContinue();
