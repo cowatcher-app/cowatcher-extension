@@ -99,6 +99,7 @@ export interface ExtensionSettings {
     frictionEnableLlmAdvice: boolean;
     frictionExcludedPlatforms: string[];
     frictionPlatformRules: Record<string, FrictionPlatformRule>;
+    frictionLockUntil: number;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -184,6 +185,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     frictionEnableLlmAdvice: true,
     frictionExcludedPlatforms: [],
     frictionPlatformRules: {},
+    frictionLockUntil: 0,
 };
 
 export const PROVIDER_PRESETS: Record<string, PipelineConfig> = {

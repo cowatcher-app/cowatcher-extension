@@ -358,6 +358,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chkFrictionExcludePlatforms = document.querySelectorAll<HTMLInputElement>(
         '.chk-friction-exclude-platform',
     );
+    const cfgFrictionLockGroup = document.getElementById(
+        'cfg-friction-lock-group',
+    );
+    const cfgFrictionLockEnabled = document.getElementById(
+        'cfg-friction-lock-enabled',
+    ) as HTMLInputElement | null;
+    const cfgFrictionLockStatus = document.getElementById(
+        'cfg-friction-lock-status',
+    );
+    const cfgFrictionLockConfirmBox = document.getElementById(
+        'cfg-friction-lock-confirm-box',
+    );
+    const cfgFrictionLockPledgeDisplay = document.getElementById(
+        'cfg-friction-lock-pledge-display',
+    );
+    const cfgFrictionLockInput = document.getElementById(
+        'cfg-friction-lock-input',
+    ) as HTMLInputElement | null;
+    const cfgFrictionLockError = document.getElementById(
+        'cfg-friction-lock-error',
+    );
+    const btnFrictionLockConfirm = document.getElementById(
+        'btn-friction-lock-confirm',
+    ) as HTMLButtonElement | null;
+    const btnFrictionLockCancel = document.getElementById(
+        'btn-friction-lock-cancel',
+    ) as HTMLButtonElement | null;
 
     // DOM Elements - Modal & Toast
     const toastNotify = document.getElementById('toast-notify');
@@ -3324,9 +3351,95 @@ document.addEventListener('DOMContentLoaded', async () => {
             chk.checked = excludedSet.has(chk.value);
         });
 
+        syncFrictionLockUI();
         refreshFrictionTodayStats();
 
         populateOpenRouterOptions();
+    }
+
+    function syncFrictionLockUI(): void {
+        const now = Date.now();
+        const lockUntil = currentSettings.frictionLockUntil || 0;
+        const isLocked = lockUntil > now;
+        const lang = currentSettings.uiLanguage || 'en';
+
+        const hasDailyLimit =
+            cfgFrictionDailyLimit && Number(cfgFrictionDailyLimit.value) > 0;
+        const hasCurfew = Boolean(cfgFrictionCurfewEnabled?.checked);
+        const shouldShowLockGroup = isLocked || hasDailyLimit || hasCurfew;
+
+        if (cfgFrictionLockGroup) {
+            cfgFrictionLockGroup.style.display = shouldShowLockGroup
+                ? 'block'
+                : 'none';
+        }
+
+        if (cfgFrictionLockPledgeDisplay) {
+            cfgFrictionLockPledgeDisplay.textContent = NCW_I18N.getText(
+                'frictionLockPledgeText',
+                lang,
+            );
+        }
+
+        if (isLocked) {
+            if (cfgFrictionLockEnabled) {
+                cfgFrictionLockEnabled.checked = true;
+                cfgFrictionLockEnabled.disabled = true;
+            }
+            if (cfgFrictionLockConfirmBox) {
+                cfgFrictionLockConfirmBox.style.display = 'none';
+            }
+            if (cfgFrictionLockStatus) {
+                const remainMs = Math.max(0, lockUntil - now);
+                const days = Math.floor(remainMs / (24 * 3600 * 1000));
+                const hours = Math.ceil(
+                    (remainMs % (24 * 3600 * 1000)) / (3600 * 1000),
+                );
+                const dateStr = new Date(lockUntil).toLocaleString();
+                cfgFrictionLockStatus.textContent = NCW_I18N.getText(
+                    'frictionLockActiveStatus',
+                    lang,
+                    {
+                        days,
+                        hours,
+                        date: dateStr,
+                    },
+                );
+                cfgFrictionLockStatus.style.display = 'block';
+            }
+
+            // Lock protected controls during the 7-day period
+            if (cfgFrictionEnabled) cfgFrictionEnabled.disabled = true;
+            if (cfgFrictionDailyLimit) cfgFrictionDailyLimit.disabled = true;
+            if (cfgFrictionCurfewEnabled)
+                cfgFrictionCurfewEnabled.disabled = true;
+            if (cfgFrictionCurfewTime) cfgFrictionCurfewTime.disabled = true;
+            chkFrictionExcludePlatforms.forEach((chk) => {
+                chk.disabled = true;
+            });
+        } else {
+            if (cfgFrictionLockEnabled) {
+                cfgFrictionLockEnabled.disabled = false;
+                if (
+                    !cfgFrictionLockConfirmBox ||
+                    cfgFrictionLockConfirmBox.style.display === 'none'
+                ) {
+                    cfgFrictionLockEnabled.checked = false;
+                }
+            }
+            if (cfgFrictionLockStatus) {
+                cfgFrictionLockStatus.style.display = 'none';
+            }
+
+            if (cfgFrictionEnabled) cfgFrictionEnabled.disabled = false;
+            if (cfgFrictionDailyLimit) cfgFrictionDailyLimit.disabled = false;
+            if (cfgFrictionCurfewEnabled)
+                cfgFrictionCurfewEnabled.disabled = false;
+            if (cfgFrictionCurfewTime) cfgFrictionCurfewTime.disabled = false;
+            chkFrictionExcludePlatforms.forEach((chk) => {
+                chk.disabled = false;
+            });
+        }
     }
 
     async function refreshFrictionTodayStats(): Promise<void> {
@@ -3743,23 +3856,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                 | '1w'
                 | '1m'
                 | '1y',
-            staticFrictionEnabled: cfgFrictionEnabled
-                ? cfgFrictionEnabled.checked
-                : Boolean(currentSettings.staticFrictionEnabled),
+            staticFrictionEnabled:
+                (currentSettings.frictionLockUntil || 0) > Date.now()
+                    ? true
+                    : cfgFrictionEnabled
+                      ? cfgFrictionEnabled.checked
+                      : Boolean(currentSettings.staticFrictionEnabled),
             frictionIntervalMinutes:
                 cfgFrictionInterval && !isNaN(Number(cfgFrictionInterval.value))
                     ? Number(cfgFrictionInterval.value)
                     : currentSettings.frictionIntervalMinutes || 45,
             frictionDailyLimitMinutes:
-                cfgFrictionDailyLimit && !isNaN(Number(cfgFrictionDailyLimit.value))
-                    ? Number(cfgFrictionDailyLimit.value)
-                    : currentSettings.frictionDailyLimitMinutes || 0,
-            frictionCurfewEnabled: cfgFrictionCurfewEnabled
-                ? cfgFrictionCurfewEnabled.checked
-                : Boolean(currentSettings.frictionCurfewEnabled),
-            frictionCurfewTime: cfgFrictionCurfewTime
-                ? cfgFrictionCurfewTime.value || '23:30'
-                : currentSettings.frictionCurfewTime,
+                (currentSettings.frictionLockUntil || 0) > Date.now()
+                    ? currentSettings.frictionDailyLimitMinutes || 0
+                    : cfgFrictionDailyLimit && !isNaN(Number(cfgFrictionDailyLimit.value))
+                      ? Number(cfgFrictionDailyLimit.value)
+                      : currentSettings.frictionDailyLimitMinutes || 0,
+            frictionCurfewEnabled:
+                (currentSettings.frictionLockUntil || 0) > Date.now()
+                    ? Boolean(currentSettings.frictionCurfewEnabled)
+                    : cfgFrictionCurfewEnabled
+                      ? cfgFrictionCurfewEnabled.checked
+                      : Boolean(currentSettings.frictionCurfewEnabled),
+            frictionCurfewTime:
+                (currentSettings.frictionLockUntil || 0) > Date.now()
+                    ? currentSettings.frictionCurfewTime || '23:30'
+                    : cfgFrictionCurfewTime
+                      ? cfgFrictionCurfewTime.value || '23:30'
+                      : currentSettings.frictionCurfewTime,
             frictionScreenType: (cfgFrictionScreenType
                 ? cfgFrictionScreenType.value
                 : currentSettings.frictionScreenType || 'screensaver') as FrictionScreenType,
@@ -3775,10 +3899,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             frictionEnableLlmAdvice: cfgFrictionLlmAdvice
                 ? cfgFrictionLlmAdvice.checked
                 : currentSettings.frictionEnableLlmAdvice !== false,
-            frictionExcludedPlatforms: Array.from(chkFrictionExcludePlatforms)
-                .filter((c) => c.checked)
-                .map((c) => c.value),
+            frictionExcludedPlatforms:
+                (currentSettings.frictionLockUntil || 0) > Date.now()
+                    ? currentSettings.frictionExcludedPlatforms || []
+                    : Array.from(chkFrictionExcludePlatforms)
+                          .filter((c) => c.checked)
+                          .map((c) => c.value),
             frictionPlatformRules: currentSettings.frictionPlatformRules || {},
+            frictionLockUntil: currentSettings.frictionLockUntil || 0,
         };
 
         currentSettings = updated;
@@ -3794,24 +3922,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     async function saveFrictionSettingsOnly(showFeedback = true): Promise<void> {
+        const isLocked =
+            (currentSettings.frictionLockUntil || 0) > Date.now();
         const updatedFriction = {
-            staticFrictionEnabled: cfgFrictionEnabled
-                ? cfgFrictionEnabled.checked
-                : Boolean(currentSettings.staticFrictionEnabled),
+            staticFrictionEnabled: isLocked
+                ? true
+                : cfgFrictionEnabled
+                  ? cfgFrictionEnabled.checked
+                  : Boolean(currentSettings.staticFrictionEnabled),
             frictionIntervalMinutes:
                 cfgFrictionInterval && !isNaN(Number(cfgFrictionInterval.value))
                     ? Number(cfgFrictionInterval.value)
                     : currentSettings.frictionIntervalMinutes || 45,
-            frictionDailyLimitMinutes:
-                cfgFrictionDailyLimit && !isNaN(Number(cfgFrictionDailyLimit.value))
-                    ? Number(cfgFrictionDailyLimit.value)
-                    : currentSettings.frictionDailyLimitMinutes || 0,
-            frictionCurfewEnabled: cfgFrictionCurfewEnabled
-                ? cfgFrictionCurfewEnabled.checked
-                : Boolean(currentSettings.frictionCurfewEnabled),
-            frictionCurfewTime: cfgFrictionCurfewTime
-                ? cfgFrictionCurfewTime.value || '23:30'
-                : currentSettings.frictionCurfewTime,
+            frictionDailyLimitMinutes: isLocked
+                ? currentSettings.frictionDailyLimitMinutes || 0
+                : cfgFrictionDailyLimit && !isNaN(Number(cfgFrictionDailyLimit.value))
+                  ? Number(cfgFrictionDailyLimit.value)
+                  : currentSettings.frictionDailyLimitMinutes || 0,
+            frictionCurfewEnabled: isLocked
+                ? Boolean(currentSettings.frictionCurfewEnabled)
+                : cfgFrictionCurfewEnabled
+                  ? cfgFrictionCurfewEnabled.checked
+                  : Boolean(currentSettings.frictionCurfewEnabled),
+            frictionCurfewTime: isLocked
+                ? currentSettings.frictionCurfewTime || '23:30'
+                : cfgFrictionCurfewTime
+                  ? cfgFrictionCurfewTime.value || '23:30'
+                  : currentSettings.frictionCurfewTime,
             frictionScreenType: (cfgFrictionScreenType
                 ? cfgFrictionScreenType.value
                 : currentSettings.frictionScreenType || 'screensaver') as FrictionScreenType,
@@ -3827,10 +3964,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             frictionEnableLlmAdvice: cfgFrictionLlmAdvice
                 ? cfgFrictionLlmAdvice.checked
                 : currentSettings.frictionEnableLlmAdvice !== false,
-            frictionExcludedPlatforms: Array.from(chkFrictionExcludePlatforms)
-                .filter((c) => c.checked)
-                .map((c) => c.value),
+            frictionExcludedPlatforms: isLocked
+                ? currentSettings.frictionExcludedPlatforms || []
+                : Array.from(chkFrictionExcludePlatforms)
+                      .filter((c) => c.checked)
+                      .map((c) => c.value),
             frictionPlatformRules: currentSettings.frictionPlatformRules || {},
+            frictionLockUntil: currentSettings.frictionLockUntil || 0,
         };
 
         currentSettings = { ...currentSettings, ...updatedFriction };
@@ -3838,6 +3978,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
         });
         await messageService.saveSettings(updatedFriction);
+        syncFrictionLockUI();
         if (showFeedback) {
             showToast('Mindful Viewing settings saved!');
         }
@@ -3902,11 +4043,120 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Prevent selection/copy on pledge box and paste/middle-click on pledge input
+    ['selectstart', 'copy', 'cut', 'contextmenu', 'dragstart'].forEach(
+        (evtName) => {
+            cfgFrictionLockConfirmBox?.addEventListener(evtName, (e) => {
+                e.preventDefault();
+            });
+            cfgFrictionLockPledgeDisplay?.addEventListener(evtName, (e) => {
+                e.preventDefault();
+            });
+        },
+    );
+
+    ['paste', 'drop', 'contextmenu'].forEach((evtName) => {
+        cfgFrictionLockInput?.addEventListener(evtName, (e) => {
+            e.preventDefault();
+        });
+    });
+
+    // Block Linux X11/Wayland middle-button primary selection paste
+    ['mousedown', 'mouseup', 'auxclick'].forEach((evtName) => {
+        cfgFrictionLockInput?.addEventListener(evtName, (e) => {
+            if ((e as MouseEvent).button === 1) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    });
+
+    cfgFrictionLockEnabled?.addEventListener('change', () => {
+        const isLocked =
+            (currentSettings.frictionLockUntil || 0) > Date.now();
+        if (isLocked) {
+            cfgFrictionLockEnabled.checked = true;
+            return;
+        }
+        if (cfgFrictionLockEnabled.checked) {
+            if (cfgFrictionLockConfirmBox) {
+                cfgFrictionLockConfirmBox.style.display = 'block';
+            }
+            if (cfgFrictionLockError) {
+                cfgFrictionLockError.style.display = 'none';
+            }
+            if (cfgFrictionLockInput) {
+                cfgFrictionLockInput.value = '';
+                cfgFrictionLockInput.focus();
+            }
+        } else {
+            if (cfgFrictionLockConfirmBox) {
+                cfgFrictionLockConfirmBox.style.display = 'none';
+            }
+            if (cfgFrictionLockError) {
+                cfgFrictionLockError.style.display = 'none';
+            }
+        }
+    });
+
+    btnFrictionLockCancel?.addEventListener('click', () => {
+        if (cfgFrictionLockConfirmBox) {
+            cfgFrictionLockConfirmBox.style.display = 'none';
+        }
+        if (cfgFrictionLockError) {
+            cfgFrictionLockError.style.display = 'none';
+        }
+        if (cfgFrictionLockInput) {
+            cfgFrictionLockInput.value = '';
+        }
+        if (cfgFrictionLockEnabled) {
+            cfgFrictionLockEnabled.checked = false;
+        }
+    });
+
+    btnFrictionLockConfirm?.addEventListener('click', async () => {
+        const lang = currentSettings.uiLanguage || 'en';
+        const expected = NCW_I18N.getText('frictionLockPledgeText', lang).trim();
+        const expectedEn = NCW_I18N.getText('frictionLockPledgeText', 'en').trim();
+        const typed = (cfgFrictionLockInput?.value || '').trim();
+
+        if (typed !== expected && typed !== expectedEn) {
+            if (cfgFrictionLockError) {
+                cfgFrictionLockError.textContent = NCW_I18N.getText(
+                    'frictionLockMismatchError',
+                    lang,
+                );
+                cfgFrictionLockError.style.display = 'block';
+            }
+            return;
+        }
+
+        if (cfgFrictionLockError) {
+            cfgFrictionLockError.style.display = 'none';
+        }
+        if (cfgFrictionLockConfirmBox) {
+            cfgFrictionLockConfirmBox.style.display = 'none';
+        }
+        if (cfgFrictionLockInput) {
+            cfgFrictionLockInput.value = '';
+        }
+
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        currentSettings.frictionLockUntil = Date.now() + sevenDaysMs;
+        if (cfgFrictionEnabled) {
+            cfgFrictionEnabled.checked = true;
+        }
+        await saveFrictionSettingsOnly(false);
+        showToast(NCW_I18N.getText('frictionLockActivatedToast', lang));
+    });
+
     uiLanguageSelect?.addEventListener('change', async (e) => {
         const target = e.target as HTMLSelectElement | null;
         if (!target) return;
-        const lang = target.value as 'en' | 'zh';
+        const lang = target.value as 'en' | 'zh' | 'ja' | 'ko';
         currentSettings.uiLanguage = lang;
+        applyI18n(lang);
+        syncFrictionLockUI();
         await storage.set({
             [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
         });

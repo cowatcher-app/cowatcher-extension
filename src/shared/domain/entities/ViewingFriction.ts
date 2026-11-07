@@ -35,6 +35,7 @@ export interface ViewingFrictionSettings {
     frictionEnableLlmAdvice: boolean;
     frictionExcludedPlatforms: string[]; // Platforms excluded from total watch calculation
     frictionPlatformRules: Record<string, FrictionPlatformRule>;
+    frictionLockUntil?: number; // Timestamp (ms) until which 1-week commitment lock is active
 }
 
 export interface ActiveFrictionBreak {

@@ -1020,6 +1020,56 @@
                 <input type="time" id="cfg-friction-curfew-time" value="23:30" class="form-control" style="width: 140px; height: 32px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 2px 8px;" />
               </div>
 
+              <!-- 1-Week Self-Control Commitment Lock -->
+              <div class="form-group" id="cfg-friction-lock-group" style="display: none; background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 12px 14px;">
+                <div class="checkbox-row" style="margin-bottom: 4px;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #fcd34d;">
+                    <input type="checkbox" id="cfg-friction-lock-enabled" />
+                    <span data-i18n="frictionLockToggleLabel">🔒 Enable 1-Week Self-Control Lock (Cannot be disabled for 7 days)</span>
+                  </label>
+                </div>
+                <small class="form-text text-muted" data-i18n="frictionLockToggleHint" style="display: block; margin-top: 2px; color: #94a3b8;">
+                  Locks Daily Viewing Limit, Late-Night Curfew, and Master Switch for 7 days to prevent impulse changes
+                </small>
+
+                <!-- Active Lock Status Banner -->
+                <div id="cfg-friction-lock-status" style="display: none; margin-top: 10px; padding: 8px 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 6px; font-size: 12.5px; font-weight: 600; color: #fca5a5;"></div>
+
+                <!-- Type-to-Confirm Pledge Box -->
+                <div id="cfg-friction-lock-confirm-box" style="display: none; margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(245, 158, 11, 0.28); user-select: none; -webkit-user-select: none;">
+                  <div data-i18n="frictionLockPromptInstruction" style="font-size: 12px; color: #cbd5e1; margin-bottom: 8px;">
+                    Type the following pledge character by character to activate the 1-week lock (selection &amp; paste disabled):
+                  </div>
+                  <div
+                    id="cfg-friction-lock-pledge-display"
+                    data-i18n="frictionLockPledgeText"
+                    unselectable="on"
+                    style="padding: 10px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; color: #fde68a; font-family: 'Fira Code', Consolas, Monaco, monospace; font-size: 12.5px; line-height: 1.5; margin-bottom: 10px; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; pointer-events: none;"
+                  >I understand this option will not be disabled in one week and I really cannot control myself so I enable this option lock!</div>
+                  <input
+                    type="text"
+                    id="cfg-friction-lock-input"
+                    class="form-control"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-i18n-placeholder="frictionLockInputPlaceholder"
+                    placeholder="Type the pledge above exactly..."
+                    style="width: 100%; font-size: 12.5px; margin-bottom: 8px; background: rgba(0, 0, 0, 0.35); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 6px; padding: 8px 10px; box-sizing: border-box;"
+                  />
+                  <div id="cfg-friction-lock-error" style="display: none; font-size: 12px; color: #f87171; margin-bottom: 8px;"></div>
+                  <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" id="btn-friction-lock-cancel" class="btn-secondary" data-i18n="frictionLockCancelBtn" style="padding: 5px 12px; font-size: 12px;">
+                      Cancel
+                    </button>
+                    <button type="button" id="btn-friction-lock-confirm" class="btn-primary" data-i18n="frictionLockConfirmBtn" style="padding: 5px 14px; font-size: 12px; background: #d97706; border-color: #f59e0b;">
+                      🔒 Activate 1-Week Lock
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label for="cfg-friction-screen-type" data-i18n="frictionScreenTypeLabel">Micro-Break Screen Type</label>
                 <select id="cfg-friction-screen-type">

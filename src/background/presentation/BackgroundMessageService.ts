@@ -1176,6 +1176,41 @@ export class BackgroundMessageService {
                                     ...(message.settings as Partial<ExtensionSettings>),
                                 } as ExtensionSettings;
 
+                                // Enforce 1-week self-control lock if currently active
+                                if (
+                                    current.frictionLockUntil &&
+                                    current.frictionLockUntil > Date.now()
+                                ) {
+                                    updated.frictionLockUntil =
+                                        current.frictionLockUntil;
+                                    updated.staticFrictionEnabled = true;
+                                    if (
+                                        current.frictionDailyLimitMinutes !==
+                                        undefined
+                                    ) {
+                                        updated.frictionDailyLimitMinutes =
+                                            current.frictionDailyLimitMinutes;
+                                    }
+                                    if (
+                                        current.frictionCurfewEnabled !==
+                                        undefined
+                                    ) {
+                                        updated.frictionCurfewEnabled =
+                                            current.frictionCurfewEnabled;
+                                    }
+                                    if (current.frictionCurfewTime !== undefined) {
+                                        updated.frictionCurfewTime =
+                                            current.frictionCurfewTime;
+                                    }
+                                    if (
+                                        current.frictionExcludedPlatforms !==
+                                        undefined
+                                    ) {
+                                        updated.frictionExcludedPlatforms =
+                                            current.frictionExcludedPlatforms;
+                                    }
+                                }
+
                                 // Always ensure plaintext key is not stored in general settings or broadcast to tabs
                                 delete (updated as Partial<ExtensionSettings>).openrouterApiKey;
 
