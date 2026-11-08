@@ -3921,9 +3921,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         await refreshVaultStatus();
     });
 
-    async function saveFrictionSettingsOnly(showFeedback = true): Promise<void> {
+    async function saveFrictionSettingsOnly(
+        showFeedback = true,
+        activatingLockUntil?: number,
+    ): Promise<void> {
         const isLocked =
+            !activatingLockUntil &&
             (currentSettings.frictionLockUntil || 0) > Date.now();
+        const effectiveLockUntil =
+            activatingLockUntil || currentSettings.frictionLockUntil || 0;
         const updatedFriction = {
             staticFrictionEnabled: isLocked
                 ? true
@@ -3970,14 +3976,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                       .filter((c) => c.checked)
                       .map((c) => c.value),
             frictionPlatformRules: currentSettings.frictionPlatformRules || {},
-            frictionLockUntil: currentSettings.frictionLockUntil || 0,
+            frictionLockUntil: effectiveLockUntil,
         };
 
         currentSettings = { ...currentSettings, ...updatedFriction };
+        await messageService.saveSettings(updatedFriction);
         await storage.set({
             [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
         });
-        await messageService.saveSettings(updatedFriction);
         syncFrictionLockUI();
         if (showFeedback) {
             showToast('Mindful Viewing settings saved!');
@@ -4002,7 +4008,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     cfgFrictionDailyLimit?.addEventListener('change', () => {
+        syncFrictionLockUI();
         saveFrictionSettingsOnly(true);
+    });
+    cfgFrictionDailyLimit?.addEventListener('input', () => {
+        syncFrictionLockUI();
+        saveFrictionSettingsOnly(false);
     });
 
     cfgFrictionCurfewEnabled?.addEventListener('change', () => {
@@ -4010,11 +4021,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             cfgFrictionCurfewTimeGroup.style.display =
                 cfgFrictionCurfewEnabled.checked ? 'block' : 'none';
         }
+        syncFrictionLockUI();
         saveFrictionSettingsOnly(true);
     });
 
     cfgFrictionCurfewTime?.addEventListener('change', () => {
         saveFrictionSettingsOnly(true);
+    });
+    cfgFrictionCurfewTime?.addEventListener('input', () => {
+        saveFrictionSettingsOnly(false);
     });
 
     cfgFrictionScreenType?.addEventListener('change', () => {
@@ -4142,11 +4157,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-        currentSettings.frictionLockUntil = Date.now() + sevenDaysMs;
+        const lockUntil = Date.now() + sevenDaysMs;
         if (cfgFrictionEnabled) {
             cfgFrictionEnabled.checked = true;
         }
-        await saveFrictionSettingsOnly(false);
+        await saveFrictionSettingsOnly(false, lockUntil);
         showToast(NCW_I18N.getText('frictionLockActivatedToast', lang));
     });
 

@@ -83,6 +83,7 @@ export class ViewingFrictionOverlay {
                 container.style.position = 'relative';
             }
         }
+        overlay.style.zIndex = '2147483647';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
 
@@ -126,7 +127,12 @@ export class ViewingFrictionOverlay {
     }
 
     isVisible(): boolean {
-        return this.element !== null;
+        return Boolean(
+            this.element &&
+                typeof document !== 'undefined' &&
+                document.body &&
+                document.body.contains(this.element),
+        );
     }
 
     getContext(): FrictionBreakContext | null {
@@ -147,6 +153,14 @@ export class ViewingFrictionOverlay {
 
     setRestingMode(reason?: FrictionTriggerReason): void {
         if (!this.element) return;
+        if (this.introTimer) {
+            clearTimeout(this.introTimer);
+            this.introTimer = null;
+        }
+        if (this.activeTimer) {
+            clearInterval(this.activeTimer);
+            this.activeTimer = null;
+        }
         const card = this.element.querySelector('.ncw-friction-card');
         if (card) {
             card.innerHTML = ViewingFrictionTemplate.renderRestingCard(
@@ -162,10 +176,6 @@ export class ViewingFrictionOverlay {
                 (intro as HTMLElement).style.display = 'none';
             }
 
-            const wakeBtn = card.querySelector('#ncw-friction-wake-btn');
-            wakeBtn?.addEventListener('click', () => {
-                this.callbacks?.onContinue();
-            });
             const closeTabBtn = card.querySelector('#ncw-friction-close-tab-btn');
             closeTabBtn?.addEventListener('click', () => {
                 try {

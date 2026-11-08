@@ -36,6 +36,7 @@ export class ViewingFrictionManager {
 
     private isPlaying: boolean = false;
     private isStoppedForToday: boolean = false;
+    private stoppedReason?: FrictionTriggerReason;
     private checkInterval: ReturnType<typeof setInterval> | null = null;
     private isEvaluating: boolean = false;
 
@@ -124,9 +125,12 @@ export class ViewingFrictionManager {
         }
         if (!this.settings.staticFrictionEnabled) {
             this.isStoppedForToday = false;
+            this.stoppedReason = undefined;
             if (this.overlay.isVisible()) {
                 this.overlay.hide();
             }
+        } else {
+            this.evaluateTriggers();
         }
     }
 
@@ -140,7 +144,7 @@ export class ViewingFrictionManager {
         if (this.isStoppedForToday) {
             this.boundVideo?.pause();
             if (!this.overlay.isVisible()) {
-                this.showRestingOverlay();
+                this.showRestingOverlay(this.stoppedReason);
             }
             return;
         }
@@ -172,6 +176,18 @@ export class ViewingFrictionManager {
 
             if (!this.settings.staticFrictionEnabled) {
                 this.isStoppedForToday = false;
+                this.stoppedReason = undefined;
+                if (this.overlay.isVisible()) {
+                    this.overlay.hide();
+                }
+                return;
+            }
+
+            if (
+                this.adapter.isPlaybackPage &&
+                !this.adapter.isPlaybackPage(window.location.href) &&
+                (!video || video.paused)
+            ) {
                 if (this.overlay.isVisible()) {
                     this.overlay.hide();
                 }
@@ -183,7 +199,7 @@ export class ViewingFrictionManager {
                     video.pause();
                 }
                 if (!this.overlay.isVisible()) {
-                    this.showRestingOverlay();
+                    this.showRestingOverlay(this.stoppedReason);
                 }
                 return;
             }
@@ -207,12 +223,14 @@ export class ViewingFrictionManager {
 
             if (res.isStoppedForToday) {
                 this.isStoppedForToday = true;
+                this.stoppedReason =
+                    res.activeBreak?.reason || this.stoppedReason;
                 if (video && !video.paused) {
                     video.pause();
                 }
                 if (!this.overlay.isVisible()) {
                     this.showRestingOverlay(
-                        res.activeBreak?.reason,
+                        this.stoppedReason,
                         res.continuousSeconds,
                         res.todaySeconds,
                         res.todayRestSeconds,
@@ -318,6 +336,7 @@ export class ViewingFrictionManager {
             onDone: async () => {
                 await this.messageService.dismissHardBlock(activeBreak.id);
                 this.isStoppedForToday = true;
+                this.stoppedReason = activeBreak.reason;
                 try {
                     this.boundVideo?.pause();
                 } catch {}

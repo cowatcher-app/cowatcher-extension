@@ -304,7 +304,6 @@ export const ViewingFrictionTemplate = {
     renderRestingCard(lang: string, reason?: FrictionTriggerReason): string {
         const isCurfew = reason === 'curfew';
         const isLimit = reason === 'daily_limit';
-        const isHardBlock = isCurfew || isLimit;
 
         const icon = isCurfew ? '🌙' : isLimit ? '📊' : '🍵';
         const title = isCurfew
@@ -328,18 +327,9 @@ export const ViewingFrictionTemplate = {
                 ${this.escapeHtml(desc)}
             </p>
             <div style="display: flex; gap: 12px; justify-content: center;">
-                <button type="button" class="ncw-friction-btn ncw-friction-btn-ghost" id="ncw-friction-close-tab-btn">
+                <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-close-tab-btn" style="padding: 12px 28px;">
                     🚪 ${NCW_I18N.getText('frictionBtnCloseTab', lang)}
                 </button>
-                ${
-                    !isHardBlock
-                        ? `
-                        <button type="button" class="ncw-friction-btn ncw-friction-btn-primary" id="ncw-friction-wake-btn">
-                            ${NCW_I18N.getText('frictionBtnContinue', lang)}
-                        </button>
-                        `
-                        : ''
-                }
             </div>
         `;
     },

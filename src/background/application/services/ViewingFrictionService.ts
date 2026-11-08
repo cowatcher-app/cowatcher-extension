@@ -70,11 +70,11 @@ export class ViewingFrictionService {
                 this.lastCurfewTriggerKey = state.lastCurfewTriggerKey || '';
                 this.lastDailyTriggerKey = state.lastDailyTriggerKey || '';
 
-                // Reset isStoppedForToday if day changed and past 05:00 AM
-                const todayStr = new Date().toDateString();
+                // Reset isStoppedForToday if logical viewing day (05:00 AM boundary) changed
+                const logicalDayKey = this.getLogicalDayKey();
                 if (
                     this.isStoppedForToday &&
-                    this.lastStoppedDate !== todayStr &&
+                    this.lastStoppedDate !== logicalDayKey &&
                     new Date().getHours() >= 5
                 ) {
                     this.isStoppedForToday = false;
@@ -137,11 +137,11 @@ export class ViewingFrictionService {
         const excluded = settings.frictionExcludedPlatforms || [];
         const todayStats = await this.watchHistoryService.getTodayWatchStats(excluded);
 
-        // Daily reset check for stopped status
-        const todayStr = new Date().toDateString();
+        // Daily reset check for stopped status using 05:00 AM logical day boundary
+        const logicalDayKey = this.getLogicalDayKey();
         if (
             this.isStoppedForToday &&
-            this.lastStoppedDate !== todayStr &&
+            this.lastStoppedDate !== logicalDayKey &&
             new Date().getHours() >= 5
         ) {
             this.isStoppedForToday = false;
@@ -183,32 +183,6 @@ export class ViewingFrictionService {
             };
         }
 
-        // 3. If user already clicked "I'm Done for Today", lock playback
-        if (this.isStoppedForToday) {
-            return {
-                shouldPause: true,
-                activeBreak: this.activeBreak,
-                continuousSeconds: Math.round(this.globalContinuousSeconds),
-                todaySeconds: todayStats.todaySeconds,
-                todayRestSeconds: todayStats.todayRestSeconds,
-                todayBreakCount: todayStats.todayBreakCount,
-                isStoppedForToday: true,
-            };
-        }
-
-        // 4. If an active mandatory break is already pending, player MUST pause and serve the break!
-        if (this.activeBreak) {
-            return {
-                shouldPause: true,
-                activeBreak: this.activeBreak,
-                continuousSeconds: Math.round(this.globalContinuousSeconds),
-                todaySeconds: todayStats.todaySeconds,
-                todayRestSeconds: todayStats.todayRestSeconds,
-                todayBreakCount: todayStats.todayBreakCount,
-                isStoppedForToday: false,
-            };
-        }
-
         const effectiveIntervalMin =
             typeof platformRules?.intervalMinutes === 'number' &&
             platformRules.intervalMinutes > 0
@@ -222,6 +196,111 @@ export class ViewingFrictionService {
                 : Number(settings.frictionDailyLimitMinutes) || 0;
 
         const now = Date.now();
+
+        // 3. Enforce Late-Night Curfew (Hard Block - always active during curfew window)
+        if (settings.frictionCurfewEnabled) {
+            const curfewTimeStr = settings.frictionCurfewTime || '23:30';
+            if (this.isPastCurfew(curfewTimeStr)) {
+                this.lastCurfewTriggerKey = logicalDayKey;
+                if (
+                    !this.activeBreak ||
+                    this.activeBreak.reason !== 'curfew' ||
+                    this.activeBreak.curfewTime !== curfewTimeStr
+                ) {
+                    this.activeBreak = {
+                        id: `brk_${now}_${Math.random().toString(36).slice(2, 6)}`,
+                        reason: 'curfew',
+                        totalSeconds: 0,
+                        remainingSeconds: 0,
+                        startedAt: now,
+                        isHardBlock: true,
+                        curfewTime: curfewTimeStr,
+                        showTitle: params.showTitle,
+                        platform: params.platform,
+                    };
+                    await this.persistState();
+                }
+                return {
+                    shouldPause: true,
+                    activeBreak: this.activeBreak,
+                    continuousSeconds: Math.round(this.globalContinuousSeconds),
+                    todaySeconds: todayStats.todaySeconds,
+                    todayRestSeconds: todayStats.todayRestSeconds,
+                    todayBreakCount: todayStats.todayBreakCount,
+                    isStoppedForToday: this.isStoppedForToday,
+                };
+            } else if (this.activeBreak?.reason === 'curfew') {
+                this.activeBreak = null;
+                await this.persistState();
+            }
+        } else if (this.activeBreak?.reason === 'curfew') {
+            this.activeBreak = null;
+            await this.persistState();
+        }
+
+        // 4. Enforce Daily Limit (Hard Block - always active once daily limit reached)
+        if (effectiveDailyLimitMin > 0) {
+            if (todayStats.todaySeconds / 60 >= effectiveDailyLimitMin) {
+                this.lastDailyTriggerKey = logicalDayKey;
+                if (
+                    !this.activeBreak ||
+                    this.activeBreak.reason !== 'daily_limit'
+                ) {
+                    this.activeBreak = {
+                        id: `brk_${now}_${Math.random().toString(36).slice(2, 6)}`,
+                        reason: 'daily_limit',
+                        totalSeconds: 0,
+                        remainingSeconds: 0,
+                        startedAt: now,
+                        isHardBlock: true,
+                        showTitle: params.showTitle,
+                        platform: params.platform,
+                    };
+                    await this.persistState();
+                }
+                return {
+                    shouldPause: true,
+                    activeBreak: this.activeBreak,
+                    continuousSeconds: Math.round(this.globalContinuousSeconds),
+                    todaySeconds: todayStats.todaySeconds,
+                    todayRestSeconds: todayStats.todayRestSeconds,
+                    todayBreakCount: todayStats.todayBreakCount,
+                    isStoppedForToday: this.isStoppedForToday,
+                };
+            } else if (this.activeBreak?.reason === 'daily_limit') {
+                this.activeBreak = null;
+                await this.persistState();
+            }
+        } else if (this.activeBreak?.reason === 'daily_limit') {
+            this.activeBreak = null;
+            await this.persistState();
+        }
+
+        // 5. If user already clicked "I'm Done for Today", lock playback
+        if (this.isStoppedForToday) {
+            return {
+                shouldPause: true,
+                activeBreak: this.activeBreak,
+                continuousSeconds: Math.round(this.globalContinuousSeconds),
+                todaySeconds: todayStats.todaySeconds,
+                todayRestSeconds: todayStats.todayRestSeconds,
+                todayBreakCount: todayStats.todayBreakCount,
+                isStoppedForToday: true,
+            };
+        }
+
+        // 6. If an active mandatory interval break is already pending, player MUST pause and serve the break!
+        if (this.activeBreak) {
+            return {
+                shouldPause: true,
+                activeBreak: this.activeBreak,
+                continuousSeconds: Math.round(this.globalContinuousSeconds),
+                todaySeconds: todayStats.todaySeconds,
+                todayRestSeconds: todayStats.todayRestSeconds,
+                todayBreakCount: todayStats.todayBreakCount,
+                isStoppedForToday: false,
+            };
+        }
 
         // Accumulate continuous seconds across active playback tabs
         if (params.isPlaying) {
@@ -247,72 +326,7 @@ export class ViewingFrictionService {
             this.lastHeartbeatTimestamp = 0;
         }
 
-        // 1. Check Late-Night Curfew
-        if (settings.frictionCurfewEnabled) {
-            const curfewTimeStr = settings.frictionCurfewTime || '23:30';
-            if (this.isPastCurfew(curfewTimeStr)) {
-                if (this.lastCurfewTriggerKey !== todayStr) {
-                    this.lastCurfewTriggerKey = todayStr;
-                    this.activeBreak = {
-                        id: `brk_${now}_${Math.random().toString(36).slice(2, 6)}`,
-                        reason: 'curfew',
-                        totalSeconds: 0,
-                        remainingSeconds: 0,
-                        startedAt: now,
-                        isHardBlock: true,
-                        curfewTime: curfewTimeStr,
-                        showTitle: params.showTitle,
-                        platform: params.platform,
-                    };
-                    await this.persistState();
-                    return {
-                        shouldPause: true,
-                        activeBreak: this.activeBreak,
-                        continuousSeconds: Math.round(this.globalContinuousSeconds),
-                        todaySeconds: todayStats.todaySeconds,
-                        todayRestSeconds: todayStats.todayRestSeconds,
-                        todayBreakCount: todayStats.todayBreakCount,
-                        isStoppedForToday: false,
-                    };
-                }
-            }
-        }
-
-        // 2. Check Daily Limit
-        if (effectiveDailyLimitMin > 0) {
-            if (todayStats.todaySeconds / 60 >= effectiveDailyLimitMin) {
-                if (
-                    this.lastDailyTriggerKey !== todayStr ||
-                    effectiveDailyLimitMin <= 1
-                ) {
-                    if (effectiveDailyLimitMin > 1) {
-                        this.lastDailyTriggerKey = todayStr;
-                    }
-                    this.activeBreak = {
-                        id: `brk_${now}_${Math.random().toString(36).slice(2, 6)}`,
-                        reason: 'daily_limit',
-                        totalSeconds: 0,
-                        remainingSeconds: 0,
-                        startedAt: now,
-                        isHardBlock: true,
-                        showTitle: params.showTitle,
-                        platform: params.platform,
-                    };
-                    await this.persistState();
-                    return {
-                        shouldPause: true,
-                        activeBreak: this.activeBreak,
-                        continuousSeconds: Math.round(this.globalContinuousSeconds),
-                        todaySeconds: todayStats.todaySeconds,
-                        todayRestSeconds: todayStats.todayRestSeconds,
-                        todayBreakCount: todayStats.todayBreakCount,
-                        isStoppedForToday: false,
-                    };
-                }
-            }
-        }
-
-        // 3. Check Continuous Interval
+        // 7. Check Continuous Interval
         if (
             effectiveIntervalMin > 0 &&
             this.globalContinuousSeconds >= effectiveIntervalMin * 60
@@ -406,6 +420,9 @@ export class ViewingFrictionService {
         if (!this.activeBreak || this.activeBreak.id !== breakId) {
             return { success: false, canResume: true };
         }
+        if (this.activeBreak.isHardBlock) {
+            return { success: false, canResume: false };
+        }
 
         const duration = this.activeBreak.totalSeconds || 20;
         await this.watchHistoryService.recordRestTime(duration);
@@ -435,8 +452,10 @@ export class ViewingFrictionService {
         }
 
         this.isStoppedForToday = true;
-        this.lastStoppedDate = new Date().toDateString();
-        this.activeBreak = null;
+        this.lastStoppedDate = this.getLogicalDayKey();
+        if (!this.activeBreak?.isHardBlock) {
+            this.activeBreak = null;
+        }
         this.globalContinuousSeconds = 0;
         await this.persistState();
 
@@ -445,15 +464,30 @@ export class ViewingFrictionService {
 
     /**
      * User clicked "Continue Watching" from a stopped / resting state.
-     * Clears isStoppedForToday and resets continuous timer.
+     * Clears isStoppedForToday and resets continuous timer ONLY if not in a hard block.
      */
     async handleWakeUp(): Promise<{ success: boolean; canResume: boolean }> {
+        if (this.activeBreak?.isHardBlock) {
+            return { success: false, canResume: false };
+        }
         this.isStoppedForToday = false;
         this.activeBreak = null;
         this.globalContinuousSeconds = 0;
         this.lastHeartbeatTimestamp = Date.now();
         await this.persistState();
         return { success: true, canResume: true };
+    }
+
+    /**
+     * Logical viewing day boundary is 05:00 AM.
+     * Times between 00:00 and 04:59 AM belong to the previous calendar day's viewing session.
+     */
+    private getLogicalDayKey(now: Date = new Date()): string {
+        const d = new Date(now.getTime());
+        if (d.getHours() < 5) {
+            d.setDate(d.getDate() - 1);
+        }
+        return d.toDateString();
     }
 
     private isPastCurfew(curfewTimeStr: string): boolean {
@@ -465,7 +499,14 @@ export class ViewingFrictionService {
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
 
-        // Curfew active from curfew time until 05:00 AM next morning
+        // If curfew is configured between 00:00 and 04:59 AM
+        if (curfewHour < 5) {
+            if (currentHour >= 5) return false;
+            if (currentHour > curfewHour) return true;
+            return currentHour === curfewHour && currentMinute >= curfewMinute;
+        }
+
+        // Standard evening curfew (e.g. 22:30 -> 05:00 AM next morning)
         if (currentHour < 5) return true;
         if (currentHour > curfewHour) return true;
         if (currentHour === curfewHour && currentMinute >= curfewMinute) {
