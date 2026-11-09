@@ -137,6 +137,7 @@ export class ViewingFrictionManager {
     private onPlay(): void {
         if (!this.settings.staticFrictionEnabled) {
             this.isStoppedForToday = false;
+            this.stoppedReason = undefined;
             this.isPlaying = true;
             this.evaluateTriggers();
             return;
@@ -146,6 +147,7 @@ export class ViewingFrictionManager {
             if (!this.overlay.isVisible()) {
                 this.showRestingOverlay(this.stoppedReason);
             }
+            this.evaluateTriggers();
             return;
         }
         this.isPlaying = true;
@@ -194,16 +196,6 @@ export class ViewingFrictionManager {
                 return;
             }
 
-            if (this.isStoppedForToday) {
-                if (video && !video.paused) {
-                    video.pause();
-                }
-                if (!this.overlay.isVisible()) {
-                    this.showRestingOverlay(this.stoppedReason);
-                }
-                return;
-            }
-
             const isCurrentlyPlaying = Boolean(
                 video && !video.paused && !video.ended && video.readyState >= 2,
             );
@@ -240,6 +232,11 @@ export class ViewingFrictionManager {
                 return;
             }
 
+            if (this.isStoppedForToday) {
+                this.isStoppedForToday = false;
+                this.stoppedReason = undefined;
+            }
+
             if (res.shouldPause && res.activeBreak) {
                 // Mandatory break active! Force video pause.
                 if (video && !video.paused) {
@@ -260,12 +257,7 @@ export class ViewingFrictionManager {
                         res.todayBreakCount,
                     );
                 }
-            } else if (
-                !res.shouldPause &&
-                this.overlay.isVisible() &&
-                this.overlay.getContext()?.reason !== 'curfew' &&
-                this.overlay.getContext()?.reason !== 'daily_limit'
-            ) {
+            } else if (!res.shouldPause && this.overlay.isVisible()) {
                 this.overlay.hide();
             }
         } catch {
