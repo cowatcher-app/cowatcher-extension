@@ -7,7 +7,8 @@ English Documentation | [简体中文文档](README_zh.md) | [📖 Detailed Popu
 
 We support:
 
-- [x] Subtitle translation for Netflix & TVer & YouTube
+- [x] Support multiple platforms, Netflix & TVer & YouTube & Bilibili & itvx
+- [x] Subtitle translation with Google Translate, Ollama, and OpenRouter.
 - [x] Official bilingual subtitle display from supported platforms
 - [x] Support YouTube ASR(automatically generated) subtitles merging into ordinary subtitles.
 - [x] Background vocabulary detection with seamless Anki learning workflow integration
@@ -19,6 +20,7 @@ We support:
 - [x] One-click vocabulary saving for effortless language acquisition
 - [x] Instant hover/click word definitions without leaving the player
 - [x] Track your watching, to know how much time you spent on it
+- [x] Add static friction to help take care of your health
 - [x] Support for both Chrome and Firefox
 
 Your CoWatcher!
@@ -128,18 +130,18 @@ ollama pull gemma4:e2b
 2. Open the extension popup, and select **OpenRouter** in the **AI Service Provider** dropdown.
 3. Paste your API key and click **Connect**.
 4. Select your preferred models:
-   - **Translation Model**: Recommended `deepseek/deepseek-chat` (cost-effective with exceptional cinematic quality) or `google/gemini-2.5-flash` (lightning-fast).
-   - **Supervisor Model**: Recommended `google/gemini-2.5-flash`.
-   - Or enter any custom OpenRouter model ID!
+    - **Translation Model**: Recommended `deepseek/deepseek-chat` (cost-effective with exceptional cinematic quality) or `google/gemini-2.5-flash` (lightning-fast).
+    - **Supervisor Model**: Recommended `google/gemini-2.5-flash`.
+    - Or enter any custom OpenRouter model ID!
 
 ### 3. Start Watching on Netflix / TVer
 
 1. Navigate to any Netflix or TVer video playback page.
 2. In the native audio/subtitles menu, **ensure an original subtitle track is selected** (e.g. English [CC] or the video's original language).
 3. Click the extension icon in the Chrome toolbar:
-   - Confirm that the status indicator shows 🟢 **Connected**.
-   - Review or fine-tune models, target language, and display preferences.
-   - For a comprehensive breakdown, consult the **[Detailed Popup UI Guide](docs/popup_guide.md)**.
+    - Confirm that the status indicator shows 🟢 **Connected**.
+    - Review or fine-tune models, target language, and display preferences.
+    - For a comprehensive breakdown, consult the **[Detailed Popup UI Guide](docs/popup_guide.md)**.
 4. As playback begins, bilingual subtitles will appear seamlessly at the bottom; toggle anytime with **`Alt + T`**.
 
 ---

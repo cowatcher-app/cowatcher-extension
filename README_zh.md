@@ -7,7 +7,8 @@
 
 我们支持:
 
-- [x] Netflix, TVer，YouTube字幕翻译
+- [x] Netflix, TVer，YouTube, Bilibili, itvx，多平台支持
+- [x] Google Translate，Ollama，OpenRouter，多种翻译方案
 - [x] 平台提供的双语字幕展示
 - [x] YouTube自动生成字幕自动合并为正常字幕
 - [x] 后台生词识别，与你的Anki学习流水线无缝衔接
@@ -19,6 +20,7 @@
 - [x] 生词一键记录，让你的学习过程压力更小
 - [x] 点击即可立刻查看解释，不必跳转到另一个页面
 - [x] 观看活动追踪，精美的表格让你知道自己花了(~浪费~)多少时间在观影上
+- [x] 观影静摩擦，兼顾健康与生活
 - [x] Chrome, Firefox，在你喜欢的浏览器上使用
 
 你的CoWatcher！
@@ -100,7 +102,7 @@
 6. 选择本项目所在根目录 `cowatcher-extension`。
 7. 看到 `CoWatcher` 已加载成功。
 
-   欢迎 请作者喝杯咖啡 ☕ <https://ko-fi.com/sfbb49898，支持我们支付> Chrome 开发者账号费用，让这个扩展早日上架 Chrome Web Store！
+    欢迎 请作者喝杯咖啡 ☕ <https://ko-fi.com/sfbb49898，支持我们支付> Chrome 开发者账号费用，让这个扩展早日上架 Chrome Web Store！
 
 ### 2. 选择您的 AI 服务提供商
 
@@ -128,18 +130,18 @@ ollama pull gemma4:e2b
 2. 打开插件弹窗，在 **AI Service Provider** 下拉菜单中选择 **OpenRouter**。
 3. 填入 API Key 并点击 **Connect** 连接。
 4. 选择推荐的云端顶尖模型：
-   - **翻译模型**：推荐 `deepseek/deepseek-chat`（极低成本、影视神翻译）或 `google/gemini-2.5-flash`（秒级响应）。
-   - **监督模型**：推荐 `google/gemini-2.5-flash`。
-   - 亦可选择自定义输入任意 OpenRouter 模型 ID！
+    - **翻译模型**：推荐 `deepseek/deepseek-chat`（极低成本、影视神翻译）或 `google/gemini-2.5-flash`（秒级响应）。
+    - **监督模型**：推荐 `google/gemini-2.5-flash`。
+    - 亦可选择自定义输入任意 OpenRouter 模型 ID！
 
 ### 3. 打开 Netflix/TVer 观影
 
 1. 访问任意 Netflix/TVer 播放页面。
 2. 在 Netflix/TVer 原生播放器音频/字幕菜单中，**确保选中了英文字幕（或影片原语言字幕）**。
 3. 点击扩展图标打开控制面板：
-   - 确认状态指示灯为 🟢 **Connected**。
-   - 检查或微调模型、翻译目标语言与显示偏好。
-   - 完整功能与滑块调优请参阅 **[控制面板详细使用指南](docs/popup_guide_zh.md)**。
+    - 确认状态指示灯为 🟢 **Connected**。
+    - 检查或微调模型、翻译目标语言与显示偏好。
+    - 完整功能与滑块调优请参阅 **[控制面板详细使用指南](docs/popup_guide_zh.md)**。
 4. 视频播放时，双语字幕将实时流畅呈现在画面底部；可随时使用快捷键 **`Alt + T`** 控制开关。
 
 ---
