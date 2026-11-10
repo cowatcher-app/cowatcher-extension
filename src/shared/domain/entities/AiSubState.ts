@@ -25,6 +25,7 @@ export class AiSubState {
             [STREAMING_PLATFORMS.NETFLIX]: props.enabled,
             [STREAMING_PLATFORMS.TVER]: props.enabled,
             [STREAMING_PLATFORMS.YOUTUBE]: props.enabled,
+            [STREAMING_PLATFORMS.BILIBILI]: props.enabled,
         };
         this.targetLanguage = props.targetLanguage;
         this.displayMode = props.displayMode ?? 'bilingual';
@@ -39,6 +40,7 @@ export class AiSubState {
                 [STREAMING_PLATFORMS.NETFLIX]: true,
                 [STREAMING_PLATFORMS.TVER]: true,
                 [STREAMING_PLATFORMS.YOUTUBE]: true,
+                [STREAMING_PLATFORMS.BILIBILI]: true,
             },
             targetLanguage: Language.DEFAULT,
             displayMode: 'bilingual',
@@ -76,6 +78,7 @@ export class AiSubState {
                 [STREAMING_PLATFORMS.NETFLIX]: enabled,
                 [STREAMING_PLATFORMS.TVER]: enabled,
                 [STREAMING_PLATFORMS.YOUTUBE]: enabled,
+                [STREAMING_PLATFORMS.BILIBILI]: enabled,
             },
             updatedAt: Date.now(),
         });

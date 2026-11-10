@@ -445,7 +445,7 @@ export class ContentMessageService {
 
     async sendFrictionHeartbeat(params: {
         isPlaying: boolean;
-        platform: string;
+        platform: StreamingPlatformId;
         showTitle?: string;
     }): Promise<{
         shouldPause: boolean;

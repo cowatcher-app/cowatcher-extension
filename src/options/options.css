@@ -1083,6 +1083,12 @@ button {
     border: 1px solid rgba(0, 180, 216, 0.35);
 }
 
+.platform-badge.bilibili {
+    background: rgba(251, 114, 153, 0.15);
+    color: #fb7299;
+    border: 1px solid rgba(251, 114, 153, 0.35);
+}
+
 .platform-badge.unknown {
     background: rgba(140, 140, 154, 0.15);
     color: #8c8c9a;

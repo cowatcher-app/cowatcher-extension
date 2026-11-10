@@ -285,6 +285,7 @@ export type MessagePayloadMap = {
             episodeId?: string;
             episodeNumber?: string;
             seasonId?: string;
+            tabId?: number;
         };
         response: { success: boolean };
     };
@@ -607,7 +608,7 @@ export type MessagePayloadMap = {
     NCW_FRICTION_HEARTBEAT: {
         request: {
             isPlaying: boolean;
-            platform: string;
+            platform: StreamingPlatformId;
             showTitle?: string;
         };
         response: {

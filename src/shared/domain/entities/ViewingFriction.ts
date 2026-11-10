@@ -1,3 +1,5 @@
+import { StreamingPlatformId } from '../constants/StreamingPlatforms';
+
 /**
  * Viewing Static Friction (Mindful Viewing & Anti-Binge Guard) Domain Entities
  */
@@ -33,8 +35,8 @@ export interface ViewingFrictionSettings {
     frictionUnlockDifficulty: FrictionUnlockDifficulty;
     frictionAutoResumeOnTimer: boolean;
     frictionEnableLlmAdvice: boolean;
-    frictionExcludedPlatforms: string[]; // Platforms excluded from total watch calculation
-    frictionPlatformRules: Record<string, FrictionPlatformRule>;
+    frictionExcludedPlatforms: StreamingPlatformId[]; // Platforms excluded from total watch calculation
+    frictionPlatformRules: Partial<Record<StreamingPlatformId, FrictionPlatformRule>>;
     frictionLockUntil?: number; // Timestamp (ms) until which 1-week commitment lock is active
 }
 
@@ -47,7 +49,7 @@ export interface ActiveFrictionBreak {
     isHardBlock: boolean;
     curfewTime?: string;
     showTitle?: string;
-    platform?: string;
+    platform?: StreamingPlatformId;
     consecutiveFailures?: number;
     sequenceLength?: number;
     lockoutUntil?: number;

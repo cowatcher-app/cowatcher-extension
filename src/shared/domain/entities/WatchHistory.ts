@@ -1,10 +1,12 @@
+import { StreamingPlatformId } from '../constants/StreamingPlatforms';
+
 /**
  * Domain entities for viewing history and playback analytics.
  */
 
 export interface WatchSession {
     id: string; // Unique session ID (e.g. uuid or timestamp-based)
-    platform: 'netflix' | 'youtube' | 'tver' | string;
+    platform: StreamingPlatformId;
 
     // Show & Episode Hierarchy
     showId: string;
@@ -40,7 +42,7 @@ export interface ShowEpisodeProgress {
 export interface ShowWatchSummary {
     showId: string;
     showTitle: string;
-    platform: string;
+    platform: StreamingPlatformId;
     totalWatchSeconds: number;
     firstWatchedAt: number;
     lastWatchedAt: number;

@@ -37,6 +37,7 @@ import {
     FrictionScreenType,
     FrictionUnlockDifficulty,
 } from '@shared/domain/entities/ViewingFriction';
+import { StreamingPlatformId } from '@shared/domain/constants/StreamingPlatforms';
 import contributorsMarkdown from '../../CONTRIBUTORS.md';
 import creditsMarkdown from '../../CREDITS.md';
 
@@ -3348,7 +3349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentSettings.frictionExcludedPlatforms || [],
         );
         chkFrictionExcludePlatforms.forEach((chk) => {
-            chk.checked = excludedSet.has(chk.value);
+            chk.checked = excludedSet.has(chk.value as StreamingPlatformId);
         });
 
         syncFrictionLockUI();
@@ -3904,7 +3905,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ? currentSettings.frictionExcludedPlatforms || []
                     : Array.from(chkFrictionExcludePlatforms)
                           .filter((c) => c.checked)
-                          .map((c) => c.value),
+                          .map((c) => c.value as StreamingPlatformId),
             frictionPlatformRules: currentSettings.frictionPlatformRules || {},
             frictionLockUntil: currentSettings.frictionLockUntil || 0,
         };
@@ -3974,7 +3975,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ? currentSettings.frictionExcludedPlatforms || []
                 : Array.from(chkFrictionExcludePlatforms)
                       .filter((c) => c.checked)
-                      .map((c) => c.value),
+                      .map((c) => c.value as StreamingPlatformId),
             frictionPlatformRules: currentSettings.frictionPlatformRules || {},
             frictionLockUntil: effectiveLockUntil,
         };

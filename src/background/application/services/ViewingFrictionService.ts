@@ -13,6 +13,7 @@ import {
     FrictionTriggerReason,
 } from '@shared/domain/entities/ViewingFriction';
 import { ExtensionSettings } from '@shared/domain/constants/SettingsDefaults';
+import { StreamingPlatformId } from '@shared/domain/constants/StreamingPlatforms';
 import { NCW_STORAGE_KEYS } from '@shared/domain/constants/StorageKeys';
 import { IBrowserStorage } from '@shared/infrastructure/storage/IBrowserStorage';
 import { BrowserStorageFactory } from '@shared/infrastructure/storage/BrowserStorageFactory';
@@ -138,7 +139,7 @@ export class ViewingFrictionService {
      */
     async handleHeartbeat(params: {
         isPlaying: boolean;
-        platform: string;
+        platform: StreamingPlatformId;
         showTitle?: string;
     }): Promise<{
         shouldPause: boolean;

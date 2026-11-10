@@ -4,6 +4,7 @@ import {
     WatchHistoryStats,
     DailyWatchStat,
 } from '@shared/domain/entities/WatchHistory';
+import { StreamingPlatformId } from '@shared/domain/constants/StreamingPlatforms';
 import { Logger } from '@shared/utils/logger';
 import { IBrowserStorage } from '@shared/infrastructure/storage/IBrowserStorage';
 import { BrowserStorageFactory } from '@shared/infrastructure/storage/BrowserStorageFactory';
@@ -458,10 +459,12 @@ export class WatchHistoryService {
     /**
      * Fast aggregation of today's watch time, sessions, and platform breakdown, along with mindful rest stats.
      */
-    async getTodayWatchStats(excludedPlatforms: string[] = []): Promise<{
+    async getTodayWatchStats(
+        excludedPlatforms: StreamingPlatformId[] | string[] = [],
+    ): Promise<{
         todaySeconds: number;
         todaySessions: number;
-        platformSeconds: Record<string, number>;
+        platformSeconds: Partial<Record<StreamingPlatformId, number>> & Record<string, number>;
         todayRestSeconds: number;
         todayBreakCount: number;
     }> {

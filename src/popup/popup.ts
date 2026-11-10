@@ -374,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (url.includes('netflix.com')) return STREAMING_PLATFORMS.NETFLIX;
         if (url.includes('tver.jp')) return STREAMING_PLATFORMS.TVER;
         if (url.includes('youtube.com')) return STREAMING_PLATFORMS.YOUTUBE;
+        if (url.includes('bilibili.com')) return STREAMING_PLATFORMS.BILIBILI;
         return null;
     }
 
@@ -931,7 +932,7 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshVocabData();
         }
 
-        if (!ctx || (!ctx.title && !ctx.isWarmedUp)) {
+        if (!ctx || (!ctx.title && !ctx.mainTitle && !ctx.isWarmedUp)) {
             if (showTitle)
                 showTitle.textContent = NCW_I18N.getText('waitingPlayback', l);
             if (memoryBadge) {

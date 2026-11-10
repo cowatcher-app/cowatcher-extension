@@ -64,6 +64,15 @@ export class SubtitleStreamDetector {
             return true;
         }
 
+        // Check for Bilibili BCC JSON format
+        if (
+            snippet.includes('"body"') &&
+            snippet.includes('"from"') &&
+            snippet.includes('"to"')
+        ) {
+            return true;
+        }
+
         return false;
     }
 }

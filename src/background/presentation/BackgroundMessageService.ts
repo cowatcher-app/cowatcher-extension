@@ -544,6 +544,7 @@ export class BackgroundMessageService {
                     case NCW_CONSTANTS.MESSAGE_TYPES.EPISODE_CHANGED: {
                         this.translationPipelineService.clearQueues();
                         this.vocabService.clearQueues();
+                        const effectiveTabId = message.tabId ?? sender.tab?.id;
                         this.glossaryService
                             .getOrCreateContext({
                                 showId: message.showId,
@@ -555,6 +556,14 @@ export class BackgroundMessageService {
                                 episodeId: message.episodeId,
                                 episodeNumber: message.episodeNumber,
                                 seasonId: message.seasonId,
+                            })
+                            .then((ctx) => {
+                                if (ctx && effectiveTabId !== undefined) {
+                                    this.glossaryService.bindTabContext(
+                                        effectiveTabId,
+                                        ctx,
+                                    );
+                                }
                             })
                             .catch(() => {});
                         sendResponse({

@@ -465,7 +465,7 @@ export class WatchHistoryTracker {
 
         const session: WatchSession = {
             id: this.currentSessionId,
-            platform: this.adapter.platformName || 'unknown',
+            platform: this.adapter.platformName,
             showId,
             showTitle,
             seasonNum: meta?.seasonNum,

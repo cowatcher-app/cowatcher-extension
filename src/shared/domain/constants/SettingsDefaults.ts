@@ -97,8 +97,8 @@ export interface ExtensionSettings {
     frictionUnlockDifficulty: FrictionUnlockDifficulty;
     frictionAutoResumeOnTimer: boolean;
     frictionEnableLlmAdvice: boolean;
-    frictionExcludedPlatforms: string[];
-    frictionPlatformRules: Record<string, FrictionPlatformRule>;
+    frictionExcludedPlatforms: StreamingPlatformId[];
+    frictionPlatformRules: Partial<Record<StreamingPlatformId, FrictionPlatformRule>>;
     frictionLockUntil: number;
 }
 
@@ -108,6 +108,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
         [STREAMING_PLATFORMS.NETFLIX]: true,
         [STREAMING_PLATFORMS.TVER]: true,
         [STREAMING_PLATFORMS.YOUTUBE]: true,
+        [STREAMING_PLATFORMS.BILIBILI]: true,
     },
     uiLanguage: 'en',
     ollamaHost: 'http://localhost:11434',

@@ -13,6 +13,7 @@ import { StreamingAdapterRegistry } from './domain/adapters/StreamingAdapterRegi
 import { NetflixContentAdapter } from './infrastructure/adapters/netflix/NetflixContentAdapter';
 import { TVerContentAdapter } from './infrastructure/adapters/tver/TVerContentAdapter';
 import { YouTubeContentAdapter } from './infrastructure/adapters/youtube/YouTubeContentAdapter';
+import { BilibiliContentAdapter } from './infrastructure/adapters/bilibili/BilibiliContentAdapter';
 import { ContentMessageService } from './application/services/ContentMessageService';
 import { SubtitleParser } from './application/utils/parser';
 import { BrowserPlatformFactory } from '@shared/infrastructure/platform/BrowserPlatformFactory';
@@ -68,6 +69,7 @@ const logger: Logger = new Logger('content');
     StreamingAdapterRegistry.register(new NetflixContentAdapter());
     StreamingAdapterRegistry.register(new TVerContentAdapter());
     StreamingAdapterRegistry.register(new YouTubeContentAdapter());
+    StreamingAdapterRegistry.register(new BilibiliContentAdapter());
 
     const adapter =
         StreamingAdapterRegistry.getMatchingAdapter() ||
