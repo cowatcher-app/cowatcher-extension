@@ -7,7 +7,7 @@
 
 我们支持:
 
-- [x] Netflix, TVer，YouTube, Bilibili, itvx，多平台支持
+- [x] Netflix, TVer，YouTube, Bilibili, itvx, channel 4，多平台支持
 - [x] Google Translate，Ollama，OpenRouter，多种翻译方案
 - [x] 平台提供的双语字幕展示
 - [x] YouTube自动生成字幕自动合并为正常字幕

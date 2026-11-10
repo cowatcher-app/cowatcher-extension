@@ -7,7 +7,7 @@ English Documentation | [简体中文文档](README_zh.md) | [📖 Detailed Popu
 
 We support:
 
-- [x] Support multiple platforms, Netflix & TVer & YouTube & Bilibili & itvx
+- [x] Support multiple platforms, Netflix & TVer & YouTube & Bilibili & itvx & channel 4
 - [x] Subtitle translation with Google Translate, Ollama, and OpenRouter.
 - [x] Official bilingual subtitle display from supported platforms
 - [x] Support YouTube ASR(automatically generated) subtitles merging into ordinary subtitles.
