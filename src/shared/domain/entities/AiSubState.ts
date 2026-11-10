@@ -26,6 +26,7 @@ export class AiSubState {
             [STREAMING_PLATFORMS.TVER]: props.enabled,
             [STREAMING_PLATFORMS.YOUTUBE]: props.enabled,
             [STREAMING_PLATFORMS.BILIBILI]: props.enabled,
+            [STREAMING_PLATFORMS.ITVX]: props.enabled,
         };
         this.targetLanguage = props.targetLanguage;
         this.displayMode = props.displayMode ?? 'bilingual';
@@ -41,6 +42,7 @@ export class AiSubState {
                 [STREAMING_PLATFORMS.TVER]: true,
                 [STREAMING_PLATFORMS.YOUTUBE]: true,
                 [STREAMING_PLATFORMS.BILIBILI]: true,
+                [STREAMING_PLATFORMS.ITVX]: true,
             },
             targetLanguage: Language.DEFAULT,
             displayMode: 'bilingual',
@@ -79,6 +81,7 @@ export class AiSubState {
                 [STREAMING_PLATFORMS.TVER]: enabled,
                 [STREAMING_PLATFORMS.YOUTUBE]: enabled,
                 [STREAMING_PLATFORMS.BILIBILI]: enabled,
+                [STREAMING_PLATFORMS.ITVX]: enabled,
             },
             updatedAt: Date.now(),
         });

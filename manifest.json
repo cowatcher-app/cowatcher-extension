@@ -50,7 +50,8 @@
         "*://*.netflix.com/*",
         "*://*.tver.jp/*",
         "*://*.youtube.com/*",
-        "*://*.bilibili.com/*"
+        "*://*.bilibili.com/*",
+        "*://*.itv.com/*"
       ],
       "js": [
         "injected/injected.js"
@@ -63,7 +64,8 @@
         "*://*.netflix.com/*",
         "*://*.tver.jp/*",
         "*://*.youtube.com/*",
-        "*://*.bilibili.com/*"
+        "*://*.bilibili.com/*",
+        "*://*.itv.com/*"
       ],
       "js": [
         "content/content.js"
@@ -87,7 +89,9 @@
         "*://*.youtube.com/*",
         "*://youtube.com/*",
         "*://*.bilibili.com/*",
-        "*://bilibili.com/*"
+        "*://bilibili.com/*",
+        "*://*.itv.com/*",
+        "*://itv.com/*"
       ]
     }
   ]

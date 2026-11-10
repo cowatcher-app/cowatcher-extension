@@ -375,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (url.includes('tver.jp')) return STREAMING_PLATFORMS.TVER;
         if (url.includes('youtube.com')) return STREAMING_PLATFORMS.YOUTUBE;
         if (url.includes('bilibili.com')) return STREAMING_PLATFORMS.BILIBILI;
+        if (url.includes('itv.com')) return STREAMING_PLATFORMS.ITVX;
         return null;
     }
 

@@ -3,6 +3,7 @@ export const STREAMING_PLATFORMS = {
     TVER: 'tver',
     YOUTUBE: 'youtube',
     BILIBILI: 'bilibili',
+    ITVX: 'itvx',
 } as const;
 
 export type StreamingPlatformId =

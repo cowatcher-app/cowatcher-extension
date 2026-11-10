@@ -109,6 +109,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
         [STREAMING_PLATFORMS.TVER]: true,
         [STREAMING_PLATFORMS.YOUTUBE]: true,
         [STREAMING_PLATFORMS.BILIBILI]: true,
+        [STREAMING_PLATFORMS.ITVX]: true,
     },
     uiLanguage: 'en',
     ollamaHost: 'http://localhost:11434',

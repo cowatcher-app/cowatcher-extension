@@ -8,6 +8,7 @@ import { NetflixInjectedAdapter } from './infrastructure/adapters/netflix/Netfli
 import { TVerInjectedAdapter } from './infrastructure/adapters/tver/TVerInjectedAdapter';
 import { YouTubeInjectedAdapter } from './infrastructure/adapters/youtube/YouTubeInjectedAdapter';
 import { BilibiliInjectedAdapter } from './infrastructure/adapters/bilibili/BilibiliInjectedAdapter';
+import { ItvxInjectedAdapter } from './infrastructure/adapters/itvx/ItvxInjectedAdapter';
 
 declare global {
     interface Window {
@@ -38,6 +39,7 @@ const logger = new Logger('injected');
     InjectedAdapterRegistry.register(new TVerInjectedAdapter());
     InjectedAdapterRegistry.register(new YouTubeInjectedAdapter());
     InjectedAdapterRegistry.register(new BilibiliInjectedAdapter());
+    InjectedAdapterRegistry.register(new ItvxInjectedAdapter());
     // Future platforms:
     // InjectedAdapterRegistry.register(new DisneyInjectedAdapter());
 
