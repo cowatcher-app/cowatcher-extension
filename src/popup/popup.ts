@@ -376,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (url.includes('youtube.com')) return STREAMING_PLATFORMS.YOUTUBE;
         if (url.includes('bilibili.com')) return STREAMING_PLATFORMS.BILIBILI;
         if (url.includes('itv.com')) return STREAMING_PLATFORMS.ITVX;
+        if (url.includes('channel4.com')) return STREAMING_PLATFORMS.CHANNEL4;
         return null;
     }
 

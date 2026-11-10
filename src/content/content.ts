@@ -15,6 +15,7 @@ import { TVerContentAdapter } from './infrastructure/adapters/tver/TVerContentAd
 import { YouTubeContentAdapter } from './infrastructure/adapters/youtube/YouTubeContentAdapter';
 import { BilibiliContentAdapter } from './infrastructure/adapters/bilibili/BilibiliContentAdapter';
 import { ItvxContentAdapter } from './infrastructure/adapters/itvx/ItvxContentAdapter';
+import { Channel4ContentAdapter } from './infrastructure/adapters/channel4/Channel4ContentAdapter';
 import { ContentMessageService } from './application/services/ContentMessageService';
 import { SubtitleParser } from './application/utils/parser';
 import { BrowserPlatformFactory } from '@shared/infrastructure/platform/BrowserPlatformFactory';
@@ -72,6 +73,7 @@ const logger: Logger = new Logger('content');
     StreamingAdapterRegistry.register(new YouTubeContentAdapter());
     StreamingAdapterRegistry.register(new BilibiliContentAdapter());
     StreamingAdapterRegistry.register(new ItvxContentAdapter());
+    StreamingAdapterRegistry.register(new Channel4ContentAdapter());
 
     const adapter =
         StreamingAdapterRegistry.getMatchingAdapter() ||

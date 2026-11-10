@@ -4,6 +4,7 @@ export const STREAMING_PLATFORMS = {
     YOUTUBE: 'youtube',
     BILIBILI: 'bilibili',
     ITVX: 'itvx',
+    CHANNEL4: 'channel4',
 } as const;
 
 export type StreamingPlatformId =
