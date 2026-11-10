@@ -49,7 +49,8 @@
       "matches": [
         "*://*.netflix.com/*",
         "*://*.tver.jp/*",
-        "*://*.youtube.com/*"
+        "*://*.youtube.com/*",
+        "*://*.bilibili.com/*"
       ],
       "js": [
         "injected/injected.js"
@@ -61,7 +62,8 @@
       "matches": [
         "*://*.netflix.com/*",
         "*://*.tver.jp/*",
-        "*://*.youtube.com/*"
+        "*://*.youtube.com/*",
+        "*://*.bilibili.com/*"
       ],
       "js": [
         "content/content.js"
@@ -83,7 +85,9 @@
         "*://*.tver.jp/*",
         "*://tver.jp/*",
         "*://*.youtube.com/*",
-        "*://youtube.com/*"
+        "*://youtube.com/*",
+        "*://*.bilibili.com/*",
+        "*://bilibili.com/*"
       ]
     }
   ]
