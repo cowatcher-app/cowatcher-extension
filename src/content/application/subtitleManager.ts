@@ -595,6 +595,18 @@ export class SubtitleManager {
         this.syncer.onSeeked();
     }
 
+    repeatCurrentCue(): boolean {
+        return this.syncer.repeatCurrentCue();
+    }
+
+    seekPreviousCue(): boolean {
+        return this.syncer.seekPreviousCue();
+    }
+
+    seekNextCue(): boolean {
+        return this.syncer.seekNextCue();
+    }
+
     private handleSeeked(effectiveTime: number): void {
         if (this.asrMerger.isAsrTrack) {
             this.checkAsrMergePipeline(effectiveTime);

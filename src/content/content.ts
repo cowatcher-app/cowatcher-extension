@@ -703,7 +703,8 @@ const logger: Logger = new Logger('content');
             activeEl &&
             (activeEl.tagName === 'INPUT' ||
                 activeEl.tagName === 'TEXTAREA' ||
-                (activeEl as HTMLElement).isContentEditable)
+                (activeEl as HTMLElement).isContentEditable ||
+                activeEl.getAttribute('role') === 'textbox')
         ) {
             return;
         }
@@ -732,6 +733,48 @@ const logger: Logger = new Logger('content');
         ) {
             e.preventDefault();
             await resetSubtitleOffset();
+        } else if (
+            ((e.key === 's' || e.key === 'S') ||
+                (e.altKey &&
+                    (e.key === 'ArrowDown' || e.code === 'ArrowDown'))) &&
+            !e.ctrlKey &&
+            !e.metaKey
+        ) {
+            const success = subtitleManager.repeatCurrentCue();
+            if (success) {
+                e.preventDefault();
+                showToast(
+                    NCW_I18N.getText('toastRepeatCue', settings.uiLanguage),
+                );
+            }
+        } else if (
+            ((e.key === 'a' || e.key === 'A') ||
+                (e.altKey &&
+                    (e.key === 'ArrowLeft' || e.code === 'ArrowLeft'))) &&
+            !e.ctrlKey &&
+            !e.metaKey
+        ) {
+            const success = subtitleManager.seekPreviousCue();
+            if (success) {
+                e.preventDefault();
+                showToast(
+                    NCW_I18N.getText('toastPrevCue', settings.uiLanguage),
+                );
+            }
+        } else if (
+            ((e.key === 'd' || e.key === 'D') ||
+                (e.altKey &&
+                    (e.key === 'ArrowRight' || e.code === 'ArrowRight'))) &&
+            !e.ctrlKey &&
+            !e.metaKey
+        ) {
+            const success = subtitleManager.seekNextCue();
+            if (success) {
+                e.preventDefault();
+                showToast(
+                    NCW_I18N.getText('toastNextCue', settings.uiLanguage),
+                );
+            }
         }
     });
 

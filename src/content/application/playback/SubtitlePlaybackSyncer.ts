@@ -249,11 +249,8 @@ export class SubtitlePlaybackSyncer {
         return rawTime;
     }
 
-    getEffectiveTime(): number {
-        if (!this.video) return 0;
-        const contentTime = this.getContentTime();
+    getTotalOffset(): number {
         this.syncCadmiumOffsetFromDOM();
-
         const validCadmium =
             Math.abs(this.cadmiumOffset) <= 180 ? this.cadmiumOffset : 0;
         const settings = this.getSettings();
@@ -266,11 +263,13 @@ export class SubtitlePlaybackSyncer {
                 ? settings.subSyncOffset
                 : this.manualOffset || 0;
         this.manualOffset = manualOffset;
+        return validCadmium + domOffset + manualOffset;
+    }
 
-        return Math.max(
-            0,
-            contentTime + validCadmium + domOffset + manualOffset,
-        );
+    getEffectiveTime(): number {
+        if (!this.video) return 0;
+        const contentTime = this.getContentTime();
+        return Math.max(0, contentTime + this.getTotalOffset());
     }
 
     private syncCadmiumOffsetFromDOM(): void {
@@ -490,6 +489,104 @@ export class SubtitlePlaybackSyncer {
             if (cues[i].endTime >= time) return i;
         }
         return Math.max(0, cues.length - 1);
+    }
+
+    getCurrentCueIndex(): number {
+        const cues = this.delegate.getCues();
+        if (!cues || cues.length === 0) return -1;
+        const time = this.getEffectiveTime();
+
+        // 1. Is playback within any active cue?
+        for (let i = 0; i < cues.length; i++) {
+            if (time >= cues[i].startTime && time <= cues[i].endTime) {
+                return i;
+            }
+        }
+
+        // 2. Is playback in gap between cues?
+        for (let i = 0; i < cues.length; i++) {
+            if (cues[i].startTime > time) {
+                // If previous cue ended recently (<= 2.0s), prioritize it
+                if (i > 0 && time - cues[i - 1].endTime <= 2.0) {
+                    return i - 1;
+                }
+                return i;
+            }
+        }
+
+        // 3. Past the last cue: if ended within 2.5s, prioritize last cue
+        const lastIdx = cues.length - 1;
+        if (time - cues[lastIdx].endTime <= 2.5) {
+            return lastIdx;
+        }
+
+        return lastIdx;
+    }
+
+    seekToCue(index: number, autoPlay = false): boolean {
+        const cues = this.delegate.getCues();
+        if (!cues || index < 0 || index >= cues.length) return false;
+
+        let video = this.video;
+        if (
+            !video ||
+            (typeof document !== 'undefined' &&
+                document.body &&
+                !document.body.contains(video))
+        ) {
+            const candidate =
+                typeof document !== 'undefined'
+                    ? document.querySelector('video')
+                    : null;
+            if (candidate) {
+                this.attachVideo(candidate);
+                video = candidate;
+            }
+        }
+        if (!video) return false;
+
+        const targetCue = cues[index];
+        const preRoll = 0.12; // 120ms audio pre-roll
+        const totalOffset = this.getTotalOffset();
+        const targetVideoTime = Math.max(
+            0,
+            targetCue.startTime - preRoll - totalOffset,
+        );
+
+        const wasPaused = video.paused;
+        video.currentTime = targetVideoTime;
+        if (autoPlay || !wasPaused) {
+            video.play().catch(() => {});
+        }
+        return true;
+    }
+
+    repeatCurrentCue(): boolean {
+        const idx = this.getCurrentCueIndex();
+        if (idx === -1) return false;
+        return this.seekToCue(idx, true);
+    }
+
+    seekPreviousCue(): boolean {
+        const cues = this.delegate.getCues();
+        if (!cues || cues.length === 0) return false;
+
+        const currentIdx = this.getCurrentCueIndex();
+        if (currentIdx === -1) return false;
+
+        const prevIdx = Math.max(0, currentIdx - 1);
+        return this.seekToCue(prevIdx, false);
+    }
+
+    seekNextCue(): boolean {
+        const cues = this.delegate.getCues();
+        if (!cues || cues.length === 0) return false;
+
+        const currentIdx = this.getCurrentCueIndex();
+        if (currentIdx === -1) return false;
+
+        const nextIdx = Math.min(cues.length - 1, currentIdx + 1);
+        return this.seekToCue(nextIdx, false);
     }
 
     onTick(): void {

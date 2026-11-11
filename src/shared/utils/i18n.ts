@@ -202,6 +202,9 @@ const NCW_I18N = {
             toastEnabled: '✓ AI Subtitles Enabled',
             toastDisabled: '✕ AI Subtitles Disabled (Alt+T)',
             toastSyncOffset: '⏱ Subtitle Offset: {offset}s',
+            toastRepeatCue: '↺ Replay Sentence (S)',
+            toastPrevCue: '⏮ Previous Sentence (A)',
+            toastNextCue: '⏭ Next Sentence (D)',
             btnPlayerTitle:
                 'CoWatcher AI Subtitles (Click to toggle / Shortcut: Alt+T)',
             btnPlayerOn: 'Sub ON',
@@ -647,6 +650,9 @@ const NCW_I18N = {
             toastEnabled: '✓ AI 双语字幕已开启',
             toastDisabled: '✕ AI 双语字幕已关闭 (Alt+T)',
             toastSyncOffset: '⏱ 字幕时间轴偏移: {offset}s',
+            toastRepeatCue: '↺ 重播当前句 (S)',
+            toastPrevCue: '⏮ 上一句 (A)',
+            toastNextCue: '⏭ 下一句 (D)',
             btnPlayerTitle:
                 'CoWatcher AI 双语字幕翻译 (点击切换 / 快捷键: Alt+T)',
             btnPlayerOn: '字幕 开',
@@ -1092,6 +1098,9 @@ const NCW_I18N = {
             toastEnabled: '✓ AI 字幕を有効にしました',
             toastDisabled: '✕ AI 字幕を無効にしました (Alt+T)',
             toastSyncOffset: '⏱ 字幕オフセット: {offset}秒',
+            toastRepeatCue: '↺ 現在の字幕をリピート (S)',
+            toastPrevCue: '⏮ 前の字幕 (A)',
+            toastNextCue: '⏭ 次の字幕 (D)',
             btnPlayerTitle:
                 'CoWatcher AI 字幕翻訳 (クリックで切替 / ショートカット: Alt+T)',
             btnPlayerOn: '字幕 ON',
@@ -1539,6 +1548,9 @@ const NCW_I18N = {
             toastEnabled: '✓ AI 자막 활성화됨',
             toastDisabled: '✕ AI 자막 비활성화됨 (Alt+T)',
             toastSyncOffset: '⏱ 자막 오프셋: {offset}초',
+            toastRepeatCue: '↺ 현재 자막 반복 (S)',
+            toastPrevCue: '⏮ 이전 자막 (A)',
+            toastNextCue: '⏭ 다음 자막 (D)',
             btnPlayerTitle:
                 'CoWatcher AI 자막 번역 (클릭하여 전환 / 단축키: Alt+T)',
             btnPlayerOn: '자막 ON',
