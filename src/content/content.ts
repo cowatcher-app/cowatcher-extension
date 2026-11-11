@@ -9,6 +9,7 @@ import { SubtitleOverlay } from './presentation/SubtitleOverlay';
 import { SubtitleManager, CueItem } from './application/subtitleManager';
 import { createSubtitleCue } from '@shared/domain/entities/Subtitle';
 import { NetflixAdDetector as AdDetector } from './infrastructure/adapters/netflix/NetflixAdDetector';
+import { IStreamingAdapter } from './domain/adapters/IStreamingAdapter';
 import { StreamingAdapterRegistry } from './domain/adapters/StreamingAdapterRegistry';
 import { NetflixContentAdapter } from './infrastructure/adapters/netflix/NetflixContentAdapter';
 import { TVerContentAdapter } from './infrastructure/adapters/tver/TVerContentAdapter';
@@ -75,7 +76,7 @@ const logger: Logger = new Logger('content');
     StreamingAdapterRegistry.register(new ItvxContentAdapter());
     StreamingAdapterRegistry.register(new Channel4ContentAdapter());
 
-    const adapter =
+    const adapter: IStreamingAdapter =
         StreamingAdapterRegistry.getMatchingAdapter() ||
         new NetflixContentAdapter();
     const messageService = ContentMessageService.getInstance();
@@ -968,6 +969,42 @@ const logger: Logger = new Logger('content');
             );
             lastParsedCues = null;
             subtitleManager.clearCues();
+        });
+    }
+
+    if (typeof adapter.onSubtitleUpdated === 'function') {
+        adapter.onSubtitleUpdated(async (movieId?: string) => {
+            const targetMid = movieId || currentVideoId || '';
+            if (movieId && currentVideoId && movieId !== currentVideoId) {
+                return;
+            }
+            logger.info(
+                'Content',
+                `Received SUBTITLE_UPDATED for ${targetMid}. Pulling via fetchSubttile...`,
+            );
+            const res = await adapter.fetchSubttile(targetMid);
+            if (res && res.rawText) {
+                const parsedCues = adapter.parseSubtitle(res.rawText);
+                if (parsedCues && parsedCues.length > 0) {
+                    const mapped: CueItem[] = parsedCues.map((c) =>
+                        createSubtitleCue({
+                            id: c.id,
+                            startTime: c.start,
+                            endTime: c.end,
+                            rawText: c.text,
+                            position: c.position,
+                        }),
+                    );
+                    lastParsedCues = mapped;
+                    const meta = subtitleManager.videoInfo;
+                    subtitleManager.updateCues(
+                        mapped,
+                        targetMid,
+                        res.bcp,
+                        meta?.isLive,
+                    );
+                }
+            }
         });
     }
 

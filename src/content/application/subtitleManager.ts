@@ -50,6 +50,7 @@ export class SubtitleManager {
     readonly pipeline: SubtitlePipelineCoordinator;
 
     currentRawLanguage = '';
+    private isLiveStream = false;
     private warmupTimer: ReturnType<typeof setTimeout> | null = null;
     private unsubscribeGlossary?: () => void;
     private unsubscribeCuesStale?: () => void;
@@ -160,6 +161,11 @@ export class SubtitleManager {
                 onPipelineTick: (t) => this.checkPipeline(t),
                 onSeeked: (t) => this.handleSeeked(t),
                 getCurrentMovieId: () => this.contextManager.currentMovieId,
+                isLive: () =>
+                    Boolean(
+                        this.contextManager.videoInfo?.isLive ||
+                        this.isLiveStream,
+                    ),
                 onVideoAttached: (v) => {
                     this.historyTracker?.attachVideo(v);
                     this.frictionManager?.attachVideo(v);
@@ -401,6 +407,51 @@ export class SubtitleManager {
         this.postLoadCues(epoch, shouldMergeAsr);
     }
 
+    updateCues(
+        cues: CueItem[],
+        movieId: string | number | null = null,
+        language?: string,
+        isLive?: boolean,
+    ): void {
+        if (!cues || cues.length === 0) return;
+        if (language && !this.currentRawLanguage) {
+            this.currentRawLanguage = language;
+            this.learningManager?.setSourceLanguage(language);
+        }
+
+        if (isLive !== undefined) {
+            this.isLiveStream = Boolean(isLive);
+            this.syncer.setIsLive(this.isLiveStream);
+        } else if (this.contextManager.latestMetadata?.isLive !== undefined) {
+            this.isLiveStream = Boolean(this.contextManager.latestMetadata.isLive);
+            this.syncer.setIsLive(this.isLiveStream);
+        }
+
+        const incomingMovieId = movieId ? String(movieId) : null;
+        if (incomingMovieId && !this.contextManager.currentMovieId) {
+            this.contextManager.currentMovieId = incomingMovieId;
+        }
+
+        // If store has no cues yet, fall back to initial loadCues
+        if (this.store.cues.length === 0) {
+            this.loadCues(cues, movieId, false, language);
+            return;
+        }
+
+        const added = this.store.updateCues(cues);
+        if (added.length === 0) return;
+
+        this.logger.info(
+            'SubtitleManager',
+            `Appended ${added.length} incremental cues (total: ${this.store.cues.length}, isLive: ${this.isLiveStream})`,
+        );
+
+        this.syncer.hasLoggedEndOfCues = false;
+        this.onTick();
+        const effectiveTime = this.getEffectiveTime();
+        this.pipeline.checkPipeline(effectiveTime);
+    }
+
     private postLoadCues(epoch: number, shouldMergeAsr: boolean): void {
         if (this.settings.enabled === false) {
             this.overlay.hide(true);
@@ -503,6 +554,10 @@ export class SubtitleManager {
 
     onMetadataLoaded(meta: VideoMetadata): void {
         this.contextManager.onMetadataLoaded(meta);
+        if (meta.isLive !== undefined) {
+            this.isLiveStream = Boolean(meta.isLive);
+            this.syncer.setIsLive(this.isLiveStream);
+        }
         if (this.historyTracker) {
             this.historyTracker.onMetadataLoaded(meta);
         }

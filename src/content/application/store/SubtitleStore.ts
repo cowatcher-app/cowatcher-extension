@@ -162,6 +162,32 @@ export class SubtitleStore {
         this.clearTranslations();
     }
 
+    updateCues(newCues: SubtitleCue[]): SubtitleCue[] {
+        const existingSignatures = new Set(
+            this.cues.map(
+                (c) => `${c.startTime.toFixed(3)}_${c.rawText.trim()}`,
+            ),
+        );
+        const added: SubtitleCue[] = [];
+        for (const cue of newCues) {
+            const sig = `${cue.startTime.toFixed(3)}_${cue.rawText.trim()}`;
+            if (!existingSignatures.has(sig)) {
+                existingSignatures.add(sig);
+                cue.id = this.cues.length;
+                this.cues.push(cue);
+                added.push(cue);
+            }
+        }
+        if (added.length > 0) {
+            this.cues.sort((a, b) => a.startTime - b.startTime);
+            this.logger.info(
+                'SubtitleStore',
+                `Incremental cues updated: added ${added.length} cues, total: ${this.cues.length}`,
+            );
+        }
+        return added;
+    }
+
     addMergedCues(newCues: SubtitleCue[]): void {
         const existingIds = new Set(this.cues.map((c) => c.id));
         const toAdd = newCues.filter((c) => !existingIds.has(c.id));

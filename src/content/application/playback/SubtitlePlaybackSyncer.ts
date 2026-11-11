@@ -16,6 +16,7 @@ export interface SubtitlePlaybackDelegate {
     onPipelineTick(effectiveTime: number): void;
     onSeeked(effectiveTime: number): void;
     getCurrentMovieId?(): string | null;
+    isLive?(): boolean;
     onVideoAttached?(video: HTMLVideoElement): void;
     onVideoDetached?(): void;
 }
@@ -40,9 +41,17 @@ export class SubtitlePlaybackSyncer {
     manualOffset = 0;
     lastNativeCalibAt = 0;
     hasLoggedEndOfCues = false;
+    isLiveMode = false;
 
     activeCueId: number | null = null;
     lastCueSig = '';
+
+    setIsLive(live: boolean): void {
+        this.isLiveMode = live;
+        if (live) {
+            this.hasLoggedEndOfCues = false;
+        }
+    }
 
     constructor(
         private readonly overlay: SubtitleOverlay,
@@ -299,6 +308,7 @@ export class SubtitlePlaybackSyncer {
         this.domOffset = 0;
         this.lastNativeCalibAt = 0;
         this.hasLoggedEndOfCues = false;
+        this.isLiveMode = false;
         this.overlay.hide(true);
     }
 
@@ -602,6 +612,10 @@ export class SubtitlePlaybackSyncer {
         cues: SubtitleCue[],
         effectiveTime: number,
     ): void {
+        if (this.isLiveMode || this.delegate.isLive?.()) {
+            this.hasLoggedEndOfCues = false;
+            return;
+        }
         const lastCue = cues[cues.length - 1];
         if (lastCue && effectiveTime > lastCue.endTime) {
             if (!this.hasLoggedEndOfCues) {

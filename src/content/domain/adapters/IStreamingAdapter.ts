@@ -17,6 +17,7 @@ export interface VideoMetadata {
     episodeSummary?: string;
     seasonNum?: number;
     episodeNum?: number;
+    isLive?: boolean;
 }
 
 import { StreamingPlatformId } from '@shared/domain/constants/StreamingPlatforms';
@@ -53,7 +54,7 @@ export { NCW_DATASET_SYNC_KEY, PlaybackDatasetHelper };
  * 3. Identity & Metadata Extraction:
  *    - Match supported platform URLs (`matches`).
  *    - Extract current video / show identifiers (`extractVideoId`).
- *    - Supply structured metadata (`getVideoInfo`): showId, videoId, titles, synopses, season/episode numbers
+ *    - Query structured metadata (`queryMetadata`): showId, videoId, titles, synopses, season/episode numbers
  *      for AI context warmup and glossary tracking.
  *
  * 4. Injected Script Bridging & Subtitle Parsing:
@@ -229,6 +230,11 @@ export interface IStreamingAdapter {
      * Listen for subtitle track being turned OFF / disabled on the streaming platform
      */
     onSubtitleOff?(callback: (movieId: string) => void): () => void;
+
+    /**
+     * Listen for subtitle track incremental updates (e.g. in live streams)
+     */
+    onSubtitleUpdated?(callback: (movieId?: string) => void): () => void;
 
     /**
      * Cleanup observers and event hooks

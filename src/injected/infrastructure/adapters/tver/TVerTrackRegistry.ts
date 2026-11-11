@@ -84,6 +84,136 @@ export class TVerTrackRegistry {
         return out.length > 20 ? out : null;
     }
 
+    static parseVttTime(str: string): number {
+        str = str.replace(',', '.').trim();
+        const parts = str.split(':');
+        let h = 0, m = 0, s = 0;
+        if (parts.length === 3) {
+            h = parseFloat(parts[0]);
+            m = parseFloat(parts[1]);
+            s = parseFloat(parts[2]);
+        } else if (parts.length === 2) {
+            m = parseFloat(parts[0]);
+            s = parseFloat(parts[1]);
+        }
+        return h * 3600 + m * 60 + s;
+    }
+
+    static parseVttToCues(vtt: string): Array<{ start: number; end: number; text: string }> {
+        const cues: Array<{ start: number; end: number; text: string }> = [];
+        if (!vtt) return cues;
+
+        const lines = vtt.split(/\r?\n/);
+        const timeRegex = /((?:\d{2}:)?\d{2}:\d{2}[.,]\d{3})\s*-->\s*((?:\d{2}:)?\d{2}:\d{2}[.,]\d{3})/;
+
+        let i = 0;
+        while (i < lines.length) {
+            const line = lines[i].trim();
+            const match = line.match(timeRegex);
+            if (match) {
+                const start = TVerTrackRegistry.parseVttTime(match[1]);
+                const end = TVerTrackRegistry.parseVttTime(match[2]);
+                i++;
+                const textLines: string[] = [];
+                while (i < lines.length && lines[i].trim() !== '') {
+                    textLines.push(lines[i].trim());
+                    i++;
+                }
+                const text = textLines.join('\n').trim();
+                if (text && end > start) {
+                    cues.push({ start, end, text });
+                }
+            } else {
+                i++;
+            }
+        }
+        return cues;
+    }
+
+    static mergeWebVTT(
+        existingVtt: string,
+        newVtt: string,
+    ): { mergedVtt: string; hasNewCues: boolean } {
+        if (!existingVtt || existingVtt.length < 10) {
+            return { mergedVtt: newVtt, hasNewCues: true };
+        }
+        if (!newVtt || newVtt.length < 10) {
+            return { mergedVtt: existingVtt, hasNewCues: false };
+        }
+
+        const existingCues = TVerTrackRegistry.parseVttToCues(existingVtt);
+        const incomingCues = TVerTrackRegistry.parseVttToCues(newVtt);
+
+        const existingKeys = new Set(
+            existingCues.map((c) => `${c.start.toFixed(3)}_${c.text}`),
+        );
+
+        let hasNewCues = false;
+        for (const cue of incomingCues) {
+            const key = `${cue.start.toFixed(3)}_${cue.text}`;
+            if (!existingKeys.has(key)) {
+                existingKeys.add(key);
+                existingCues.push(cue);
+                hasNewCues = true;
+            }
+        }
+
+        if (!hasNewCues) {
+            return { mergedVtt: existingVtt, hasNewCues: false };
+        }
+
+        existingCues.sort((a, b) => a.start - b.start);
+
+        let out = 'WEBVTT\n\n';
+        for (let i = 0; i < existingCues.length; i++) {
+            const cue = existingCues[i];
+            const start = TVerTrackRegistry.formatVttTime(cue.start);
+            const end = TVerTrackRegistry.formatVttTime(cue.end);
+            out += `${i + 1}\n${start} --> ${end}\n${cue.text}\n\n`;
+        }
+
+        return { mergedVtt: out, hasNewCues: true };
+    }
+
+    mergeOrRegisterTrack(
+        episodeId: string,
+        lang: string,
+        data: Omit<TVerTrackDetail, 'episodeId' | 'lang'>,
+    ): { detail: TVerTrackDetail; hasNewCues: boolean } {
+        const normalizedLang = (lang || 'ja').toLowerCase();
+        const existing = this.getCachedTrack(episodeId, normalizedLang);
+        if (existing && existing.rawText) {
+            const { mergedVtt, hasNewCues } = TVerTrackRegistry.mergeWebVTT(
+                existing.rawText,
+                data.rawText,
+            );
+            const updated: TVerTrackDetail = {
+                ...existing,
+                rawText: mergedVtt,
+                interceptedAt: Date.now(),
+            };
+            let langMap = this.knownTracks.get(episodeId);
+            if (!langMap) {
+                langMap = new Map();
+                this.knownTracks.set(episodeId, langMap);
+            }
+            langMap.set(normalizedLang, updated);
+            if (updated.url) {
+                this.urlToKnownTrackIndex.set(updated.url, updated);
+            }
+            if (hasNewCues) {
+                this.logger.info(
+                    'TVer-AI-Sub',
+                    `Accumulated new cues for ep ${episodeId} (${normalizedLang}): total len=${mergedVtt.length}`,
+                );
+            }
+            return { detail: updated, hasNewCues };
+        }
+
+        const detail = this.registerKnownTrack(episodeId, normalizedLang, data);
+        return { detail, hasNewCues: true };
+    }
+
     addInterceptedTrack(
         url: string,
         rawText: string,
@@ -91,17 +221,6 @@ export class TVerTrackRegistry {
         lang = 'ja',
     ): TVerTrackDetail | null {
         if (!rawText || rawText.length < 20) return null;
-
-        const existing = this.urlToKnownTrackIndex.get(url);
-        if (existing) {
-            const updated: TVerTrackDetail = {
-                ...existing,
-                rawText,
-                interceptedAt: Date.now(),
-            };
-            this.registerKnownTrack(existing.episodeId, existing.lang, updated);
-            return updated;
-        }
 
         const episodeId = this.extractEpisodeIdFromUrl(url) || activeEpisodeId;
         if (!episodeId) {
@@ -117,7 +236,7 @@ export class TVerTrackRegistry {
             return null;
         }
 
-        const detail = this.registerKnownTrack(episodeId, lang, {
+        const { detail } = this.mergeOrRegisterTrack(episodeId, lang, {
             trackId: url,
             url,
             rawText,
@@ -243,11 +362,11 @@ export class TVerTrackRegistry {
         return undefined;
     }
 
-    private async extractFromPlayerTracks(
+    async extractOrUpdateFromPlayerTracks(
         episodeId: string,
         player: TVerStreaksPlayer | null,
         video: HTMLVideoElement | null,
-    ): Promise<TVerTrackDetail | null> {
+    ): Promise<{ detail: TVerTrackDetail | null; hasNewCues: boolean }> {
         try {
             const rawTrackList = (
                 player && typeof player.textTracks === 'function'
@@ -255,10 +374,10 @@ export class TVerTrackRegistry {
                     : video && video.textTracks ? video.textTracks : null
             ) as ArrayLike<TVerTextTrackLike> | null;
 
-            if (!rawTrackList) return null;
+            if (!rawTrackList) return { detail: null, hasNewCues: false };
 
             const length = typeof rawTrackList.length === 'number' ? rawTrackList.length : 0;
-            if (length === 0) return null;
+            if (length === 0) return { detail: null, hasNewCues: false };
 
             const tracks: TVerTextTrackLike[] = [];
             for (let i = 0; i < length; i++) {
@@ -279,7 +398,7 @@ export class TVerTrackRegistry {
                     if (vtt && vtt.length > 20) {
                         const trackLang = track.language || 'ja';
                         const trackId = `track_${track.label || trackLang}`;
-                        return this.registerKnownTrack(episodeId, trackLang, {
+                        return this.mergeOrRegisterTrack(episodeId, trackLang, {
                             trackId,
                             label: track.label,
                             kind: track.kind,
@@ -295,7 +414,7 @@ export class TVerTrackRegistry {
                             const text = await resp.text();
                             if (TVerTrackRegistry.isSubtitleContent(text)) {
                                 const trackLang = track.language || 'ja';
-                                return this.registerKnownTrack(episodeId, trackLang, {
+                                return this.mergeOrRegisterTrack(episodeId, trackLang, {
                                     trackId: track.src,
                                     label: track.label,
                                     kind: track.kind,
@@ -313,7 +432,16 @@ export class TVerTrackRegistry {
         } catch (err) {
             this.logger.warn('TVer-AI-Sub', 'Error extracting from player tracks:', err);
         }
-        return null;
+        return { detail: null, hasNewCues: false };
+    }
+
+    private async extractFromPlayerTracks(
+        episodeId: string,
+        player: TVerStreaksPlayer | null,
+        video: HTMLVideoElement | null,
+    ): Promise<TVerTrackDetail | null> {
+        const { detail } = await this.extractOrUpdateFromPlayerTracks(episodeId, player, video);
+        return detail;
     }
 
     private isConfirmedNoSubtitle(

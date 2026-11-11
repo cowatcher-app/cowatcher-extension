@@ -27,6 +27,7 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
     private lastObservedEpisodeId: string | null = null;
     private lastTrackState = '';
     private lastAdState = false;
+    private subtitleUpdateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     private lastReportedTime: number | null = null;
     private lastTimeUpdateSync = 0;
 
@@ -81,6 +82,10 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
         if (this.pollIntervalId) {
             clearInterval(this.pollIntervalId);
             this.pollIntervalId = null;
+        }
+        if (this.subtitleUpdateDebounceTimer) {
+            clearTimeout(this.subtitleUpdateDebounceTimer);
+            this.subtitleUpdateDebounceTimer = null;
         }
 
         this.cleanupMessageListener?.();
@@ -245,6 +250,7 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
                                     'ja',
                                 );
                                 if (detail) {
+                                    this.notifySubtitleUpdated(detail.episodeId);
                                     this.emitSubtitleData(rawUrl, text, false, detail.episodeId);
                                 }
                             }
@@ -299,6 +305,7 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
                             'ja',
                         );
                         if (detail) {
+                            this.notifySubtitleUpdated(detail.episodeId);
                             this.emitSubtitleData(rawUrl, text, false, detail.episodeId);
                         }
                     }
@@ -527,6 +534,9 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
                     isPaused,
                     playbackRate,
                 });
+                if (typeof document !== 'undefined' && document.documentElement) {
+                    document.documentElement.dataset.ncwIsLive = this.isLiveStream() ? 'true' : 'false';
+                }
 
                 // 2.2 Low-frequency event sync when time shifts significantly
                 if (
@@ -556,11 +566,44 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
             // Check text track changes
             this.checkTVerTextTracks();
 
-            // Attempt initial extraction if not yet cached
-            if (currentEpId && !this.trackRegistry.getCachedTrack(currentEpId)) {
+            // Attempt extraction if not yet cached or if live stream
+            if (currentEpId && (this.isLiveStream() || !this.trackRegistry.getCachedTrack(currentEpId))) {
                 this.tryExtractFromTextTracks();
             }
         } catch {}
+    }
+
+    private isLiveStream(): boolean {
+        const url = window.location.href;
+        if (url.includes('/live/') || url.includes('simul')) return true;
+        const video = this.getVideoElement();
+        if (video && (video.duration === Infinity || (video.duration > 0 && !isFinite(video.duration)))) return true;
+        const player = this.getTVerPlayer();
+        const adFields = player?.getMedia?.()?.adFields as Record<string, unknown> | undefined;
+        if (adFields && (adFields.c === 'simul' || adFields.type === 'live')) return true;
+        return false;
+    }
+
+    private notifySubtitleUpdated(movieId: string): void {
+        if (!movieId) return;
+        if (this.subtitleUpdateDebounceTimer) {
+            clearTimeout(this.subtitleUpdateDebounceTimer);
+        }
+        this.subtitleUpdateDebounceTimer = setTimeout(() => {
+            this.subtitleUpdateDebounceTimer = null;
+            this.logger.info(
+                'TVer-AI-Sub',
+                `Posting SUBTITLE_UPDATED for ${movieId}`,
+            );
+            window.postMessage(
+                {
+                    type: NCW_MESSAGE_TYPES.SUBTITLE_UPDATED,
+                    movieId,
+                    timestamp: Date.now(),
+                },
+                '*',
+            );
+        }, 300);
     }
 
     private checkTVerTextTracks(): void {
@@ -645,9 +688,12 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
         if (!currentEpId) return false;
 
         this.trackRegistry
-            .getTrack(currentEpId, 'ja', this.getTVerPlayer(), this.getVideoElement())
-            .then((detail) => {
+            .extractOrUpdateFromPlayerTracks(currentEpId, this.getTVerPlayer(), this.getVideoElement())
+            .then(({ detail, hasNewCues }) => {
                 if (detail && detail.rawText) {
+                    if (hasNewCues) {
+                        this.notifySubtitleUpdated(currentEpId);
+                    }
                     this.emitSubtitleData(
                         detail.url || 'streaksplayer-track',
                         detail.rawText,
@@ -750,6 +796,7 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
                             movieId: targetEpId,
                             showId: cachedMeta.showId || targetEpId,
                             showTitle: cachedMeta.mainTitle,
+                            isLive: this.isLiveStream(),
                             currentEpisode: {
                                 episodeId: targetEpId,
                                 episodeTitle: cachedMeta.episodeTitle || '',
@@ -793,6 +840,9 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
                 const player = this.getTVerPlayer();
                 const playerSeriesId = player?.getMedia?.()?.adFields?.ad_series_id || null;
                 const result = this.metadataManager.getMetadata(targetEpId, playerSeriesId);
+                if (result.metadata) {
+                    result.metadata.isLive = this.isLiveStream();
+                }
 
                 respond(result.status, result.metadata);
             }

@@ -60,6 +60,12 @@ export class TVerContentAdapter implements IStreamingAdapter {
                 ? document.documentElement.dataset
                 : undefined;
 
+        const isLive =
+            ds?.ncwIsLive === 'true' ||
+            (typeof window !== 'undefined' &&
+                (window.location.href.includes('/live/') ||
+                    window.location.href.includes('simul')));
+
         if (ds && (ds.ncwMainTitle || ds.ncwShowId)) {
             const mainTitle = ds.ncwMainTitle || '';
             const episodeTitle = ds.ncwEpisodeTitle || '';
@@ -78,6 +84,7 @@ export class TVerContentAdapter implements IStreamingAdapter {
                 seasonId: ds.ncwSeasonId,
                 showSummary: ds.ncwShowSummary,
                 episodeSummary: ds.ncwEpisodeSummary,
+                isLive,
             };
         }
 
@@ -91,6 +98,7 @@ export class TVerContentAdapter implements IStreamingAdapter {
             episodeTitle: '',
             fullTitle: rawTitle,
             videoId: this.extractVideoId() || '',
+            isLive,
         };
     }
 
@@ -293,6 +301,7 @@ export class TVerContentAdapter implements IStreamingAdapter {
                     episodeSummary: payload.currentEpisode?.episodeSynopsis,
                     seasonNum: payload.seasonSeq,
                     episodeNum: payload.currentEpisode?.episodeSeq,
+                    isLive: payload.isLive,
                 };
 
                 this.cachedMetadata = meta;
@@ -392,6 +401,18 @@ export class TVerContentAdapter implements IStreamingAdapter {
                     ? String(event.data.movieId)
                     : this.extractVideoId() || '';
                 callback(movieId);
+            }
+        };
+        window.addEventListener('message', listener);
+        this.messageListeners.push(listener);
+        return () => window.removeEventListener('message', listener);
+    }
+
+    onSubtitleUpdated(callback: (movieId?: string) => void): () => void {
+        const listener = (event: MessageEvent) => {
+            if (event.source !== window || !event.data) return;
+            if (event.data.type === NCW_MESSAGE_TYPES.SUBTITLE_UPDATED) {
+                callback(event.data.movieId);
             }
         };
         window.addEventListener('message', listener);

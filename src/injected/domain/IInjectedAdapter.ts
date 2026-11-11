@@ -71,7 +71,14 @@ export interface InjectedMetadataLoadedPayload {
         episodeSeq?: number;
         episodeSynopsis?: string;
     };
+    isLive?: boolean;
     rawMetadata?: unknown;
+}
+
+export interface InjectedSubtitleUpdatedPayload {
+    type: typeof NCW_CONSTANTS.MESSAGE_TYPES.SUBTITLE_UPDATED;
+    movieId?: string;
+    timestamp: number;
 }
 
 export interface InjectedAdStateChangedPayload {
