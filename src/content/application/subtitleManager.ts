@@ -93,7 +93,9 @@ export class SubtitleManager {
                 {
                     isAdPlaying: () => Boolean(this.adDetector?.isAdPlaying),
                     getShowTitle: () =>
-                        this.contextManager?.currentContext?.title,
+                        this.contextManager?.currentContext?.title ||
+                        this.contextManager?.videoInfo?.fullTitle ||
+                        this.contextManager?.videoInfo?.mainTitle,
                 },
             );
         }

@@ -287,7 +287,7 @@ export class ViewingFrictionManager {
             todayRestSeconds,
             todayBreakCount,
             curfewTime: activeBreak.curfewTime,
-            showTitle: activeBreak.showTitle || this.getShowTitle?.(),
+            showTitle: this.getShowTitle?.(),
             platform: this.adapter.platformName,
             unlockDifficulty: this.settings.frictionUnlockDifficulty || 'none',
             autoResumeOnTimer:
@@ -406,6 +406,7 @@ export class ViewingFrictionManager {
             todaySeconds,
             todayRestSeconds,
             todayBreakCount,
+            showTitle: this.getShowTitle?.(),
             platform: this.adapter.platformName,
             unlockDifficulty: 'none',
             autoResumeOnTimer: false,
