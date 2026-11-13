@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CoWatcher",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "AI Dual Subtitles, Real-Time Translation, Language Immersion & More, your watching companion",
   "icons": {
     "16": "icons/icon16.png",
@@ -32,6 +32,24 @@
     "alarms"
   ],
   "host_permissions": [
+    "*://*.netflix.com/*",
+    "*://*.tver.jp/*",
+    "*://*.youtube.com/*",
+    "*://*.bilibili.com/*",
+    "*://*.itv.com/*",
+    "*://*.channel4.com/*",
+    "https://translate.googleapis.com/*",
+    "https://translate.google.com/*",
+    "https://openrouter.ai/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://dict.youdao.com/*",
+    "https://api.dictionaryapi.dev/*",
+    "https://jisho.org/*",
+    "https://en.wiktionary.org/*",
+    "https://ac-dict.naver.com/*"
+  ],
+  "optional_host_permissions": [
     "http://*/*",
     "https://*/*"
   ],
