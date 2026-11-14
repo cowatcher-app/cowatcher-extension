@@ -12,8 +12,8 @@
       <div class="nav-brand">
         <img src="/icons/icon48.png" alt="Logo" class="logo-icon" />
         <div class="brand-info">
-          <h1 class="brand-title">Subtitle Translator</h1>
-          <span class="brand-subtitle">Control Center & Data Management</span>
+          <h1 class="brand-title" data-i18n="optBrandTitle">Subtitle Translator</h1>
+          <span class="brand-subtitle" data-i18n="optBrandSubtitle">Control Center & Data Management</span>
         </div>
       </div>
 
@@ -21,35 +21,35 @@
       <nav class="nav-tabs">
         <button class="nav-tab-btn active" data-tab="cache">
           <span class="tab-icon">💾</span>
-          <span>Subtitle Cache</span>
+          <span data-i18n="optTabCache">Subtitle Cache</span>
           <span class="tab-count-badge" id="nav-cache-count">0</span>
         </button>
         <button class="nav-tab-btn" data-tab="vocab">
           <span class="tab-icon">📚</span>
-          <span>Vocabulary Bank</span>
+          <span data-i18n="optTabVocab">Vocabulary Bank</span>
           <span class="tab-count-badge" id="nav-vocab-count">0</span>
         </button>
         <button class="nav-tab-btn" data-tab="context">
           <span class="tab-icon">🎬</span>
-          <span>Show Context & Memory</span>
+          <span data-i18n="optTabContext">Show Context & Memory</span>
           <span class="tab-count-badge" id="nav-context-count">0</span>
         </button>
         <button class="nav-tab-btn" data-tab="history">
           <span class="tab-icon">📊</span>
-          <span>Watch History</span>
+          <span data-i18n="optTabHistory">Watch History</span>
           <span class="tab-count-badge" id="nav-history-count">0</span>
         </button>
         <button class="nav-tab-btn" data-tab="settings">
           <span class="tab-icon">⚙️</span>
-          <span>Settings</span>
+          <span data-i18n="optTabSettings">Settings</span>
         </button>
         <button class="nav-tab-btn" data-tab="contributors">
           <span class="tab-icon">🌟</span>
-          <span>Contributors</span>
+          <span data-i18n="optTabContributors">Contributors</span>
         </button>
         <button class="nav-tab-btn" data-tab="credits">
           <span class="tab-icon">⚖️</span>
-          <span>Third-Party Credits</span>
+          <span data-i18n="optTabCredits">Third-Party Credits</span>
         </button>
       </nav>
 
@@ -68,7 +68,7 @@
           class="btn-kofi"
           title="Support on Ko-fi"
         >
-          <span>☕ Support</span>
+          <span data-i18n="optSupportBtn">☕ Support</span>
         </a>
       </div>
     </header>
@@ -79,8 +79,8 @@
       <section id="pane-cache" class="tab-pane active">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">💾 Subtitle Track Cache</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optCacheTitle">💾 Subtitle Track Cache</h2>
+            <p class="pane-desc" data-i18n="optCacheDesc">
               Stores translated and reviewed subtitle cues bound by SHA-256
               track fingerprints, target language, and AI models for 0-latency
               playback and instant rewatching.
@@ -88,22 +88,22 @@
           </div>
           <div class="pane-actions" style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
             <div class="cache-retention-control" style="display: inline-flex; align-items: center; gap: 0.35rem;">
-              <label for="cache-retention-select" style="font-size: 0.8rem; color: #aaa; white-space: nowrap;">
+              <label for="cache-retention-select" data-i18n="optCacheRetentionLabel" style="font-size: 0.8rem; color: #aaa; white-space: nowrap;">
                 ⏱️ Auto-cleanup:
               </label>
               <select id="cache-retention-select" class="select-sm" title="Automatic Cache Retention Period">
-                <option value="1w">1 Week</option>
-                <option value="1m">1 Month (Default)</option>
-                <option value="1y">1 Year</option>
+                <option value="1w" data-i18n="optRetention1w">1 Week</option>
+                <option value="1m" data-i18n="optRetention1m">1 Month (Default)</option>
+                <option value="1y" data-i18n="optRetention1y">1 Year</option>
               </select>
             </div>
-            <button id="btn-clean-expired-cache" class="btn-secondary" title="Manually clean caches older than the retention period">
+            <button id="btn-clean-expired-cache" class="btn-secondary" data-i18n="optBtnCleanExpired" title="Manually clean caches older than the retention period">
               🧹 Clean Expired
             </button>
-            <button id="btn-refresh-cache" class="btn-secondary">
+            <button id="btn-refresh-cache" class="btn-secondary" data-i18n="optBtnRefresh">
               🔄 Refresh
             </button>
-            <button id="btn-clear-all-cache" class="btn-danger">
+            <button id="btn-clear-all-cache" class="btn-danger" data-i18n="optBtnClearAllCache">
               🗑️ Clear All Subtitle Caches
             </button>
           </div>
@@ -112,19 +112,19 @@
         <!-- Overview Stat Cards -->
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">Cached Episodes / Tracks</div>
+            <div class="stat-label" data-i18n="optStatCacheTracks">Cached Episodes / Tracks</div>
             <div class="stat-val" id="stat-cache-tracks">0</div>
-            <div class="stat-sub">Indexed in browser database</div>
+            <div class="stat-sub" data-i18n="optStatCacheTracksSub">Indexed in browser database</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Total Cached Cues</div>
+            <div class="stat-label" data-i18n="optStatCacheCues">Total Cached Cues</div>
             <div class="stat-val" id="stat-cache-cues">0</div>
-            <div class="stat-sub">Saved dialogue lines</div>
+            <div class="stat-sub" data-i18n="optStatCacheCuesSub">Saved dialogue lines</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Reviewed vs Raw Cues</div>
+            <div class="stat-label" data-i18n="optStatCacheReviewed">Reviewed vs Raw Cues</div>
             <div class="stat-val" id="stat-cache-reviewed-raw">0 / 0</div>
-            <div class="stat-sub">Audit-approved vs draft cues</div>
+            <div class="stat-sub" data-i18n="optStatCacheReviewedSub">Audit-approved vs draft cues</div>
           </div>
         </div>
 
@@ -135,6 +135,7 @@
             <input
               type="text"
               id="cache-search"
+              data-i18n-placeholder="optCacheSearchPlaceholder"
               placeholder="Search by show title, movie ID, or track hash..."
             />
           </div>
@@ -150,18 +151,18 @@
           <table class="data-table" id="cache-table">
             <thead>
               <tr>
-                <th>Episode / Show</th>
-                <th>Track Hash</th>
-                <th>Target Lang</th>
-                <th>Provider & Model</th>
-                <th>Translation Status</th>
-                <th>Last Accessed</th>
-                <th>Action</th>
+                <th data-i18n="optThEpisode">Episode / Show</th>
+                <th data-i18n="optThTrackHash">Track Hash</th>
+                <th data-i18n="optThTargetLang">Target Lang</th>
+                <th data-i18n="optThProviderModel">Provider & Model</th>
+                <th data-i18n="optThTransStatus">Translation Status</th>
+                <th data-i18n="optThLastAccessed">Last Accessed</th>
+                <th data-i18n="optThAction">Action</th>
               </tr>
             </thead>
             <tbody id="cache-table-body">
               <tr>
-                <td colspan="7" class="empty-cell">
+                <td colspan="7" class="empty-cell" data-i18n="optLoadingCache">
                   Loading subtitle cache...
                 </td>
               </tr>
@@ -174,18 +175,18 @@
       <section id="pane-vocab" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">📚 Episode Vocabulary Collection</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optVocabTitle">📚 Episode Vocabulary Collection</h2>
+            <p class="pane-desc" data-i18n="optVocabDesc">
               Vocabulary, idioms, context sentences, and translations collected
               during video playback. You can preview, download CSV for Anki /
               Excel, or delete specific episodes.
             </p>
           </div>
           <div class="pane-actions">
-            <button id="btn-refresh-vocab" class="btn-secondary">
+            <button id="btn-refresh-vocab" class="btn-secondary" data-i18n="optBtnRefresh">
               🔄 Refresh
             </button>
-            <button id="btn-clear-all-vocab" class="btn-danger">
+            <button id="btn-clear-all-vocab" class="btn-danger" data-i18n="optBtnClearAllVocab">
               🗑️ Clear All Vocabulary
             </button>
           </div>
@@ -194,19 +195,19 @@
         <!-- Overview Stat Cards -->
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">Collected Episodes</div>
+            <div class="stat-label" data-i18n="optStatVocabEpisodes">Collected Episodes</div>
             <div class="stat-val" id="stat-vocab-episodes">0</div>
-            <div class="stat-sub">Unique shows / episodes</div>
+            <div class="stat-sub" data-i18n="optStatVocabEpisodesSub">Unique shows / episodes</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Total Unique Words</div>
+            <div class="stat-label" data-i18n="optStatVocabWords">Total Unique Words</div>
             <div class="stat-val" id="stat-vocab-words">0</div>
-            <div class="stat-sub">Difficult words & expressions</div>
+            <div class="stat-sub" data-i18n="optStatVocabWordsSub">Difficult words & expressions</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Source / Target Pairs</div>
-            <div class="stat-val" id="stat-vocab-langs">Multi-lang</div>
-            <div class="stat-sub">Context-isolated definitions</div>
+            <div class="stat-label" data-i18n="optStatVocabPairs">Source / Target Pairs</div>
+            <div class="stat-val" id="stat-vocab-langs" data-i18n="optStatVocabPairsVal">Multi-lang</div>
+            <div class="stat-sub" data-i18n="optStatVocabPairsSub">Context-isolated definitions</div>
           </div>
         </div>
 
@@ -217,6 +218,7 @@
             <input
               type="text"
               id="vocab-search"
+              data-i18n-placeholder="optVocabSearchPlaceholder"
               placeholder="Search by show title, movie ID, or vocabulary words..."
             />
           </div>
@@ -225,13 +227,13 @@
             style="display: flex; align-items: center; gap: 14px"
           >
             <select id="vocab-source-filter" class="select-sm">
-              <option value="all">All Sources</option>
-              <option value="user">⭐ User Marked Only</option>
-              <option value="ai">🤖 AI Extracted</option>
+              <option value="all" data-i18n="optVocabFilterAll">All Sources</option>
+              <option value="user" data-i18n="optVocabFilterUser">⭐ User Marked Only</option>
+              <option value="ai" data-i18n="optVocabFilterAi">🤖 AI Extracted</option>
             </select>
             <label class="select-all-label">
               <input type="checkbox" id="vocab-select-all" />
-              <span>Select All</span>
+              <span data-i18n="optSelectAll">Select All</span>
             </label>
             <button
               id="btn-import-external-csv"
@@ -251,6 +253,7 @@
             <button
               id="btn-export-user-vocab"
               class="btn-secondary btn-sm"
+              data-i18n="optBtnExportUserVocab"
               title="Export only words marked by you with context sentences"
             >
               ⭐ Export User Vocab (.CSV)
@@ -278,7 +281,7 @@
 
         <!-- Vocab Show Groups Container -->
         <div class="vocab-groups-list" id="vocab-cards-grid">
-          <div class="empty-state">Loading vocabulary bank...</div>
+          <div class="empty-state" data-i18n="optLoadingVocab">Loading vocabulary bank...</div>
         </div>
       </section>
 
@@ -286,18 +289,18 @@
       <section id="pane-context" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">🎬 Show Context & Supervisor Memory</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optContextTitle">🎬 Show Context & Supervisor Memory</h2>
+            <p class="pane-desc" data-i18n="optContextDesc">
               Stores film synopses, characters, aliases, and terminology
               glossaries maintained by the supervisor model across episodes for
               consistency.
             </p>
           </div>
           <div class="pane-actions">
-            <button id="btn-refresh-context" class="btn-secondary">
+            <button id="btn-refresh-context" class="btn-secondary" data-i18n="optBtnRefresh">
               🔄 Refresh
             </button>
-            <button id="btn-clear-all-context" class="btn-danger">
+            <button id="btn-clear-all-context" class="btn-danger" data-i18n="optBtnClearAllContext">
               🗑️ Clear All Show Memory
             </button>
           </div>
@@ -306,19 +309,19 @@
         <!-- Overview Stat Cards -->
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">Remembered Shows</div>
+            <div class="stat-label" data-i18n="optStatContextShows">Remembered Shows</div>
             <div class="stat-val" id="stat-context-shows">0</div>
-            <div class="stat-sub">Active film profiles</div>
+            <div class="stat-sub" data-i18n="optStatContextShowsSub">Active film profiles</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Total Discovered Characters</div>
+            <div class="stat-label" data-i18n="optStatContextChars">Total Discovered Characters</div>
             <div class="stat-val" id="stat-context-chars">0</div>
-            <div class="stat-sub">Names & aliases tracked</div>
+            <div class="stat-sub" data-i18n="optStatContextCharsSub">Names & aliases tracked</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Glossary Terms</div>
+            <div class="stat-label" data-i18n="optStatContextTerms">Glossary Terms</div>
             <div class="stat-val" id="stat-context-terms">0</div>
-            <div class="stat-sub">Canon translation terms</div>
+            <div class="stat-sub" data-i18n="optStatContextTermsSub">Canon translation terms</div>
           </div>
         </div>
 
@@ -329,6 +332,7 @@
             <input
               type="text"
               id="context-search"
+              data-i18n-placeholder="optContextSearchPlaceholder"
               placeholder="Search by show title, character name, or term..."
             />
           </div>
@@ -341,7 +345,7 @@
 
         <!-- Context Cards List -->
         <div class="context-grid" id="context-cards-grid">
-          <div class="empty-state">Loading show memory...</div>
+          <div class="empty-state" data-i18n="optLoadingContext">Loading show memory...</div>
         </div>
       </section>
 
@@ -349,20 +353,20 @@
       <section id="pane-history" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">📊 Viewing History & Analytics</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optHistoryTitle">📊 Viewing History & Analytics</h2>
+            <p class="pane-desc" data-i18n="optHistoryDesc">
               Tracks your active viewing sessions, time intervals, episodes, and
               immersion habits across Netflix, YouTube, and TVer.
             </p>
           </div>
           <div class="pane-actions">
-            <button id="btn-refresh-history" class="btn-secondary">
+            <button id="btn-refresh-history" class="btn-secondary" data-i18n="optBtnRefresh">
               🔄 Refresh
             </button>
-            <button id="btn-export-history-csv" class="btn-primary">
+            <button id="btn-export-history-csv" class="btn-primary" data-i18n="optBtnExportHistoryCsv">
               ⬇️ Export History (.CSV)
             </button>
-            <button id="btn-clear-all-history" class="btn-danger">
+            <button id="btn-clear-all-history" class="btn-danger" data-i18n="optBtnClearAllHistory">
               🗑️ Clear All History
             </button>
           </div>
@@ -371,24 +375,24 @@
         <!-- Overview Stat Cards -->
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">Total Time Watched</div>
+            <div class="stat-label" data-i18n="optStatHistoryTime">Total Time Watched</div>
             <div class="stat-val" id="stat-history-time">0h 0m</div>
-            <div class="stat-sub">Active video playback time</div>
+            <div class="stat-sub" data-i18n="optStatHistoryTimeSub">Active video playback time</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Tracked Shows</div>
+            <div class="stat-label" data-i18n="optStatHistoryShows">Tracked Shows</div>
             <div class="stat-val" id="stat-history-shows">0</div>
-            <div class="stat-sub">Unique series & movies</div>
+            <div class="stat-sub" data-i18n="optStatHistoryShowsSub">Unique series & movies</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Episodes Watched</div>
+            <div class="stat-label" data-i18n="optStatHistoryEpisodes">Episodes Watched</div>
             <div class="stat-val" id="stat-history-episodes">0</div>
-            <div class="stat-sub">Across all platforms</div>
+            <div class="stat-sub" data-i18n="optStatHistoryEpisodesSub">Across all platforms</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Viewing Sessions</div>
+            <div class="stat-label" data-i18n="optStatHistorySessions">Viewing Sessions</div>
             <div class="stat-val" id="stat-history-sessions">0</div>
-            <div class="stat-sub">Interval playback logs</div>
+            <div class="stat-sub" data-i18n="optStatHistorySessionsSub">Interval playback logs</div>
           </div>
         </div>
 
@@ -412,7 +416,7 @@
                 margin-bottom: 14px;
               "
             >
-              <h3 class="card-title" style="margin: 0">
+              <h3 class="card-title" style="margin: 0" data-i18n="optHeatmapTitle">
                 📅 Immersion Activity (Past 26 Weeks)
               </h3>
               <div
@@ -425,7 +429,7 @@
                   color: #888;
                 "
               >
-                <span>Less</span>
+                <span data-i18n="optHeatmapLess">Less</span>
                 <span
                   class="heatmap-cell level-0"
                   style="
@@ -476,7 +480,7 @@
                     background: #39d353;
                   "
                 ></span>
-                <span>More</span>
+                <span data-i18n="optHeatmapMore">More</span>
               </div>
             </div>
             <div
@@ -487,6 +491,7 @@
             </div>
             <div
               id="heatmap-tooltip"
+              data-i18n="optHeatmapTooltipDefault"
               style="
                 font-size: 11.5px;
                 color: #aaa;
@@ -508,7 +513,7 @@
               flex-direction: column;
             "
           >
-            <h3 class="card-title" style="margin-bottom: 14px">
+            <h3 class="card-title" style="margin-bottom: 14px" data-i18n="optTrendChartTitle">
               📈 Recent 14-Day Watch Trend
             </h3>
             <div
@@ -537,6 +542,7 @@
             <input
               type="text"
               id="history-search"
+              data-i18n-placeholder="optHistorySearchPlaceholder"
               placeholder="Search by show title, episode, or platform..."
             />
           </div>
@@ -545,7 +551,7 @@
             style="display: flex; align-items: center; gap: 14px"
           >
             <select id="history-platform-filter" class="select-sm">
-              <option value="all">All Platforms</option>
+              <option value="all" data-i18n="optAllPlatforms">All Platforms</option>
               <option value="netflix">Netflix</option>
               <option value="youtube">YouTube</option>
               <option value="tver">TVer</option>
@@ -561,7 +567,7 @@
 
         <!-- History Shows & Sessions Cards Container -->
         <div class="history-shows-list" id="history-cards-grid">
-          <div class="empty-state">Loading watch history...</div>
+          <div class="empty-state" data-i18n="optLoadingHistory">Loading watch history...</div>
         </div>
       </section>
 
@@ -569,14 +575,14 @@
       <section id="pane-settings" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">⚙️ Full Extension Configuration</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optSettingsTitle">⚙️ Full Extension Configuration</h2>
+            <p class="pane-desc" data-i18n="optSettingsDesc">
               Configure dual-model translation parameters, API credentials, cue
               buffers, and appearance preferences.
             </p>
           </div>
           <div class="pane-actions">
-            <button id="btn-save-settings" class="btn-primary">
+            <button id="btn-save-settings" class="btn-primary" data-i18n="optBtnSaveSettings">
               💾 Save Settings
             </button>
           </div>
@@ -585,16 +591,16 @@
         <div class="settings-form-grid">
           <!-- Col 1: Provider & Models -->
           <div class="settings-card">
-            <h3 class="card-title">🤖 AI Service Provider & Models</h3>
+            <h3 class="card-title" data-i18n="optCardProviderTitle">🤖 AI Service Provider & Models</h3>
 
             <div class="form-group">
-              <label for="cfg-ai-provider">AI Provider</label>
+              <label for="cfg-ai-provider" data-i18n="optLblAiProvider">AI Provider</label>
               <select id="cfg-ai-provider">
-                <option value="google" selected>
+                <option value="google" selected data-i18n="providerGoogle">
                   Google Translate (Free / Out of the Box)
                 </option>
-                <option value="ollama">Ollama (Local / Privacy-first)</option>
-                <option value="openrouter">
+                <option value="ollama" data-i18n="providerOllama">Ollama (Local / Privacy-first)</option>
+                <option value="openrouter" data-i18n="providerOpenRouter">
                   OpenRouter (Cloud / High Speed)
                 </option>
               </select>
@@ -603,7 +609,7 @@
             <!-- Ollama settings -->
             <div id="cfg-ollama-section">
               <div class="form-group">
-                <label for="cfg-ollama-host">Ollama Server Host</label>
+                <label for="cfg-ollama-host" data-i18n="optLblOllamaHost">Ollama Server Host</label>
                 <input
                   type="text"
                   id="cfg-ollama-host"
@@ -611,13 +617,13 @@
                 />
               </div>
               <div class="form-group">
-                <label for="cfg-translation-model">Translation Model</label>
+                <label for="cfg-translation-model" data-i18n="optLblTransModel">Translation Model</label>
                 <select id="cfg-translation-model">
                   <option value="translategemma:4b">translategemma:4b</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="cfg-supervisor-model">Supervisor Model</label>
+                <label for="cfg-supervisor-model" data-i18n="optLblSupModel">Supervisor Model</label>
                 <select id="cfg-supervisor-model">
                   <option value="gemma4:e4b">gemma4:e4b</option>
                 </select>
@@ -627,7 +633,7 @@
             <!-- OpenRouter settings -->
             <div id="cfg-openrouter-section" style="display: none">
               <div class="form-group">
-                <label for="cfg-openrouter-key">OpenRouter API Key</label>
+                <label for="cfg-openrouter-key" data-i18n="optLblOpenRouterKey">OpenRouter API Key</label>
                 <div style="display: flex; gap: 8px;">
                   <input
                     type="password"
@@ -639,6 +645,7 @@
                     type="button"
                     id="cfg-btn-clear-key"
                     class="btn secondary-btn"
+                    data-i18n="optBtnClear"
                     style="display: none; padding: 6px 12px; font-size: 13px;"
                   >
                     Clear
@@ -654,11 +661,11 @@
               >
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <label for="cfg-enable-master-pwd" style="margin: 0; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    <span>🔒 Master Password AES-256 Protection</span>
+                    <span data-i18n="optLblEnableMasterPwd">🔒 Master Password AES-256 Protection</span>
                   </label>
                   <input type="checkbox" id="cfg-enable-master-pwd" style="cursor: pointer;" />
                 </div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+                <div data-i18n="optDescMasterPwd" style="font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
                   Encrypts your API key locally with AES-256 to protect against disk scanners. Decrypted in memory only with your password. (Optional, disabled by default)
                 </div>
 
@@ -668,12 +675,14 @@
                     <input
                       type="password"
                       id="cfg-master-pwd-input"
+                      data-i18n-placeholder="masterPasswordPlaceholder"
                       placeholder="Set Master Password..."
                       style="flex: 1; min-width: 140px;"
                     />
                     <input
                       type="password"
                       id="cfg-master-pwd-confirm"
+                      data-i18n-placeholder="masterPasswordConfirmPlaceholder"
                       placeholder="Confirm Password..."
                       style="flex: 1; min-width: 140px;"
                     />
@@ -681,6 +690,7 @@
                       type="button"
                       id="cfg-btn-save-master-pwd"
                       class="btn primary-btn"
+                      data-i18n="optBtnApply"
                       style="padding: 6px 14px; font-size: 13px;"
                     >
                       Apply
@@ -699,6 +709,7 @@
                     <input
                       type="password"
                       id="cfg-vault-unlock-input"
+                      data-i18n-placeholder="masterPasswordPlaceholder"
                       placeholder="Enter password..."
                       style="max-width: 160px;"
                     />
@@ -706,6 +717,7 @@
                       type="button"
                       id="cfg-btn-vault-unlock"
                       class="btn primary-btn"
+                      data-i18n="btnUnlock"
                       style="padding: 6px 12px; font-size: 13px;"
                     >
                       Unlock
@@ -714,6 +726,7 @@
                       type="button"
                       id="cfg-btn-vault-lock"
                       class="btn secondary-btn"
+                      data-i18n="btnLock"
                       style="display: none; padding: 6px 12px; font-size: 13px;"
                     >
                       Lock
@@ -723,13 +736,13 @@
               </div>
 
               <div class="form-group">
-                <label for="cfg-openrouter-trans-model"
+                <label for="cfg-openrouter-trans-model" data-i18n="optLblOpenRouterTrans"
                   >OpenRouter Translation Model</label
                 >
                 <select id="cfg-openrouter-trans-model"></select>
               </div>
               <div class="form-group">
-                <label for="cfg-openrouter-sup-model"
+                <label for="cfg-openrouter-sup-model" data-i18n="optLblOpenRouterSup"
                   >OpenRouter Supervisor Model</label
                 >
                 <select id="cfg-openrouter-sup-model"></select>
@@ -739,7 +752,7 @@
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-enable-supervisor" />
-                <span
+                <span data-i18n="optLblEnableSupervisor"
                   >Enable Supervisor Model (Consistency Audit & Memory)</span
                 >
               </label>
@@ -748,10 +761,10 @@
 
           <!-- Col 2: Target Language & Subtitle Display -->
           <div class="settings-card">
-            <h3 class="card-title">🌐 Language & Display Options</h3>
+            <h3 class="card-title" data-i18n="optCardDisplayTitle">🌐 Language & Display Options</h3>
 
             <div class="form-group">
-              <label for="cfg-target-lang">Target Translation Language</label>
+              <label for="cfg-target-lang" data-i18n="optLblTargetLang">Target Translation Language</label>
               <select id="cfg-target-lang">
                 <option value="English">English</option>
                 <option value="简体中文">简体中文 (Simplified Chinese)</option>
@@ -765,13 +778,13 @@
             </div>
 
             <div class="form-group">
-              <label for="cfg-display-mode">Display Mode</label>
+              <label for="cfg-display-mode" data-i18n="optLblDisplayMode">Display Mode</label>
               <select id="cfg-display-mode">
-                <option value="bilingual">
+                <option value="bilingual" data-i18n="optDisplayBilingual">
                   Bilingual (Translation + Original)
                 </option>
-                <option value="translated">Translation Only</option>
-                <option value="original">Original Only</option>
+                <option value="translated" data-i18n="optDisplayTranslated">Translation Only</option>
+                <option value="original" data-i18n="optDisplayOriginal">Original Only</option>
               </select>
             </div>
 
@@ -782,7 +795,7 @@
                   id="cfg-prefer-native-subtitles"
                   checked
                 />
-                <span
+                <span data-i18n="optLblPreferNative"
                   >Prefer Official Platform Subtitles (0-Latency / Studio
                   Quality)</span
                 >
@@ -792,7 +805,7 @@
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-extract-native-terms" />
-                <span
+                <span data-i18n="optLblExtractNativeTerms"
                   >Extract Glossary from Official Subtitles via Supervisor
                   Model</span
                 >
@@ -802,28 +815,28 @@
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-hide-native" />
-                <span>Hide Native Subtitles (Prevent duplicate overlap)</span>
+                <span data-i18n="optLblHideNative">Hide Native Subtitles (Prevent duplicate overlap)</span>
               </label>
             </div>
 
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-enable-dom-sync" />
-                <span>DOM Subtitle Text Auto-Calibration (Default: Off)</span>
+                <span data-i18n="optLblDomSync">DOM Subtitle Text Auto-Calibration (Default: Off)</span>
               </label>
             </div>
 
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-enable-learning" />
-                <span>Interactive Word Segmentation & Subtitle Learning</span>
+                <span data-i18n="optLblEnableLearning">Interactive Word Segmentation & Subtitle Learning</span>
               </label>
             </div>
 
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-auto-pause-learning" checked />
-                <span
+                <span data-i18n="optLblAutoPauseLearning"
                   >Auto-pause video playback when clicking subtitle word</span
                 >
               </label>
@@ -850,12 +863,12 @@
 
           <!-- Col 3: Vocabulary Collector Config -->
           <div class="settings-card">
-            <h3 class="card-title">📚 Vocabulary Collector Pass</h3>
+            <h3 class="card-title" data-i18n="optCardVocabTitle">📚 Vocabulary Collector Pass</h3>
 
             <div class="form-group checkbox-row">
               <label>
                 <input type="checkbox" id="cfg-vocab-enabled" />
-                <span>Enable Background Vocabulary Collection</span>
+                <span data-i18n="optLblVocabEnabled">Enable Background Vocabulary Collection</span>
               </label>
             </div>
 
@@ -870,40 +883,40 @@
             </div>
 
             <div class="form-group">
-              <label for="cfg-vocab-provider">Vocab Model Provider</label>
+              <label for="cfg-vocab-provider" data-i18n="optLblVocabProvider">Vocab Model Provider</label>
               <select id="cfg-vocab-provider">
-                <option value="openrouter">OpenRouter (Cloud)</option>
-                <option value="ollama">Ollama (Local)</option>
+                <option value="openrouter" data-i18n="optOptOpenRouterCloud">OpenRouter (Cloud)</option>
+                <option value="ollama" data-i18n="optOptOllamaLocal">Ollama (Local)</option>
               </select>
             </div>
 
             <div class="form-group" id="cfg-vocab-openrouter-group">
-              <label for="cfg-vocab-openrouter-model">Vocab OpenRouter Model</label>
+              <label for="cfg-vocab-openrouter-model" data-i18n="optLblVocabOpenRouterModel">Vocab OpenRouter Model</label>
               <select id="cfg-vocab-openrouter-model"></select>
             </div>
 
             <div class="form-group" id="cfg-vocab-ollama-group" style="display: none">
-              <label for="cfg-vocab-ollama-model">Vocab Ollama Model</label>
+              <label for="cfg-vocab-ollama-model" data-i18n="optLblVocabOllamaModel">Vocab Ollama Model</label>
               <select id="cfg-vocab-ollama-model"></select>
             </div>
 
             <div class="form-group">
-              <label for="cfg-vocab-difficulty">Vocabulary Difficulty</label>
+              <label for="cfg-vocab-difficulty" data-i18n="optLblVocabDifficulty">Vocabulary Difficulty</label>
               <select id="cfg-vocab-difficulty">
-                <option value="easy">🟢 Easy (Phrasal verbs & Slang)</option>
-                <option value="medium">
+                <option value="easy" data-i18n="optDiffEasy">🟢 Easy (Phrasal verbs & Slang)</option>
+                <option value="medium" data-i18n="optDiffMedium">
                   🟡 Medium (B2/C1, Academic & Idioms)
                 </option>
-                <option value="hard">🔴 Hard (C2+, Jargon & GRE)</option>
+                <option value="hard" data-i18n="optDiffHard">🔴 Hard (C2+, Jargon & GRE)</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label for="cfg-vocab-source-lang"
+              <label for="cfg-vocab-source-lang" data-i18n="optLblVocabSourceLang"
                 >Subtitle Source Language</label
               >
               <select id="cfg-vocab-source-lang">
-                <option value="auto">✨ Auto Detect</option>
+                <option value="auto" data-i18n="optAutoDetect">✨ Auto Detect</option>
                 <option value="Japanese">Japanese (日本語)</option>
                 <option value="English">English</option>
                 <option value="Korean">Korean (한국어)</option>
@@ -912,12 +925,13 @@
             </div>
 
             <div class="form-group">
-              <label for="cfg-vocab-custom-prompt"
+              <label for="cfg-vocab-custom-prompt" data-i18n="optLblVocabCustomPrompt"
                 >Custom Extraction Prompt / Instructions</label
               >
               <textarea
                 id="cfg-vocab-custom-prompt"
                 rows="3"
+                data-i18n-placeholder="optVocabPromptPlaceholder"
                 placeholder="e.g. Focus on JLPT N1 idioms, medical terminology, ignore character names..."
               ></textarea>
             </div>
@@ -925,16 +939,16 @@
 
           <!-- Col 4: Storage & Cache Retention Policy -->
           <div class="settings-card">
-            <h3 class="card-title">💾 Local Storage & Cache Policy</h3>
+            <h3 class="card-title" data-i18n="optCardStorageTitle">💾 Local Storage & Cache Policy</h3>
 
             <div class="form-group">
-              <label for="cfg-cache-retention">Auto-cleanup Retention Period</label>
+              <label for="cfg-cache-retention" data-i18n="optLblCacheRetention">Auto-cleanup Retention Period</label>
               <select id="cfg-cache-retention">
-                <option value="1w">1 Week (7 Days)</option>
-                <option value="1m">1 Month (30 Days - Default)</option>
-                <option value="1y">1 Year (365 Days)</option>
+                <option value="1w" data-i18n="optRetention1wLong">1 Week (7 Days)</option>
+                <option value="1m" data-i18n="optRetention1mLong">1 Month (30 Days - Default)</option>
+                <option value="1y" data-i18n="optRetention1yLong">1 Year (365 Days)</option>
               </select>
-              <small style="color: #888; font-size: 0.75rem; margin-top: 4px; display: block;">
+              <small data-i18n="optRetentionHint" style="color: #888; font-size: 0.75rem; margin-top: 4px; display: block;">
                 Automatically purges cached subtitle tracks and cues older than this retention period to ensure transient data caching.
               </small>
             </div>
@@ -1153,8 +1167,8 @@
       <section id="pane-contributors" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">🌟 Contributors & Honorary Sponsors Roll</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optContributorsTitle">🌟 Contributors & Honorary Sponsors Roll</h2>
+            <p class="pane-desc" data-i18n="optContributorsDesc">
               Synchronized automatically from CONTRIBUTORS.md at project root.
             </p>
           </div>
@@ -1165,12 +1179,13 @@
               class="btn-kofi"
               title="Support on Ko-fi"
             >
-              <span>☕ Support on Ko-fi</span>
+              <span data-i18n="optBtnSupportKofi">☕ Support on Ko-fi</span>
             </a>
             <a
               href="https://github.com/cowatcher-app/cowatcher-extension"
               target="_blank"
               class="btn-secondary"
+              data-i18n="optBtnStarGithub"
             >
               ⭐ Star on GitHub
             </a>
@@ -1184,8 +1199,8 @@
       <section id="pane-credits" class="tab-pane">
         <div class="pane-header">
           <div>
-            <h2 class="pane-title">⚖️ Third-Party Credits, Open Source Notices & Licenses</h2>
-            <p class="pane-desc">
+            <h2 class="pane-title" data-i18n="optCreditsTitle">⚖️ Third-Party Credits, Open Source Notices & Licenses</h2>
+            <p class="pane-desc" data-i18n="optCreditsDesc">
               CoWatcher is built on the shoulders of giants. We gratefully acknowledge upstream open-source linguistics engines and free dictionary data services.
             </p>
           </div>
@@ -1194,6 +1209,7 @@
               href="https://github.com/cowatcher-app/cowatcher-extension/blob/main/CREDITS.md"
               target="_blank"
               class="btn-secondary"
+              data-i18n="optBtnViewCredits"
             >
               📄 View CREDITS.md
             </a>

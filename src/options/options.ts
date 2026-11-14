@@ -4173,9 +4173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentSettings.uiLanguage = lang;
         applyI18n(lang);
         syncFrictionLockUI();
-        await storage.set({
-            [NCW_CONSTANTS.STORAGE_KEYS.SETTINGS]: currentSettings,
-        });
+        await messageService.saveSettings({ uiLanguage: lang });
     });
 
     cfgChinesePhoneticSystem?.addEventListener('change', async (e) => {
@@ -4212,12 +4210,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (uiLanguageSelect) {
             uiLanguageSelect.value = currentSettings.uiLanguage || 'en';
-            uiLanguageSelect.addEventListener('change', async () => {
-                const val = uiLanguageSelect.value as 'en' | 'zh' | 'ja' | 'ko';
-                currentSettings.uiLanguage = val;
-                await messageService.saveSettings({ uiLanguage: val });
-                applyI18n(val);
-            });
         }
         applyI18n(currentSettings.uiLanguage || 'en');
     });
