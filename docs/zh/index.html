@@ -1,0 +1,2380 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="msvalidate.01" content="74D1D82251CCD15C73F83C9A3298381E" />
+        <title>CoWatcher - 你的观影小助手</title>
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="../icons/icon48.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="../icons/icon16.png"
+        />
+        <link rel="apple-touch-icon" href="../icons/icon128.png" />
+
+        <style>
+            :root {
+                --bg: #090a0f;
+                --card-bg: rgba(22, 24, 35, 0.7);
+                --card-border: rgba(255, 255, 255, 0.08);
+                --primary: #e50914;
+                --primary-glow: rgba(229, 9, 20, 0.35);
+                --accent: #6366f1;
+                --accent-glow: rgba(99, 102, 241, 0.3);
+                --text: #f3f4f6;
+                --text-muted: #9ca3af;
+                --highlight: #38bdf8;
+                --success: #10b981;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background-color: var(--bg);
+                color: var(--text);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                    'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                overflow-x: hidden;
+                background-image:
+                    radial-gradient(
+                        circle at 15% 20%,
+                        rgba(229, 9, 20, 0.12) 0%,
+                        transparent 40%
+                    ),
+                    radial-gradient(
+                        circle at 85% 60%,
+                        rgba(99, 102, 241, 0.12) 0%,
+                        transparent 40%
+                    );
+                background-attachment: fixed;
+            }
+
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            /* Header / Nav */
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                backdrop-filter: blur(16px);
+                background: rgba(9, 10, 15, 0.75);
+                border-bottom: 1px solid var(--card-border);
+            }
+
+            .nav-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 1rem 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .logo-group {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 700;
+                font-size: 1.25rem;
+                letter-spacing: -0.02em;
+            }
+
+            .logo-group img {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                box-shadow: 0 0 15px var(--primary-glow);
+            }
+
+            .nav-links {
+                display: flex;
+                align-items: center;
+                gap: 1.25rem;
+            }
+
+            .nav-links a {
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                transition: color 0.2s;
+            }
+
+            .nav-links a:hover {
+                color: #fff;
+            }
+
+            .lang-toggle {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid var(--card-border);
+                color: #fff;
+                padding: 0.35rem 0.75rem;
+                border-radius: 20px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                transition: all 0.2s;
+            }
+
+            .lang-toggle:hover {
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            /* Hero Section */
+            .hero {
+                max-width: 1100px;
+                margin: 4rem auto 3rem;
+                padding: 0 1.5rem;
+                text-align: center;
+            }
+
+            .badge-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.4rem 1rem;
+                border-radius: 50px;
+                background: rgba(229, 9, 20, 0.15);
+                border: 1px solid rgba(229, 9, 20, 0.3);
+                color: #ff6b6b;
+                font-size: 0.875rem;
+                font-weight: 500;
+                margin-bottom: 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: clamp(2.5rem, 5vw, 4rem);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+                line-height: 1.15;
+                margin-bottom: 1.25rem;
+                background: linear-gradient(
+                    135deg,
+                    #ffffff 30%,
+                    #e2e8f0 70%,
+                    #94a3b8 100%
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .hero h1 span.gradient-text {
+                background: linear-gradient(135deg, #ff4d4d, #f43f5e, #a855f7);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .hero p.subtitle {
+                font-size: 1.2rem;
+                color: var(--text-muted);
+                max-width: 720px;
+                margin: 0 auto 2.5rem;
+            }
+
+            .cta-group {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 1rem;
+                margin-bottom: 3.5rem;
+            }
+
+            .btn {
+                padding: 0.8rem 1.6rem;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 1rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, #e50914, #dc2626);
+                color: #fff;
+                box-shadow: 0 4px 20px var(--primary-glow);
+                border: none;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(229, 9, 20, 0.5);
+            }
+
+            .btn-secondary {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--card-border);
+                color: #fff;
+                backdrop-filter: blur(10px);
+            }
+
+            .btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: translateY(-2px);
+            }
+
+            .btn-kofi {
+                background: #ff5e5b;
+                color: white;
+                box-shadow: 0 4px 15px rgba(255, 94, 91, 0.3);
+            }
+
+            .btn-kofi:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(255, 94, 91, 0.5);
+            }
+
+            /* Subtitle Simulator */
+            .player-showcase {
+                max-width: 860px;
+                margin: 0 auto 5rem;
+                border-radius: 16px;
+                border: 1px solid var(--card-border);
+                background: #000;
+                box-shadow:
+                    0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                    0 0 40px rgba(229, 9, 20, 0.15);
+                overflow: hidden;
+                position: relative;
+            }
+
+            .player-bar {
+                height: 38px;
+                background: #141414;
+                display: flex;
+                align-items: center;
+                padding: 0 1rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                justify-content: space-between;
+            }
+
+            .window-dots {
+                display: flex;
+                gap: 6px;
+            }
+
+            .window-dots span {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #333;
+            }
+            .window-dots span:nth-child(1) {
+                background: #ff5f56;
+            }
+            .window-dots span:nth-child(2) {
+                background: #ffbd2e;
+            }
+            .window-dots span:nth-child(3) {
+                background: #27c93f;
+            }
+
+            .video-viewport {
+                height: 380px;
+                position: relative;
+                background: linear-gradient(180deg, #181924 0%, #0e0f17 100%);
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                align-items: center;
+                padding-bottom: 3.5rem;
+                user-select: none;
+            }
+
+            .bg-cinema-ambient {
+                position: absolute;
+                inset: 0;
+                opacity: 0.4;
+                background:
+                    radial-gradient(
+                        circle at 50% 30%,
+                        rgba(99, 102, 241, 0.25) 0%,
+                        transparent 60%
+                    ),
+                    radial-gradient(
+                        circle at 70% 70%,
+                        rgba(229, 9, 20, 0.2) 0%,
+                        transparent 50%
+                    );
+                pointer-events: none;
+            }
+
+            /* Subtitle Container */
+            .subtitles-box {
+                z-index: 10;
+                text-align: center;
+                padding: 0.8rem 1.6rem;
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.72);
+                backdrop-filter: blur(8px);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                max-width: 85%;
+                animation: fadeInSub 0.6s ease-out;
+            }
+
+            .sub-orig {
+                font-size: 1.15rem;
+                font-weight: 500;
+                color: #e5e7eb;
+                margin-bottom: 0.35rem;
+                letter-spacing: 0.02em;
+            }
+
+            .sub-orig .highlight-word {
+                color: #38bdf8;
+                border-bottom: 1.5px dashed #38bdf8;
+                cursor: pointer;
+                position: relative;
+            }
+
+            .sub-trans {
+                font-size: 1.35rem;
+                font-weight: 700;
+                color: #facc15;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+                letter-spacing: 0.04em;
+            }
+
+            .sub-pill-tag {
+                display: inline-block;
+                margin-top: 0.5rem;
+                font-size: 0.75rem;
+                color: #a78bfa;
+                background: rgba(167, 139, 250, 0.12);
+                padding: 2px 8px;
+                border-radius: 4px;
+                border: 1px solid rgba(167, 139, 250, 0.25);
+            }
+
+            .player-controls-mock {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 44px;
+                background: rgba(10, 10, 12, 0.85);
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 1.25rem;
+                font-size: 0.85rem;
+                color: #9ca3af;
+            }
+
+            .badge-sub-on {
+                background: #e50914;
+                color: #fff;
+                font-size: 0.75rem;
+                font-weight: 700;
+                padding: 3px 8px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            /* Section Headers */
+            .section-title {
+                text-align: center;
+                max-width: 700px;
+                margin: 0 auto 3rem;
+                padding: 0 1.5rem;
+            }
+
+            .section-title h2 {
+                font-size: 2.25rem;
+                font-weight: 700;
+                margin-bottom: 0.75rem;
+                letter-spacing: -0.02em;
+            }
+
+            .section-title p {
+                color: var(--text-muted);
+                font-size: 1.05rem;
+            }
+
+            /* Features Grid */
+            .features-grid {
+                max-width: 1200px;
+                margin: 0 auto 6rem;
+                padding: 0 1.5rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                gap: 1.75rem;
+            }
+
+            .feature-card {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 16px;
+                padding: 2rem;
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(12px);
+            }
+
+            .feature-card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(255, 255, 255, 0.2);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            }
+
+            .feature-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .feature-card h3 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 0.75rem;
+            }
+
+            .feature-card p {
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                line-height: 1.6;
+            }
+
+            .platform-tags {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
+
+            .platform-pill {
+                font-size: 0.75rem;
+                padding: 2px 8px;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.08);
+                color: #cbd5e1;
+            }
+
+            /* Install Step Section */
+            .steps-section {
+                max-width: 1000px;
+                margin: 0 auto 6rem;
+                padding: 0 1.5rem;
+            }
+
+            .step-list {
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+
+            .step-item {
+                display: flex;
+                gap: 1.5rem;
+                align-items: flex-start;
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 14px;
+                padding: 1.5rem;
+                transition: border-color 0.2s;
+            }
+
+            .step-item:hover {
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .step-num {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: var(--primary);
+                color: #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 1.1rem;
+                flex-shrink: 0;
+                box-shadow: 0 0 12px var(--primary-glow);
+            }
+
+            .step-content h4 {
+                font-size: 1.1rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .step-content p {
+                color: var(--text-muted);
+                font-size: 0.95rem;
+            }
+
+            .step-content code {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 2px 6px;
+                border-radius: 4px;
+                color: #f43f5e;
+                font-family: monospace;
+            }
+
+            /* Support Callout */
+            .coffee-callout {
+                max-width: 800px;
+                margin: 0 auto 6rem;
+                padding: 2.5rem 2rem;
+                border-radius: 20px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 94, 91, 0.15) 0%,
+                    rgba(99, 102, 241, 0.15) 100%
+                );
+                border: 1px solid rgba(255, 94, 91, 0.3);
+                text-align: center;
+                position: relative;
+            }
+
+            .coffee-callout h3 {
+                font-size: 1.6rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .coffee-callout p {
+                color: #d1d5db;
+                max-width: 600px;
+                margin: 0 auto 1.5rem;
+            }
+
+            /* Footer */
+            footer {
+                border-top: 1px solid var(--card-border);
+                background: #06070a;
+                padding: 3rem 1.5rem 2rem;
+                color: var(--text-muted);
+                font-size: 0.9rem;
+            }
+
+            .footer-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+
+            .footer-links {
+                display: flex;
+                gap: 1.5rem;
+            }
+
+            .footer-links a:hover {
+                color: #fff;
+            }
+
+            @keyframes fadeInSub {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @media (max-width: 768px) {
+                .hero {
+                    margin-top: 2.5rem;
+                }
+                .video-viewport {
+                    height: 280px;
+                    padding-bottom: 2.5rem;
+                }
+                .sub-orig {
+                    font-size: 0.95rem;
+                }
+                .sub-trans {
+                    font-size: 1.1rem;
+                }
+                .features-grid {
+                    grid-template-columns: 1fr;
+                }
+                .step-item {
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+                .nav-links a.hide-mobile {
+                    display: none;
+                }
+            }
+
+            /* Platform Support Bar */
+            .platform-bar {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                padding: 0.45rem 1rem;
+                border-radius: 50px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                backdrop-filter: blur(12px);
+                margin-bottom: 2rem;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .platform-bar-label {
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                font-weight: 500;
+                margin-right: 0.25rem;
+            }
+
+            .platform-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-size: 0.82rem;
+                font-weight: 600;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                letter-spacing: 0.01em;
+            }
+
+            .platform-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+
+            .platform-netflix {
+                color: #ff6b6b;
+                background: rgba(229, 9, 20, 0.12);
+                border: 1px solid rgba(229, 9, 20, 0.35);
+            }
+            .platform-netflix .platform-dot {
+                background: #e50914;
+                box-shadow: 0 0 8px rgba(229, 9, 20, 0.9);
+            }
+
+            .platform-tver {
+                color: #38bdf8;
+                background: rgba(0, 160, 233, 0.12);
+                border: 1px solid rgba(0, 160, 233, 0.35);
+            }
+            .platform-tver .platform-dot {
+                background: #00a0e9;
+                box-shadow: 0 0 8px rgba(0, 160, 233, 0.9);
+            }
+
+            .platform-youtube {
+                color: #f87171;
+                background: rgba(255, 0, 0, 0.12);
+                border: 1px solid rgba(255, 0, 0, 0.35);
+            }
+            .platform-youtube .platform-dot {
+                background: #ff0000;
+                box-shadow: 0 0 8px rgba(255, 0, 0, 0.9);
+            }
+
+            .platform-badge {
+                font-size: 0.78rem;
+                color: #cbd5e1;
+                background: rgba(255, 255, 255, 0.06);
+                padding: 0.2rem 0.6rem;
+                border-radius: 12px;
+                margin-left: 0.25rem;
+            }
+
+            /* Sticky Stacking Cards Showcase Section */
+            .stacking-section {
+                max-width: 1220px;
+                margin: 3rem auto 8rem;
+                padding: 0 1.5rem;
+                position: relative;
+            }
+
+            .stacking-intro {
+                text-align: center;
+                max-width: 720px;
+                margin: 0 auto 3.5rem;
+            }
+
+            .stacking-title {
+                font-size: clamp(2rem, 3.5vw, 2.75rem);
+                font-weight: 800;
+                line-height: 1.25;
+                margin: 1rem 0 0.75rem;
+                color: #fff;
+                letter-spacing: -0.02em;
+            }
+
+            .stacking-sub {
+                color: var(--text-muted);
+                font-size: 1.05rem;
+            }
+
+            .stacking-cards-wrapper {
+                position: relative;
+                width: 100%;
+            }
+
+            .stacking-card {
+                position: sticky;
+                top: calc(76px + (var(--card-index) - 1) * 12px);
+                min-height: calc(100vh - 120px);
+                margin-bottom: 10vh;
+                border-radius: 28px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                box-shadow:
+                    0 -25px 60px rgba(0, 0, 0, 0.85),
+                    0 30px 60px rgba(0, 0, 0, 0.7);
+                padding: 2rem 3rem 3rem;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+                justify-content: center;
+                backdrop-filter: blur(24px);
+                transform-origin: center top;
+                transition:
+                    transform 0.25s cubic-bezier(0.2, 0, 0, 1),
+                    filter 0.25s cubic-bezier(0.2, 0, 0, 1);
+            }
+
+            .stacking-card:last-child {
+                margin-bottom: 5rem;
+            }
+
+            .stacking-card.card-1 {
+                z-index: 1;
+                background: linear-gradient(155deg, #131525 0%, #090a12 100%);
+                border-color: rgba(229, 9, 20, 0.35);
+            }
+
+            .stacking-card.card-2 {
+                z-index: 2;
+                background: linear-gradient(155deg, #0e182e 0%, #060b16 100%);
+                border-color: rgba(56, 189, 248, 0.35);
+            }
+
+            .stacking-card.card-3 {
+                z-index: 3;
+                background: linear-gradient(155deg, #0b1f1e 0%, #051010 100%);
+                border-color: rgba(52, 211, 153, 0.35);
+            }
+
+            .stacking-card.card-4 {
+                z-index: 4;
+                background: linear-gradient(155deg, #201a0f 0%, #0f0c06 100%);
+                border-color: rgba(251, 191, 36, 0.35);
+            }
+
+            .stacking-step-anchor {
+                position: relative;
+                height: 0;
+                width: 100%;
+                pointer-events: none;
+                visibility: hidden;
+            }
+
+            .stacking-card-topbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                padding-bottom: 0.85rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .card-step-badge {
+                font-size: 0.78rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                color: #94a3b8;
+                text-transform: uppercase;
+            }
+
+            .card-step-hint {
+                font-size: 0.76rem;
+                color: var(--text-muted);
+                opacity: 0.85;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+
+            .card-step-dots {
+                display: flex;
+                gap: 0.4rem;
+                align-items: center;
+            }
+
+            .step-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.25);
+                transition: all 0.25s ease;
+                cursor: pointer;
+            }
+
+            .step-dot:hover {
+                background: rgba(255, 255, 255, 0.6);
+                transform: scale(1.3);
+            }
+
+            .step-dot.active {
+                width: 22px;
+                border-radius: 4px;
+                background: #fff;
+                cursor: default;
+                transform: none;
+            }
+
+            .card-1 .step-dot.active {
+                background: #ff4d4d;
+                box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
+            }
+            .card-2 .step-dot.active {
+                background: #38bdf8;
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            }
+            .card-3 .step-dot.active {
+                background: #34d399;
+                box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+            }
+            .card-4 .step-dot.active {
+                background: #fbbf24;
+                box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+            }
+
+            .stacking-card-body {
+                display: grid;
+                grid-template-columns: 1fr 1.15fr;
+                gap: 3rem;
+                align-items: center;
+            }
+
+            .showcase-info {
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+                text-align: left;
+            }
+
+            .showcase-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.3rem 0.8rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                width: fit-content;
+            }
+
+            .showcase-pill-sub {
+                color: #ff6b6b;
+                background: rgba(229, 9, 20, 0.12);
+                border: 1px solid rgba(229, 9, 20, 0.3);
+            }
+
+            .showcase-pill-history {
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.12);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+            }
+
+            .showcase-pill-learn {
+                color: #34d399;
+                background: rgba(52, 211, 153, 0.12);
+                border: 1px solid rgba(52, 211, 153, 0.3);
+            }
+
+            .showcase-pill-ai {
+                color: #fbbf24;
+                background: rgba(251, 191, 36, 0.12);
+                border: 1px solid rgba(251, 191, 36, 0.3);
+            }
+
+            .showcase-heading {
+                font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+                font-weight: 800;
+                line-height: 1.25;
+                letter-spacing: -0.02em;
+                color: #fff;
+            }
+
+            .showcase-desc {
+                color: var(--text-muted);
+                font-size: 0.98rem;
+                line-height: 1.7;
+            }
+
+            .showcase-feature-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.9rem;
+            }
+
+            .showcase-feature-item {
+                display: flex;
+                gap: 0.75rem;
+                align-items: flex-start;
+                font-size: 0.95rem;
+                color: #e2e8f0;
+                line-height: 1.5;
+            }
+
+            .showcase-feature-item strong {
+                color: #fff;
+            }
+
+            .showcase-feature-bullet {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.75rem;
+                font-weight: 700;
+                flex-shrink: 0;
+                margin-top: 2px;
+                background: rgba(255, 255, 255, 0.08);
+                color: #38bdf8;
+            }
+
+            .showcase-tags-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+            }
+
+            .showcase-canvas {
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: #090a10;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+                position: relative;
+            }
+
+            /* Mockup Components */
+            .mock-dash {
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+                text-align: left;
+            }
+
+            .mock-dash-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                padding-bottom: 0.75rem;
+            }
+
+            .mock-dash-title {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #f1f5f9;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .mock-dash-badge {
+                font-size: 0.75rem;
+                color: #38bdf8;
+                font-weight: 600;
+            }
+
+            .mock-stat-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+            }
+
+            .mock-stat-box {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
+                padding: 0.75rem;
+                text-align: center;
+            }
+
+            .mock-stat-num {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #38bdf8;
+            }
+
+            .mock-stat-lbl {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+
+            .mock-item-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+
+            .mock-item-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: #fff;
+            }
+
+            .mock-item-tag {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                background: rgba(255, 255, 255, 0.06);
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .mock-progress-track {
+                height: 6px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 3px;
+                overflow: hidden;
+            }
+
+            .mock-progress-bar {
+                height: 100%;
+                background: linear-gradient(90deg, #38bdf8, #6366f1);
+                border-radius: 3px;
+            }
+
+            .mock-item-footer {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.78rem;
+                color: #94a3b8;
+                align-items: center;
+            }
+
+            .mock-cache-pill {
+                color: #34d399;
+                font-weight: 600;
+            }
+
+            /* Mock Vocab Popover */
+            .mock-vocab-viewport {
+                padding: 2.5rem 1.5rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+                position: relative;
+                min-height: 380px;
+                background: radial-gradient(
+                    circle at 50% 50%,
+                    rgba(99, 102, 241, 0.15) 0%,
+                    transparent 70%
+                );
+            }
+
+            .mock-sub-row {
+                background: rgba(0, 0, 0, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                max-width: 90%;
+            }
+
+            .mock-sub-jp {
+                font-size: 1.2rem;
+                color: #f1f5f9;
+                font-weight: 500;
+                margin-bottom: 0.35rem;
+            }
+
+            .mock-sub-zh {
+                font-size: 1.25rem;
+                color: #facc15;
+                font-weight: 700;
+            }
+
+            .mock-word-highlight {
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.15);
+                padding: 2px 4px;
+                border-radius: 4px;
+                border-bottom: 2px solid #38bdf8;
+                cursor: pointer;
+            }
+
+            .mock-popover {
+                background: rgba(22, 24, 35, 0.95);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+                box-shadow:
+                    0 20px 40px rgba(0, 0, 0, 0.7),
+                    0 0 20px rgba(56, 189, 248, 0.2);
+                border-radius: 12px;
+                padding: 1.25rem;
+                max-width: 360px;
+                text-align: left;
+                backdrop-filter: blur(16px);
+                animation: popoverFloat 3s ease-in-out infinite alternate;
+            }
+
+            @keyframes popoverFloat {
+                0% {
+                    transform: translateY(0);
+                }
+                100% {
+                    transform: translateY(-4px);
+                }
+            }
+
+            .mock-popover-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin-bottom: 0.5rem;
+            }
+
+            .mock-popover-word {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .mock-popover-kana {
+                font-size: 0.85rem;
+                color: #94a3b8;
+                margin-left: 0.4rem;
+            }
+
+            .mock-popover-type {
+                font-size: 0.72rem;
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.1);
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .mock-popover-def {
+                font-size: 0.85rem;
+                color: #cbd5e1;
+                line-height: 1.5;
+                margin-bottom: 0.9rem;
+            }
+
+            .mock-popover-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .mock-popover-btn {
+                font-size: 0.78rem;
+                padding: 0.4rem 0.75rem;
+                border-radius: 6px;
+                font-weight: 600;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.05);
+                color: #fff;
+                cursor: pointer;
+            }
+
+            .mock-popover-btn.active {
+                background: #10b981;
+                border-color: #10b981;
+                color: #fff;
+            }
+
+            /* Mock Models Card */
+            .mock-models-body {
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                text-align: left;
+            }
+
+            .mock-model-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 1.1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+                transition: all 0.2s;
+            }
+
+            .mock-model-card.active {
+                border-color: rgba(251, 191, 36, 0.4);
+                background: rgba(251, 191, 36, 0.05);
+                box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);
+            }
+
+            .mock-model-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+
+            .mock-model-name {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .mock-model-sub {
+                display: block;
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+
+            .mock-model-tag {
+                font-size: 0.72rem;
+                padding: 2px 7px;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.08);
+                color: #cbd5e1;
+            }
+
+            .mock-model-tag.active {
+                background: rgba(251, 191, 36, 0.2);
+                color: #fbbf24;
+                font-weight: 600;
+            }
+
+            .mock-model-detail {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.8rem;
+                color: #94a3b8;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 0.5rem;
+            }
+
+            .mock-model-detail code {
+                background: rgba(255, 255, 255, 0.08);
+                padding: 1px 5px;
+                border-radius: 3px;
+                color: #38bdf8;
+            }
+
+            .mock-models-footer {
+                text-align: center;
+                font-size: 0.8rem;
+                color: #94a3b8;
+                padding-top: 0.5rem;
+            }
+
+            @media (max-width: 900px) {
+                .stacking-card {
+                    position: relative;
+                    top: auto !important;
+                    min-height: auto;
+                    margin-bottom: 2rem;
+                    padding: 2rem 1.25rem;
+                    transform: none !important;
+                    filter: none !important;
+                }
+                .stacking-card-body {
+                    grid-template-columns: 1fr;
+                    gap: 2rem;
+                }
+                .mock-stat-grid {
+                    grid-template-columns: 1fr;
+                }
+                .sub-gallery-grid {
+                    grid-template-columns: 1fr !important;
+                }
+            }
+
+            /* Real Screenshot Subtitle Gallery */
+            .sub-gallery-tabs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.45rem;
+                padding: 0.75rem 1rem;
+                background: rgba(15, 17, 26, 0.9);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .sub-gallery-tab {
+                appearance: none;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.04);
+                color: #9ca3af;
+                font-size: 0.78rem;
+                font-weight: 600;
+                padding: 0.35rem 0.75rem;
+                border-radius: 999px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .sub-gallery-tab:hover {
+                color: #f3f4f6;
+                border-color: rgba(255, 255, 255, 0.25);
+            }
+            .sub-gallery-tab.active {
+                background: rgba(229, 9, 20, 0.18);
+                border-color: rgba(229, 9, 20, 0.55);
+                color: #fff;
+            }
+            .sub-gallery-body {
+                padding: 0.9rem;
+                background: #090a10;
+            }
+            .sub-gallery-panel {
+                display: none;
+            }
+            .sub-gallery-panel.active {
+                display: block;
+            }
+            .sub-gallery-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                align-items: start;
+            }
+            .sub-gallery-grid.single {
+                grid-template-columns: 1fr;
+            }
+            .sub-shot-card {
+                margin: 0;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+            .sub-shot-card img {
+                width: 100%;
+                max-height: 310px;
+                object-fit: contain;
+                background: #05060a;
+                display: block;
+                cursor: zoom-in;
+            }
+            .sub-shot-card figcaption {
+                padding: 0.45rem 0.7rem;
+                font-size: 0.76rem;
+                color: #cbd5e1;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                background: rgba(15, 17, 26, 0.75);
+            }
+            .sub-gallery-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.55rem 1rem;
+                font-size: 0.74rem;
+                color: #9ca3af;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                background: rgba(15, 17, 26, 0.85);
+            }
+            .sub-lightbox {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.86);
+                backdrop-filter: blur(6px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+                z-index: 9999;
+                cursor: zoom-out;
+            }
+            .sub-lightbox.open {
+                display: flex;
+            }
+            .sub-lightbox img {
+                max-width: 94vw;
+                max-height: 90vh;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+            }
+
+            /* Apple-Style Vertical Storytelling Showcase */
+            .apple-showcase {
+                position: relative;
+                padding: 2rem 0 4rem;
+            }
+            .apple-chapter {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 5.5rem 1.5rem;
+                text-align: center;
+                opacity: 0;
+                transform: translateY(28px);
+                transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            .apple-chapter.is-visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .apple-eyebrow {
+                display: inline-block;
+                font-size: 0.85rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #ff4d5a;
+                margin-bottom: 1rem;
+            }
+            .apple-headline {
+                font-size: clamp(2.1rem, 4.6vw, 3.5rem);
+                font-weight: 800;
+                line-height: 1.14;
+                letter-spacing: -0.03em;
+                color: #f5f5f7;
+                margin: 0 auto 1.25rem;
+                max-width: 820px;
+            }
+            .apple-lead {
+                font-size: clamp(1rem, 1.5vw, 1.18rem);
+                line-height: 1.7;
+                color: #86868b;
+                max-width: 680px;
+                margin: 0 auto 3rem;
+            }
+            .apple-hero-media {
+                border-radius: 22px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: #05060a;
+                box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75);
+            }
+            .apple-hero-media img {
+                width: 100%;
+                display: block;
+                cursor: zoom-in;
+            }
+            .apple-media-caption {
+                margin-top: 0.9rem;
+                font-size: 0.8rem;
+                color: #6e6e73;
+            }
+            .apple-split {
+                display: grid;
+                grid-template-columns: 1.05fr 0.95fr;
+                gap: 3rem;
+                align-items: center;
+                text-align: left;
+                margin-top: 1rem;
+            }
+            .apple-split-copy .apple-headline {
+                font-size: clamp(2rem, 3.6vw, 2.9rem);
+                margin: 0 0 1.1rem;
+                text-align: left;
+            }
+            .apple-split-copy .apple-lead {
+                margin: 0 0 1.75rem;
+                text-align: left;
+            }
+            .apple-mini-highlights {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.65rem;
+            }
+            .apple-mini-pill {
+                padding: 0.45rem 0.9rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #d1d5db;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            .apple-dual-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+                align-items: stretch;
+            }
+            .apple-media-card {
+                background: rgba(255, 255, 255, 0.025);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 20px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+            }
+            .apple-media-card img {
+                width: 100%;
+                height: 100%;
+                max-height: 360px;
+                object-fit: contain;
+                background: #06070b;
+                display: block;
+                cursor: zoom-in;
+            }
+            .apple-media-card-meta {
+                padding: 1.1rem 1.35rem;
+                text-align: left;
+                border-top: 1px solid rgba(255, 255, 255, 0.07);
+                background: rgba(15, 17, 26, 0.75);
+            }
+            .apple-media-card-meta strong {
+                display: block;
+                color: #f5f5f7;
+                font-size: 1rem;
+                margin-bottom: 0.25rem;
+            }
+            .apple-media-card-meta span {
+                color: #86868b;
+                font-size: 0.88rem;
+                line-height: 1.5;
+            }
+            .apple-stats-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+                margin: 0 auto 3rem;
+                max-width: 820px;
+            }
+            .apple-stat-item {
+                padding: 1.4rem 1rem;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .apple-stat-num {
+                font-size: clamp(2rem, 3.5vw, 2.75rem);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+                color: #f5f5f7;
+                line-height: 1.1;
+                margin-bottom: 0.4rem;
+            }
+            .apple-stat-label {
+                font-size: 0.9rem;
+                color: #86868b;
+            }
+            .apple-text-bento {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.25rem;
+                text-align: left;
+            }
+            .apple-bento-card {
+                padding: 2rem 1.75rem;
+                border-radius: 20px;
+                background: rgba(255, 255, 255, 0.025);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .apple-bento-icon {
+                font-size: 1.75rem;
+                margin-bottom: 1rem;
+            }
+            .apple-bento-card h3 {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: #f5f5f7;
+                margin: 0 0 0.6rem;
+            }
+            .apple-bento-card p {
+                font-size: 0.94rem;
+                line-height: 1.65;
+                color: #86868b;
+                margin: 0;
+            }
+            @media (max-width: 900px) {
+                .apple-chapter {
+                    padding: 3.75rem 1.25rem;
+                }
+                .apple-split,
+                .apple-dual-grid,
+                .apple-stats-row,
+                .apple-text-bento {
+                    grid-template-columns: 1fr;
+                }
+                .apple-split-copy .apple-headline,
+                .apple-split-copy .apple-lead {
+                    text-align: center;
+                }
+                .apple-mini-highlights {
+                    justify-content: center;
+                }
+            }
+
+        </style>
+    </head>
+    <body>
+        <!-- Navigation -->
+        <header>
+            <div class="nav-container">
+                <div class="logo-group">
+                    <img src="../icons/icon48.png" alt="CoWatcher Logo" />
+                    <span>CoWatcher</span>
+                </div>
+                <div class="nav-links">
+                    <a
+                        href="#features"
+                        class="hide-mobile"
+                        data-i18n="nav-features"
+                        >核心特性</a
+                    >
+                    <a href="#guide" class="hide-mobile" data-i18n="nav-guide"
+                        >安装指南</a
+                    >
+                    <a
+                        href="docs/"
+                        id="doc-link"
+                        target="_blank"
+                        data-i18n="nav-docs"
+                        >使用文档</a
+                    >
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension"
+                        target="_blank"
+                        >GitHub</a
+                    >
+                    <a
+                        class="lang-toggle"
+                        id="lang-btn"
+                        href="../en/"
+                        onclick="localStorage.setItem('ncw_page_lang', 'en')"
+                        >🌐 <span id="lang-text">English</span></a
+                    >
+                </div>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <main>
+            <section class="hero">
+                <!-- Platform Support Bar -->
+                <div class="platform-bar">
+                    <span class="platform-bar-label">支持平台</span>
+                    <span class="platform-chip platform-netflix"
+                        ><span class="platform-dot"></span>Netflix
+                        官方/广告版</span
+                    >
+                    <span class="platform-chip platform-tver"
+                        ><span class="platform-dot"></span>TVer 日本电视</span
+                    >
+                    <span class="platform-chip platform-youtube"
+                        ><span class="platform-dot"></span>YouTube 视频</span
+                    >
+                    <span class="platform-badge">专有优化</span>
+                </div>
+
+                <h1 data-i18n="hero-title">
+                    让每一部好剧，都不再受限于语言<br />
+                    <span class="gradient-text"
+                        >让每一次遇见，不再被时光遗忘</span
+                    >
+                </h1>
+
+                <p class="subtitle" data-i18n="hero-sub">
+                    专为流媒体打造的 AI 智能观影助手 ·
+                    融合实时双语字幕、影视观影足迹与沉浸式外语学习
+                </p>
+
+                <div class="cta-group">
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension/releases"
+                        target="_blank"
+                        class="btn btn-primary"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span data-i18n="btn-download"
+                            >下载最新扩展包 (.zip)</span
+                        >
+                    </a>
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension"
+                        target="_blank"
+                        class="btn btn-secondary"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                            ></polygon>
+                        </svg>
+                        <span>Star on GitHub</span>
+                    </a>
+                    <a
+                        href="https://ko-fi.com/sfbb49898"
+                        target="_blank"
+                        class="btn btn-kofi"
+                    >
+                        ☕
+                        <span data-i18n="btn-kofi">赞助作者上架 Web Store</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Apple-Style Vertical Storytelling Showcase -->
+            <section class="apple-showcase" id="showcase">
+                <!-- Chapter 1: Hero Bilingual Fullscreen -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">01 · 实时双语字幕</span>
+                    <h2 class="apple-headline">原生质感，自然融入每一帧。</h2>
+                    <p class="apple-lead">
+                        双语分层渲染，译文与原文清晰对齐。专为 Netflix、YouTube 与 TVer 播放器深度适配，对抗贴片广告引起的时轴错位，并自动缓存已译字幕，重看零等待、零额外消耗。
+                    </p>
+                    <div class="apple-hero-media">
+                        <img
+                            src="../screenshots/subtitle-fullscreen.png"
+                            alt="CoWatcher YouTube 全屏双语字幕渲染实景"
+                            class="apple-zoomable"
+                        />
+                    </div>
+                    <p class="apple-media-caption">
+                        演示视频来源：Scott Buckley《How to use my music correctly》（CC BY）· 点击任意截图可放大查看
+                    </p>
+                </div>
+
+                <!-- Chapter 2: Subtitle Styles & Display Modes -->
+                <div class="apple-chapter">
+                    <div class="apple-split">
+                        <div class="apple-split-copy">
+                            <span class="apple-eyebrow">02 · 自由排版与样式</span>
+                            <h2 class="apple-headline">四种模式，随心切换。</h2>
+                            <p class="apple-lead">
+                                双语对照、仅译文、仅原文、半透明专注底框与主副行上下互换。无论深色电影还是亮色访谈，都能在弹窗里一键切到最顺眼的阅读方式。
+                            </p>
+                            <div class="apple-mini-highlights">
+                                <span class="apple-mini-pill">双语分层</span>
+                                <span class="apple-mini-pill">单语沉浸</span>
+                                <span class="apple-mini-pill">主副行互换</span>
+                                <span class="apple-mini-pill">Alt + T 快捷键</span>
+                            </div>
+                        </div>
+                        <div class="apple-dual-grid" style="grid-template-columns: 1fr;">
+                            <figure class="apple-media-card" style="margin: 0;">
+                                <img
+                                    src="../screenshots/subtitle-styles.png"
+                                    alt="四种字幕样式与显示模式对比"
+                                    class="apple-zoomable"
+                                    style="max-height: 440px;"
+                                />
+                                <figcaption class="apple-media-card-meta">
+                                    <strong>多模式实时渲染对比</strong>
+                                    <span>清晰描边与半透明底框任选，兼顾可读性与画面沉浸感。</span>
+                                </figcaption>
+                            </figure>
+                            <figure class="apple-media-card" style="margin: 0;">
+                                <img
+                                    src="../screenshots/subtitle-display-modes.png"
+                                    alt="弹窗内一键切换显示模式"
+                                    class="apple-zoomable"
+                                    style="max-height: 180px;"
+                                />
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter 3: Glossary & Cross-Episode Consistency -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">03 · 跨集术语记忆</span>
+                    <h2 class="apple-headline">追十集，人名始终如一。</h2>
+                    <p class="apple-lead">
+                        内置跨集 Glossary 术语表，锁定角色译名、别名与专有名词。支持直接粘贴维基百科或角色设定表，由 AI 自动对齐提取双语词条，并按单集或全剧一键刷新缓存。
+                    </p>
+                    <div class="apple-dual-grid">
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/glossary-editor.png"
+                                alt="跨集术语表与角色译名编辑器"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>角色与术语锁定表</strong>
+                                <span>统一译名与别名映射，修改后可即时作用于当前集或整部剧集。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/glossary-ai-extract.png"
+                                alt="AI 从双语参考资料自动提取术语表"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>AI 百科对齐提取</strong>
+                                <span>粘贴剧情简介或双语角色表，自动抽取并对齐人名与世界观术语。</span>
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+
+                <!-- Chapter 4: Providers & Languages -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">04 · 多引擎与多语言</span>
+                    <h2 class="apple-headline">免费开箱，也可接入你的大模型。</h2>
+                    <p class="apple-lead">
+                        默认内置 Google 翻译，无需任何 API Key 即可开始观影；追求更懂剧情的语境精翻，可随时切换本地 Ollama 或云端 OpenRouter。
+                    </p>
+                    <div class="apple-stats-row">
+                        <div class="apple-stat-item">
+                            <div class="apple-stat-num">3</div>
+                            <div class="apple-stat-label">大翻译引擎 · 自由切换</div>
+                        </div>
+                        <div class="apple-stat-item">
+                            <div class="apple-stat-num">14+</div>
+                            <div class="apple-stat-label">目标翻译语种支持</div>
+                        </div>
+                        <div class="apple-stat-item">
+                            <div class="apple-stat-num">0ms</div>
+                            <div class="apple-stat-label">本地缓存命中重看延迟</div>
+                        </div>
+                    </div>
+                    <div class="apple-dual-grid">
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/subtitle-ai-providers.png"
+                                alt="AI 服务提供商切换菜单"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>Google · Ollama · OpenRouter</strong>
+                                <span>兼顾零成本开箱即用、本地隐私运行与云端高质量模型。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/subtitle-languages.png"
+                                alt="多语言翻译支持列表"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>14+ 目标语言与多语界面</strong>
+                                <span>覆盖简繁中文、英、日、韩及主流欧亚语种。</span>
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+
+                <!-- Chapter 5: Other Capabilities (Text-Only Minimalist Bento) -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">更多体验 · 即将呈现实机预览</span>
+                    <h2 class="apple-headline">不止字幕，更是顺手的追剧伴侣。</h2>
+                    <p class="apple-lead">
+                        除了双语字幕与术语记忆，CoWatcher 还把观影记录、点词学习与隐私保护整合在同一套轻量工作流里。
+                    </p>
+                    <div class="apple-text-bento">
+                        <div class="apple-bento-card">
+                            <div class="apple-bento-icon">⏱️</div>
+                            <h3>自动观影足迹</h3>
+                            <p>默默记录你看过的每一集与有效沉浸时长，无需手动打卡即可回顾追剧历程。</p>
+                        </div>
+                        <div class="apple-bento-card">
+                            <div class="apple-bento-icon">📚</div>
+                            <h3>点词查义与生词本</h3>
+                            <p>看剧时点击字幕单词即可查看释义并自动暂停，支持沉淀为词库并导出至 Anki。</p>
+                        </div>
+                        <div class="apple-bento-card">
+                            <div class="apple-bento-icon">🔒</div>
+                            <h3>本地存储与隐私优先</h3>
+                            <p>字幕缓存与观影历史均保存在本地浏览器中，API Key 支持 AES-256 主密码加密保护。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Install Guide -->
+            <section class="steps-section" id="guide">
+                <div class="section-title">
+                    <h2 data-i18n="guide-title">三分钟快速上手</h2>
+                    <p data-i18n="guide-sub">
+                        只需简单几步，即可在 Chrome / Edge 中开启观影新体验
+                    </p>
+                </div>
+
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h4 data-i18n="step-1-title">下载扩展安装包</h4>
+                            <p data-i18n="step-1-desc">
+                                前往
+                                <a
+                                    href="https://github.com/cowatcher-app/cowatcher-extension/releases"
+                                    target="_blank"
+                                    style="
+                                        color: #38bdf8;
+                                        text-decoration: underline;
+                                    "
+                                    >GitHub Releases</a
+                                >
+                                下载最新的
+                                <code>cowatcher-extension.zip</code
+                                >，并在本地解压缩。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h4 data-i18n="step-2-title">
+                                打开开发者模式并加载
+                            </h4>
+                            <p data-i18n="step-2-desc">
+                                在浏览器地址栏输入
+                                <code>chrome://extensions/</code>，勾选右上角的
+                                <strong>开发者模式 (Developer Mode)</strong
+                                >，点击
+                                <strong
+                                    >加载已解压的扩展程序 (Load
+                                    unpacked)</strong
+                                >，选中解压出来的文件夹。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h4 data-i18n="step-3-title">选择模型并开启观影</h4>
+                            <p data-i18n="step-3-desc">
+                                点击浏览器右上角 CoWatcher
+                                插件图标，选择默认免费翻译、本地 Ollama
+                                或填写云端 API Key，打开 Netflix、TVer 或
+                                YouTube 播放页按下
+                                <code>Alt + T</code> 即可立即享受！
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ko-fi Support Banner -->
+            <div class="coffee-callout">
+                <h3>
+                    ☕
+                    <span data-i18n="coffee-title"
+                        >支持 CoWatcher 上架 Chrome 应用商店</span
+                    >
+                </h3>
+                <p data-i18n="coffee-desc">
+                    CoWatcher
+                    坚持完全开源透明。如果您喜欢这个项目，欢迎请作者喝一杯咖啡，您的赞助将帮助我们支付
+                    Chrome Web Store
+                    开发者账号费用，让更多影迷与外语学习者直接一键安装！所有赞助者都将被永久记录在鸣谢名册中。
+                </p>
+                <div
+                    style="
+                        display: flex;
+                        gap: 1rem;
+                        justify-content: center;
+                        flex-wrap: wrap;
+                        margin-top: 1rem;
+                    "
+                >
+                    <a
+                        href="https://ko-fi.com/sfbb49898"
+                        target="_blank"
+                        class="btn btn-kofi"
+                    >
+                        👉
+                        <span data-i18n="coffee-btn"
+                            >前往 Ko-fi 请作者喝杯咖啡</span
+                        >
+                    </a>
+                    <a
+                        href="../zh/docs/contributors.html"
+                        target="_blank"
+                        class="btn"
+                        style="
+                            background: rgba(255, 255, 255, 0.08);
+                            border: 1px solid rgba(255, 255, 255, 0.15);
+                        "
+                    >
+                        🌟
+                        <span data-i18n="coffee-contributors"
+                            >致谢与赞助者榜单</span
+                        >
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-container">
+                <div>
+                    <p>
+                        <strong>CoWatcher</strong> - Smart Watch History & AI
+                        Bilingual Subtitle Assistant
+                    </p>
+                    <p style="margin-top: 0.35rem; font-size: 0.8rem">
+                        Licensed under MIT © 2026 CoWatcher Contributors
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <a
+                        href="https://github.com/cowatcher-app/cowatcher-extension"
+                        target="_blank"
+                        >GitHub Repo</a
+                    >
+                    <a href="docs/" target="_blank" id="footer-doc-link"
+                        >控制面板详细指南</a
+                    >
+                    <a
+                        href="../zh/docs/contributors.html"
+                        target="_blank"
+                        data-i18n="footer-contributors"
+                        >贡献者与赞助者</a
+                    >
+                    <a
+                        href="../zh/docs/credits.html"
+                        target="_blank"
+                        data-i18n="footer-credits"
+                        >第三方引用与免责声明</a
+                    >
+                    <a href="https://ko-fi.com/sfbb49898" target="_blank"
+                        >Ko-fi 赞助</a
+                    >
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            // i18n Dictionary
+            const i18n = {
+                zh: {
+                    'page-title':
+                        'CoWatcher - 智能观影记录 · 双语字幕 · AI实时翻译 · 沉浸式外语学习助手',
+                    'nav-features': '核心特性',
+                    'nav-guide': '安装指南',
+                    'nav-docs': '使用文档',
+                    'hero-badge':
+                        'Netflix · TVer · YouTube 影视双语字幕 · 自动观影记录 · AI 智能伴侣',
+                    'hero-title':
+                        '让每一部好剧，都不再受限于语言<br><span class="gradient-text">让每一次遇见，不再被时光遗忘</span>',
+                    'hero-sub':
+                        '专为流媒体打造的 AI 智能观影助手 · 融合实时双语字幕、影视观影足迹与沉浸式外语学习',
+                    'btn-download': '下载最新扩展包 (.zip)',
+                    'btn-kofi': '赞助作者上架 Web Store',
+                    'feat-title': '为什么选择 CoWatcher？',
+                    'feat-sub':
+                        '不仅是实时字幕，更是为你量身定制的 AI 智能观影助手与外语学习伴侣',
+                    'feat-1-title': '双模型协同翻译 (Dual-Model)',
+                    'feat-1-desc':
+                        '轻量快译模型负责毫秒级字幕生成，追剧流畅不卡顿；后台智能审校模型动态纠错，确保连播中角色名、敬语与专属术语高度统一，不再机翻出戏。',
+                    'feat-2-title':
+                        '智能观影记录与影视记忆 (Show Context & History)',
+                    'feat-2-desc':
+                        '自动统计追剧活动与观看时长，第 1 集识别出的角色名与专有名词在下一集无缝继承。支持按语种独立隔离缓存，并在控制面板可视化查看与调整。',
+                    'feat-3-title': '语言学习与 Anki 深度整合',
+                    'feat-3-desc':
+                        '原生支持双语对照，原语言与翻译字幕可一键互换主副层；后台自动提取对话中的生词并支持一键录入，无缝衔接你的背词工作流。',
+                    'feat-4-title': '广告时移与原生级融合排版',
+                    'feat-4-desc':
+                        '深度适配 Netflix 广告版，智能校准插播广告后的时间轴偏移。同时完美支持横排与日剧/动漫常见的竖排排版，宛如官方原生质感。',
+                    'feat-5-title':
+                        '多种翻译方案随心选 (Flexible AI Providers)',
+                    'feat-5-desc':
+                        '内置免费翻译服务，开箱即用无需任何折腾；电脑有独立显卡可使用本地 Ollama 享受零费用与隐私保护；亦可一键直连 DeepSeek、Gemini、Claude 等顶尖云端模型。',
+                    'feat-6-title': '持久化缓存，Token 零浪费',
+                    'feat-6-desc':
+                        '自动基于当前剧集与模型持久化缓存翻译结果。重温心仪电影或反复拉片复习时，秒级调出历史字幕，绝不多耗费一枚 Token 或多余算力。',
+                    'guide-title': '三分钟快速上手',
+                    'guide-sub':
+                        '只需简单几步，即可在 Chrome / Edge 中开启观影新体验',
+                    'step-1-title': '下载扩展安装包',
+                    'step-1-desc':
+                        '前往 GitHub Releases 下载最新的 cowatcher-extension.zip，并在本地解压缩。',
+                    'step-2-title': '打开开发者模式并加载',
+                    'step-2-desc':
+                        '在浏览器地址栏输入 chrome://extensions/，勾选右上角的 开发者模式 (Developer Mode)，点击 加载已解压的扩展程序 (Load unpacked)，选中解压出来的文件夹。',
+                    'step-3-title': '选择模型并开启观影',
+                    'step-3-desc':
+                        '点击浏览器右上角 CoWatcher 插件图标，选择默认免费翻译、本地 Ollama 或填写云端 API Key，打开 Netflix、TVer 或 YouTube 播放页按下 Alt + T 即可立即享受！',
+                    'coffee-title': '支持 CoWatcher 上架 Chrome 应用商店',
+                    'coffee-desc':
+                        'CoWatcher 坚持完全开源透明。如果您喜欢这个项目，欢迎请作者喝一杯咖啡，您的赞助将帮助我们支付 Chrome Web Store 开发者账号费用与开源项目基础设施。所有赞助者都将被永久记录在鸣谢名册中！',
+                    'coffee-btn': '前往 Ko-fi 请作者喝杯咖啡',
+                    'coffee-contributors': '致谢与赞助者榜单',
+                    'footer-contributors': '贡献者与赞助者',
+                    'footer-credits': '第三方引用与免责声明',
+                },
+                en: {
+                    'page-title':
+                        'CoWatcher - Smart Watch History & Notes · Dual Subtitles · Real-Time AI Translation · Language Immersion',
+                    'nav-features': 'Features',
+                    'nav-guide': 'Installation',
+                    'nav-docs': 'Documentation',
+                    'hero-badge':
+                        'Netflix · TVer · YouTube Bilingual Subtitles · Watch History · AI Streaming Companion',
+                    'hero-title':
+                        'Never Let Language Bound a Great Show<br><span class="gradient-text">Never Let Encounters Fade in Time</span>',
+                    'hero-sub':
+                        'AI streaming companion for Netflix, TVer & YouTube · Real-time bilingual subtitles, watch footprints & immersive language learning',
+                    'btn-download': 'Download Latest (.zip)',
+                    'btn-kofi': 'Support on Ko-fi',
+                    'feat-title': 'Why CoWatcher?',
+                    'feat-sub':
+                        'More than real-time subtitles — an AI-native streaming companion engineered for movie lovers and language learners',
+                    'feat-1-title': 'Dual-Model Collaborative Pipeline',
+                    'feat-1-desc':
+                        'A fast model produces instant subtitles with zero lag, while a background supervisor model audits character names, honorifics, and terminology consistency.',
+                    'feat-2-title': 'Smart Watch History & Context Memory',
+                    'feat-2-desc':
+                        'Automatically tracks viewing sessions and duration. Character aliases and terms discovered in Episode 1 seamlessly persist into Episode 2 and beyond with per-language caching.',
+                    'feat-3-title': 'Designed for Language Learners',
+                    'feat-3-desc':
+                        'Native dual-language rendering with 1-click swap for primary/secondary subtitles. Automatic vocabulary detection bridges directly into your Anki flashcard workflow.',
+                    'feat-4-title': 'Ad Break Guard & Native Typography',
+                    'feat-4-desc':
+                        'Intelligent timeline compensation preserves subtitle sync across ad interruptions. Flawlessly supports both horizontal and authentic Japanese vertical typography.',
+                    'feat-5-title': 'Flexible AI Providers & Free Fallback',
+                    'feat-5-desc':
+                        'Free built-in translation works right away. Run privately and free on your local GPU with Ollama, or connect directly to top-tier cloud models (DeepSeek, Gemini, Claude).',
+                    'feat-6-title': 'Persistent Subtitle Cache',
+                    'feat-6-desc':
+                        'Translations are cached by show and model. Replay favorite scenes or rewatch episodes instantly with zero token consumption and zero latency.',
+                    'guide-title': 'Quick Start in 3 Minutes',
+                    'guide-sub':
+                        'Get up and running in Chrome or Edge in a few simple clicks',
+                    'step-1-title': '1. Download Extension Archive',
+                    'step-1-desc':
+                        'Navigate to GitHub Releases, download cowatcher-extension.zip, and extract it to a local folder.',
+                    'step-2-title': '2. Enable Developer Mode & Load',
+                    'step-2-desc':
+                        'Go to chrome://extensions/ in your browser, switch on Developer Mode (top right), click "Load unpacked", and pick the extracted folder.',
+                    'step-3-title': '3. Pick Provider & Start Watching',
+                    'step-3-desc':
+                        'Click the CoWatcher toolbar icon, pick free built-in translation, connect Ollama, or add your cloud API key, then press Alt + T in Netflix, TVer, or YouTube to start watching!',
+                    'coffee-title': 'Help Us Launch on the Chrome Web Store',
+                    'coffee-desc':
+                        'CoWatcher is 100% free and open-source. Buying the author a coffee helps cover Chrome Web Store developer registration fees and open-source infrastructure. All sponsors will be permanently acknowledged in our contributors roll!',
+                    'coffee-btn': 'Buy a Coffee on Ko-fi',
+                    'coffee-contributors': 'Sponsors & Contributors Roll',
+                    'footer-contributors': 'Contributors & Sponsors',
+                    'footer-credits': 'Credits & Notices',
+                },
+            };
+
+            const STORAGE_KEY = 'ncw_page_lang';
+
+            function detectInitialLang() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved === 'zh' || saved === 'en') {
+                        return saved;
+                    }
+                    const navLang = (
+                        navigator.language ||
+                        navigator.userLanguage ||
+                        ''
+                    ).toLowerCase();
+                    if (navLang.startsWith('zh')) {
+                        return 'zh';
+                    }
+                    return 'en';
+                } catch (e) {
+                    return 'zh';
+                }
+            }
+
+            let currentLang = 'zh';
+            try {
+                localStorage.setItem(STORAGE_KEY, 'zh');
+            } catch (e) {}
+
+            function toggleLang() {
+                currentLang = currentLang === 'zh' ? 'en' : 'zh';
+                try {
+                    localStorage.setItem(STORAGE_KEY, currentLang);
+                } catch (e) {}
+                applyLang(currentLang);
+            }
+
+            function applyLang(lang) {
+                currentLang = lang;
+                const langText = document.getElementById('lang-text');
+                if (langText) {
+                    langText.innerText = lang === 'zh' ? 'English' : '中文';
+                }
+                document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+
+                // Update page title
+                if (i18n[lang] && i18n[lang]['page-title']) {
+                    document.title = i18n[lang]['page-title'];
+                }
+
+                // Update doc links
+                const docLink = document.getElementById('doc-link');
+                const footerDocLink =
+                    document.getElementById('footer-doc-link');
+                if (docLink) {
+                    docLink.href = 'docs/';
+                }
+                if (footerDocLink) {
+                    footerDocLink.href = 'docs/';
+                    footerDocLink.innerText =
+                        lang === 'zh'
+                            ? '在线使用与配置指南'
+                            : 'Online Documentation & Guide';
+                }
+
+                // Update text nodes
+                const elements = document.querySelectorAll('[data-i18n]');
+                elements.forEach((el) => {
+                    const key = el.getAttribute('data-i18n');
+                    if (key && i18n[lang] && i18n[lang][key]) {
+                        el.innerHTML = i18n[lang][key];
+                    }
+                });
+            }
+
+            // Initialize language on page load based on browser detection or remembered preference
+            applyLang(currentLang);
+
+            // Dynamic Subtitle Demo cycling
+            const demoSamples = [
+                {
+                    orig: '「君の言葉を、もっと<span class="highlight-word" title="生词：知りたい (想知道)">知りたい</span>んだ。」',
+                    trans: '“我想更加理解你所说的话。”',
+                    note: '🤖 Gemma-4 Supervisor: 角色全名统一为「西宫硝子」| 词汇已收录',
+                },
+                {
+                    orig: '「あきらめたら、そこで<span class="highlight-word" title="生词：試合終了 (比赛结束)">試合終了</span>ですよ…？」',
+                    trans: '“如果放弃的话，比赛可就在这里提前结束了哦…？”',
+                    note: '⚡ TranslateGemma: 实时毫秒级流式快译',
+                },
+                {
+                    orig: '「俺は海賊王になる<span class="highlight-word" title="生词：男 (男子汉)">男</span>だ！」',
+                    trans: '“我可是要成为海贼王的男人！”',
+                    note: '🎬 Context: 自动继承跨集角色名与词表',
+                },
+            ];
+
+            let demoIndex = 0;
+            setInterval(() => {
+                demoIndex = (demoIndex + 1) % demoSamples.length;
+                const box = document.getElementById('demo-sub');
+                if (!box) return;
+                box.style.opacity = '0';
+                box.style.transform = 'translateY(6px)';
+                setTimeout(() => {
+                    const sample = demoSamples[demoIndex];
+                    const origEl = document.getElementById('demo-orig');
+                    const transEl = document.getElementById('demo-trans');
+                    if (origEl) origEl.innerHTML = sample.orig;
+                    if (transEl) transEl.innerText = sample.trans;
+                    const tag = box.querySelector('.sub-pill-tag');
+                    if (tag) tag.innerText = sample.note;
+                    box.style.transition = 'all 0.5s ease-out';
+                    box.style.opacity = '1';
+                    box.style.transform = 'translateY(0)';
+                }, 300);
+            }, 4500);
+
+            // Apple-Style Scroll Reveal & Screenshot Lightbox
+            (function () {
+                const chapters = document.querySelectorAll(.apple-chapter);
+                if (IntersectionObserver in window) {
+                    const observer = new IntersectionObserver(
+                        (entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    entry.target.classList.add(is-visible);
+                                    observer.unobserve(entry.target);
+                                }
+                            });
+                        },
+                        { threshold: 0.12 }
+                    );
+                    chapters.forEach((ch) => observer.observe(ch));
+                } else {
+                    chapters.forEach((ch) => ch.classList.add(is-visible));
+                }
+
+                const lightbox = document.createElement(div);
+                lightbox.className = sub-lightbox;
+                const lightboxImg = document.createElement(img);
+                lightbox.appendChild(lightboxImg);
+                document.body.appendChild(lightbox);
+
+                document.querySelectorAll(.apple-zoomable).forEach((img) => {
+                    img.addEventListener(click, () => {
+                        lightboxImg.src = img.src;
+                        lightboxImg.alt = img.alt;
+                        lightbox.classList.add(open);
+                    });
+                });
+                lightbox.addEventListener(click, () => {
+                    lightbox.classList.remove(open);
+                });
+                window.addEventListener(keydown, (e) => {
+                    if (e.key === Escape) {
+                        lightbox.classList.remove(open);
+                    }
+                });
+            })();
+        </script>
+    </body>
+</html>
