@@ -1440,6 +1440,211 @@
                 border: 1px solid rgba(255, 255, 255, 0.16);
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
             }
+
+            /* Apple-Style Vertical Storytelling Showcase */
+            .apple-showcase {
+                position: relative;
+                padding: 2rem 0 4rem;
+            }
+            .apple-chapter {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 5.5rem 1.5rem;
+                text-align: center;
+                opacity: 0;
+                transform: translateY(28px);
+                transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            .apple-chapter.is-visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .apple-eyebrow {
+                display: inline-block;
+                font-size: 0.85rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #ff4d5a;
+                margin-bottom: 1rem;
+            }
+            .apple-headline {
+                font-size: clamp(2.1rem, 4.6vw, 3.5rem);
+                font-weight: 800;
+                line-height: 1.14;
+                letter-spacing: -0.03em;
+                color: #f5f5f7;
+                margin: 0 auto 1.25rem;
+                max-width: 820px;
+            }
+            .apple-lead {
+                font-size: clamp(1rem, 1.5vw, 1.18rem);
+                line-height: 1.7;
+                color: #86868b;
+                max-width: 680px;
+                margin: 0 auto 3rem;
+            }
+            .apple-hero-media {
+                border-radius: 22px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: #05060a;
+                box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75);
+            }
+            .apple-hero-media img {
+                width: 100%;
+                display: block;
+                cursor: zoom-in;
+            }
+            .apple-media-caption {
+                margin-top: 0.9rem;
+                font-size: 0.8rem;
+                color: #6e6e73;
+            }
+            .apple-split {
+                display: grid;
+                grid-template-columns: 1.05fr 0.95fr;
+                gap: 3rem;
+                align-items: center;
+                text-align: left;
+                margin-top: 1rem;
+            }
+            .apple-split-copy .apple-headline {
+                font-size: clamp(2rem, 3.6vw, 2.9rem);
+                margin: 0 0 1.1rem;
+                text-align: left;
+            }
+            .apple-split-copy .apple-lead {
+                margin: 0 0 1.75rem;
+                text-align: left;
+            }
+            .apple-mini-highlights {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.65rem;
+            }
+            .apple-mini-pill {
+                padding: 0.45rem 0.9rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #d1d5db;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            .apple-dual-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+                align-items: stretch;
+            }
+            .apple-media-card {
+                background: rgba(255, 255, 255, 0.025);
+                border: 1px solid rgba(255, 255, 255, 0.09);
+                border-radius: 20px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+            }
+            .apple-media-card img {
+                width: 100%;
+                height: 100%;
+                max-height: 360px;
+                object-fit: contain;
+                background: #06070b;
+                display: block;
+                cursor: zoom-in;
+            }
+            .apple-media-card-meta {
+                padding: 1.1rem 1.35rem;
+                text-align: left;
+                border-top: 1px solid rgba(255, 255, 255, 0.07);
+                background: rgba(15, 17, 26, 0.75);
+            }
+            .apple-media-card-meta strong {
+                display: block;
+                color: #f5f5f7;
+                font-size: 1rem;
+                margin-bottom: 0.25rem;
+            }
+            .apple-media-card-meta span {
+                color: #86868b;
+                font-size: 0.88rem;
+                line-height: 1.5;
+            }
+            .apple-stats-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+                margin: 0 auto 3rem;
+                max-width: 820px;
+            }
+            .apple-stat-item {
+                padding: 1.4rem 1rem;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .apple-stat-num {
+                font-size: clamp(2rem, 3.5vw, 2.75rem);
+                font-weight: 800;
+                letter-spacing: -0.03em;
+                color: #f5f5f7;
+                line-height: 1.1;
+                margin-bottom: 0.4rem;
+            }
+            .apple-stat-label {
+                font-size: 0.9rem;
+                color: #86868b;
+            }
+            .apple-text-bento {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.25rem;
+                text-align: left;
+            }
+            .apple-bento-card {
+                padding: 2rem 1.75rem;
+                border-radius: 20px;
+                background: rgba(255, 255, 255, 0.025);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .apple-bento-icon {
+                font-size: 1.75rem;
+                margin-bottom: 1rem;
+            }
+            .apple-bento-card h3 {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: #f5f5f7;
+                margin: 0 0 0.6rem;
+            }
+            .apple-bento-card p {
+                font-size: 0.94rem;
+                line-height: 1.65;
+                color: #86868b;
+                margin: 0;
+            }
+            @media (max-width: 900px) {
+                .apple-chapter {
+                    padding: 3.75rem 1.25rem;
+                }
+                .apple-split,
+                .apple-dual-grid,
+                .apple-stats-row,
+                .apple-text-bento {
+                    grid-template-columns: 1fr;
+                }
+                .apple-split-copy .apple-headline,
+                .apple-split-copy .apple-lead {
+                    text-align: center;
+                }
+                .apple-mini-highlights {
+                    justify-content: center;
+                }
+            }
+
         </style>
     </head>
     <body>
@@ -1568,857 +1773,170 @@
                 </div>
             </section>
 
-            <!-- Sticky Stacking Cards Showcase Section -->
-            <section class="stacking-section" id="showcase">
-                <!-- Section Intro Heading -->
-                <div class="stacking-intro">
-                    <div class="badge-pill">✨ 核心功能</div>
-                    <h2 class="stacking-title">四大核心功能，提升观影体验</h2>
-                    <p class="stacking-sub">向下滚动页面</p>
+            <!-- Apple-Style Vertical Storytelling Showcase -->
+            <section class="apple-showcase" id="showcase">
+                <!-- Chapter 1: Hero Bilingual Fullscreen -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">01 · 实时双语字幕</span>
+                    <h2 class="apple-headline">原生质感，自然融入每一帧。</h2>
+                    <p class="apple-lead">
+                        双语分层渲染，译文与原文清晰对齐。专为 Netflix、YouTube 与 TVer 播放器深度适配，对抗贴片广告引起的时轴错位，并自动缓存已译字幕，重看零等待、零额外消耗。
+                    </p>
+                    <div class="apple-hero-media">
+                        <img
+                            src="../screenshots/subtitle-fullscreen.png"
+                            alt="CoWatcher YouTube 全屏双语字幕渲染实景"
+                            class="apple-zoomable"
+                        />
+                    </div>
+                    <p class="apple-media-caption">
+                        演示视频来源：Scott Buckley《How to use my music correctly》（CC BY）· 点击任意截图可放大查看
+                    </p>
                 </div>
 
-                <div class="stacking-cards-wrapper">
-                    <!-- Step Anchor 0 -->
-                    <div class="stacking-step-anchor" data-step="0"></div>
-                    <!-- Card 1: 影视双语字幕 -->
-                    <div
-                        class="stacking-card card-1"
-                        id="stack-card-1"
-                        style="--card-index: 1"
-                    >
-                        <div class="stacking-card-topbar">
-                            <span class="card-step-badge">FEATURE 01 / 04</span>
-                            <span class="card-step-hint"
-                                >自然滚动 · 自动磁吸 ↕</span
-                            >
-                            <div class="card-step-dots">
-                                <span
-                                    class="step-dot active"
-                                    data-goto="0"
-                                    title="第 1 项：影视双语字幕"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="1"
-                                    title="第 2 项：智能观影足迹"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="2"
-                                    title="第 3 项：语言学习"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="3"
-                                    title="第 4 项：隐私优先，兼顾服务"
-                                ></span>
+                <!-- Chapter 2: Subtitle Styles & Display Modes -->
+                <div class="apple-chapter">
+                    <div class="apple-split">
+                        <div class="apple-split-copy">
+                            <span class="apple-eyebrow">02 · 自由排版与样式</span>
+                            <h2 class="apple-headline">四种模式，随心切换。</h2>
+                            <p class="apple-lead">
+                                双语对照、仅译文、仅原文、半透明专注底框与主副行上下互换。无论深色电影还是亮色访谈，都能在弹窗里一键切到最顺眼的阅读方式。
+                            </p>
+                            <div class="apple-mini-highlights">
+                                <span class="apple-mini-pill">双语分层</span>
+                                <span class="apple-mini-pill">单语沉浸</span>
+                                <span class="apple-mini-pill">主副行互换</span>
+                                <span class="apple-mini-pill">Alt + T 快捷键</span>
                             </div>
                         </div>
-                        <div class="stacking-card-body">
-                            <div class="showcase-info">
-                                <span class="showcase-pill showcase-pill-sub"
-                                    >✨ 实时双语 · 原生融入</span
-                                >
-                                <h2 class="showcase-heading">
-                                    连贯追剧不跳戏，角色译名跨集高度一致
-                                </h2>
-                                <p class="showcase-desc">
-                                    灵活接入 Google Translate 与新一代生成式 AI
-                                    大模型。深度还原 Netflix
-                                    原生字幕排版与质感，让每一行台词都自然地融入画面。
-                                </p>
-                                <div class="showcase-feature-list">
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >角色译名记忆与术语表：</strong
-                                            >支持 AI
-                                            自动提取与手动校准，杜绝同名异译、代词混乱，长篇追剧更连贯</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >播放器深度级同步（抗广告偏移）：</strong
-                                            >专为 Netflix（含广告版）、TVer 与
-                                            YouTube
-                                            深度适配，精准对抗贴片广告引起的音画与字幕时轴错位</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >轻量无感的控制交互：</strong
-                                            >极简悬浮开关与快捷键随时唤醒，播放时静默自动隐藏，绝不遮挡原画与操作界面。</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >原生级的同屏多字幕与竖排支持：</strong
-                                            >完整解析同屏多处、多角色的屏幕字幕与竖排台词，完美复刻官方原生排版体验。</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >字幕缓存，你花的每一分不会浪费：</strong
-                                            >翻译结果会被我们暂时缓存起来，当你重看时可以直接享用之前的成果</span
-                                        >
-                                    </div>
-                                </div>
-                                <div class="showcase-tags-row">
-                                    <span class="platform-pill"
-                                        >术语表实时注入</span
-                                    >
-                                    <span class="platform-pill"
-                                        >广告时钟重对齐</span
-                                    >
-                                    <span class="platform-pill"
-                                        >快捷键 Alt + T</span
-                                    >
-                                    <span class="platform-pill">智能缓存</span>
-                                </div>
-                            </div>
-
-                            <div class="showcase-canvas">
-                                <div
-                                    class="player-showcase"
-                                    style="margin: 0; box-shadow: none"
-                                >
-                                    <div class="player-bar">
-                                        <div class="window-dots">
-                                            <span></span><span></span
-                                            ><span></span>
-                                        </div>
-                                        <div>
-                                            CoWatcher · 双语字幕实机截图预览
-                                        </div>
-                                        <div
-                                            style="
-                                                font-size: 0.75rem;
-                                                color: #10b981;
-                                            "
-                                        >
-                                            ● Real Captures
-                                        </div>
-                                    </div>
-
-                                    <div class="sub-gallery-tabs" role="tablist">
-                                        <button
-                                            type="button"
-                                            class="sub-gallery-tab active"
-                                            data-sub-tab="live"
-                                        >
-                                            🎬 实景双语
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="sub-gallery-tab"
-                                            data-sub-tab="styles"
-                                        >
-                                            🎨 显示模式与样式
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="sub-gallery-tab"
-                                            data-sub-tab="glossary"
-                                        >
-                                            📖 跨集术语表
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="sub-gallery-tab"
-                                            data-sub-tab="providers"
-                                        >
-                                            🤖 多引擎与语言
-                                        </button>
-                                    </div>
-
-                                    <div class="sub-gallery-body">
-                                        <div
-                                            class="sub-gallery-panel active"
-                                            data-sub-panel="live"
-                                        >
-                                            <div class="sub-gallery-grid single">
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/subtitle-fullscreen.png"
-                                                        alt="YouTube 全屏双语字幕渲染实景"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        全屏双语渲染效果：译文与原文上下分层对齐，贴近官方原生字幕质感（点击图片可放大）
-                                                    </figcaption>
-                                                </figure>
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            class="sub-gallery-panel"
-                                            data-sub-panel="styles"
-                                        >
-                                            <div class="sub-gallery-grid">
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/subtitle-styles.png"
-                                                        alt="四种字幕样式与显示模式对比"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        支持双语、仅译文、仅原文、半透明底框及主副行互换
-                                                    </figcaption>
-                                                </figure>
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/subtitle-display-modes.png"
-                                                        alt="字幕显示模式切换菜单"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        弹窗内一键切换 Subtitle Display Mode
-                                                    </figcaption>
-                                                </figure>
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            class="sub-gallery-panel"
-                                            data-sub-panel="glossary"
-                                        >
-                                            <div class="sub-gallery-grid">
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/glossary-editor.png"
-                                                        alt="角色译名与专有名词 Glossary 编辑器"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        Glossary 编辑器：锁定人名、别名与专有名词，支持按单集或全剧刷新缓存
-                                                    </figcaption>
-                                                </figure>
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/glossary-ai-extract.png"
-                                                        alt="AI 从双语参考资料自动提取术语表"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        粘贴百科 / 角色表，AI 自动对齐双语人名与设定术语
-                                                    </figcaption>
-                                                </figure>
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            class="sub-gallery-panel"
-                                            data-sub-panel="providers"
-                                        >
-                                            <div class="sub-gallery-grid">
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/subtitle-ai-providers.png"
-                                                        alt="AI 翻译服务提供商选项"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        自由切换 Google 翻译（免配置）、Ollama（本地隐私）与 OpenRouter（云端多模型）
-                                                    </figcaption>
-                                                </figure>
-                                                <figure class="sub-shot-card">
-                                                    <img
-                                                        src="../screenshots/subtitle-languages.png"
-                                                        alt="多语言翻译支持列表"
-                                                        loading="lazy"
-                                                    />
-                                                    <figcaption>
-                                                        支持简繁中文、英文、日韩、西法德意葡俄越印尼泰等多语种目标翻译
-                                                    </figcaption>
-                                                </figure>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="sub-gallery-footer">
-                                        <span
-                                            >演示视频来源：Scott Buckley《How to use my music correctly》（CC BY）</span
-                                        >
-                                        <span>点击任意截图可放大查看</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="apple-dual-grid" style="grid-template-columns: 1fr;">
+                            <figure class="apple-media-card" style="margin: 0;">
+                                <img
+                                    src="../screenshots/subtitle-styles.png"
+                                    alt="四种字幕样式与显示模式对比"
+                                    class="apple-zoomable"
+                                    style="max-height: 440px;"
+                                />
+                                <figcaption class="apple-media-card-meta">
+                                    <strong>多模式实时渲染对比</strong>
+                                    <span>清晰描边与半透明底框任选，兼顾可读性与画面沉浸感。</span>
+                                </figcaption>
+                            </figure>
+                            <figure class="apple-media-card" style="margin: 0;">
+                                <img
+                                    src="../screenshots/subtitle-display-modes.png"
+                                    alt="弹窗内一键切换显示模式"
+                                    class="apple-zoomable"
+                                    style="max-height: 180px;"
+                                />
+                            </figure>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Step Anchor 1 -->
-                    <div class="stacking-step-anchor" data-step="1"></div>
-                    <!-- Card 2: 智能观影足迹 -->
-                    <div
-                        class="stacking-card card-2"
-                        id="stack-card-2"
-                        style="--card-index: 2"
-                    >
-                        <div class="stacking-card-topbar">
-                            <span class="card-step-badge">FEATURE 02 / 04</span>
-                            <span class="card-step-hint"
-                                >自然滚动 · 自动磁吸 ↕</span
-                            >
-                            <div class="card-step-dots">
-                                <span
-                                    class="step-dot active"
-                                    data-goto="0"
-                                    title="第 1 项：影视双语字幕"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="1"
-                                    title="第 2 项：智能观影足迹"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="2"
-                                    title="第 3 项：语言学习"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="3"
-                                    title="第 4 项：隐私优先，兼顾服务"
-                                ></span>
-                            </div>
+                <!-- Chapter 3: Glossary & Cross-Episode Consistency -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">03 · 跨集术语记忆</span>
+                    <h2 class="apple-headline">追十集，人名始终如一。</h2>
+                    <p class="apple-lead">
+                        内置跨集 Glossary 术语表，锁定角色译名、别名与专有名词。支持直接粘贴维基百科或角色设定表，由 AI 自动对齐提取双语词条，并按单集或全剧一键刷新缓存。
+                    </p>
+                    <div class="apple-dual-grid">
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/glossary-editor.png"
+                                alt="跨集术语表与角色译名编辑器"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>角色与术语锁定表</strong>
+                                <span>统一译名与别名映射，修改后可即时作用于当前集或整部剧集。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/glossary-ai-extract.png"
+                                alt="AI 从双语参考资料自动提取术语表"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>AI 百科对齐提取</strong>
+                                <span>粘贴剧情简介或双语角色表，自动抽取并对齐人名与世界观术语。</span>
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+
+                <!-- Chapter 4: Providers & Languages -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">04 · 多引擎与多语言</span>
+                    <h2 class="apple-headline">免费开箱，也可接入你的大模型。</h2>
+                    <p class="apple-lead">
+                        默认内置 Google 翻译，无需任何 API Key 即可开始观影；追求更懂剧情的语境精翻，可随时切换本地 Ollama 或云端 OpenRouter。
+                    </p>
+                    <div class="apple-stats-row">
+                        <div class="apple-stat-item">
+                            <div class="apple-stat-num">3</div>
+                            <div class="apple-stat-label">大翻译引擎 · 自由切换</div>
                         </div>
-                        <div class="stacking-card-body">
-                            <div class="showcase-info">
-                                <span
-                                    class="showcase-pill showcase-pill-history"
-                                    >⏱️ 观影足迹 · 记忆中心</span
-                                >
-                                <h2 class="showcase-heading">
-                                    自动记录追剧时光<br />一目了然的统计图表
-                                </h2>
-                                <p class="showcase-desc">
-                                    自动追踪你看过的剧，轻松了解自己的追剧习惯
-                                </p>
-                                <div class="showcase-feature-list">
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >智能时长与进度追踪：</strong
-                                            >Netflix、TVer、YouTube
-                                            观看时间自动沉淀，生成可视化观影统计</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >广告时间/暂停时间不被记录：</strong
-                                            >我们只记录你的观剧时长，广告和暂停不会计入</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong>休息一下：</strong
-                                            >基于你的观剧时长，不时帮你暂停影片，让你休息一下</span
-                                        >
-                                    </div>
-                                </div>
-                                <div class="showcase-tags-row">
-                                    <span class="platform-pill"
-                                        >观影足迹看板</span
-                                    >
-                                </div>
-                                <div class="showcase-tags-row">
-                                    <span class="platform-pill">数字健康</span>
-                                </div>
-                            </div>
-
-                            <div class="showcase-canvas">
-                                <div class="mock-dash">
-                                    <div class="mock-dash-header">
-                                        <div class="mock-dash-title">
-                                            <span>📊</span> CoWatcher
-                                            观影足迹与记忆中心
-                                        </div>
-                                        <span class="mock-dash-badge"
-                                            >● IndexedDB 离线就绪</span
-                                        >
-                                    </div>
-                                    <div class="mock-stat-grid">
-                                        <div class="mock-stat-box">
-                                            <div class="mock-stat-num">
-                                                48.5h
-                                            </div>
-                                            <div class="mock-stat-lbl">
-                                                本月追剧时长
-                                            </div>
-                                        </div>
-                                        <div class="mock-stat-box">
-                                            <div class="mock-stat-num">
-                                                12 部
-                                            </div>
-                                            <div class="mock-stat-lbl">
-                                                正在追剧集
-                                            </div>
-                                        </div>
-                                        <div class="mock-stat-box">
-                                            <div class="mock-stat-num">
-                                                3,420
-                                            </div>
-                                            <div class="mock-stat-lbl">
-                                                已缓存字幕行数
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mock-item-card">
-                                        <div class="mock-item-top">
-                                            <span
-                                                >葬送のフリーレン (第 28
-                                                话)</span
-                                            >
-                                            <span class="mock-item-tag"
-                                                >Netflix</span
-                                            >
-                                        </div>
-                                        <div class="mock-progress-track">
-                                            <div
-                                                class="mock-progress-bar"
-                                                style="width: 82%"
-                                            ></div>
-                                        </div>
-                                        <div class="mock-item-footer">
-                                            <span
-                                                >Show Context: 角色词条 36 项
-                                                (已同步至后集)</span
-                                            >
-                                            <span class="mock-cache-pill"
-                                                >✓ 缓存已生效 (0 Token)</span
-                                            >
-                                        </div>
-                                    </div>
-                                    <div class="mock-item-card">
-                                        <div class="mock-item-top">
-                                            <span>Eye Love You (第 4 话)</span>
-                                            <span class="mock-item-tag"
-                                                >TVer</span
-                                            >
-                                        </div>
-                                        <div class="mock-progress-track">
-                                            <div
-                                                class="mock-progress-bar"
-                                                style="width: 45%"
-                                            ></div>
-                                        </div>
-                                        <div class="mock-item-footer">
-                                            <span
-                                                >广告自动时移补偿：+120s
-                                                偏移已校准</span
-                                            >
-                                            <span class="mock-cache-pill"
-                                                >✓ 竖排字幕适配</span
-                                            >
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="apple-stat-item">
+                            <div class="apple-stat-num">14+</div>
+                            <div class="apple-stat-label">目标翻译语种支持</div>
+                        </div>
+                        <div class="apple-stat-item">
+                            <div class="apple-stat-num">0ms</div>
+                            <div class="apple-stat-label">本地缓存命中重看延迟</div>
                         </div>
                     </div>
-
-                    <!-- Step Anchor 2 -->
-                    <div class="stacking-step-anchor" data-step="2"></div>
-                    <!-- Card 3: 沉浸生词学习 -->
-                    <div
-                        class="stacking-card card-3"
-                        id="stack-card-3"
-                        style="--card-index: 3"
-                    >
-                        <div class="stacking-card-topbar">
-                            <span class="card-step-badge">FEATURE 03 / 04</span>
-                            <span class="card-step-hint"
-                                >自然滚动 · 自动磁吸 ↕</span
-                            >
-                            <div class="card-step-dots">
-                                <span
-                                    class="step-dot active"
-                                    data-goto="0"
-                                    title="第 1 项：影视双语字幕"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="1"
-                                    title="第 2 项：智能观影足迹"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="2"
-                                    title="第 3 项：语言学习"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="3"
-                                    title="第 4 项：隐私优先，兼顾服务"
-                                ></span>
-                            </div>
-                        </div>
-                        <div class="stacking-card-body">
-                            <div class="showcase-info">
-                                <span class="showcase-pill showcase-pill-learn"
-                                    >📖 单词学习 · 记忆流</span
-                                >
-                                <h2 class="showcase-heading">
-                                    看剧即是学外语<br />点词即查 · 1-Click 导入
-                                    Anki
-                                </h2>
-                                <p class="showcase-desc">
-                                    不用暂停切屏查字典。播放过程中鼠标悬停即见假名注音与地道释义，生词一键录入并导出至
-                                    Anki 卡片盒。
-                                </p>
-                                <div class="showcase-feature-list">
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong>智能分词与注音：</strong
-                                            >智能分词，并针对日文、中文、韩文进行注音支持</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong>悬浮词典极速释义：</strong
-                                            >长按鼠标左键即可选中生词，词典显示期间自动暂停，消失后自动恢复，让你的追剧没有阻碍</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong>稍后再学：</strong
-                                            >长按鼠标右键选中生词，松开手直接入库，视频马上恢复播放，让阅读和生词解藕</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >优先使用平台原生翻译字幕：</strong
-                                            >优先选择平台原生的翻译字幕，你花给Netflix订阅费不会浪费</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong>原生字幕优先显示：</strong
-                                            >支持翻译字幕与原始字幕位置转换，优先显示原始字幕，支持翻译字幕透明度调节，可以让你更加注重所学习的语言</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >原生 Anki 格式直出：</strong
-                                            >带例句、时间戳、上下文台词一键导出，高效构建日常背词库</span
-                                        >
-                                    </div>
-                                </div>
-                                <div class="showcase-tags-row">
-                                    <span class="platform-pill"
-                                        >Intl 精准分词与智能注音</span
-                                    >
-                                    <span class="platform-pill"
-                                        >划词悬浮释义</span
-                                    >
-                                    <span class="platform-pill"
-                                        >一键收藏生词</span
-                                    >
-                                    <span class="platform-pill"
-                                        >Anki 卡片直连</span
-                                    >
-                                    <span class="platform-pill">原生优先</span>
-                                </div>
-                            </div>
-
-                            <div class="showcase-canvas">
-                                <div class="mock-vocab-viewport">
-                                    <div class="mock-sub-row">
-                                        <div class="mock-sub-jp">
-                                            あきらめたら、そこで<span
-                                                class="mock-word-highlight"
-                                                >試合終了</span
-                                            >ですよ…？
-                                        </div>
-                                        <div class="mock-sub-zh">
-                                            如果放弃的话，比赛可就提前结束了哦…？
-                                        </div>
-                                    </div>
-                                    <div class="mock-popover">
-                                        <div class="mock-popover-header">
-                                            <div>
-                                                <span class="mock-popover-word"
-                                                    >試合終了</span
-                                                >
-                                                <span class="mock-popover-kana"
-                                                    >しあいしゅうりょう</span
-                                                >
-                                            </div>
-                                            <span class="mock-popover-type"
-                                                >名 · 惯用</span
-                                            >
-                                        </div>
-                                        <div class="mock-popover-def">
-                                            【释义】比赛结束。常引申为「放弃即宣告彻底失败，坚持到底才能迎来转机」。
-                                        </div>
-                                        <div class="mock-popover-actions">
-                                            <button
-                                                class="mock-popover-btn active"
-                                            >
-                                                ★ 已录入生词本
-                                            </button>
-                                            <button class="mock-popover-btn">
-                                                📥 导出至 Anki
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="apple-dual-grid">
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/subtitle-ai-providers.png"
+                                alt="AI 服务提供商切换菜单"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>Google · Ollama · OpenRouter</strong>
+                                <span>兼顾零成本开箱即用、本地隐私运行与云端高质量模型。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/subtitle-languages.png"
+                                alt="多语言翻译支持列表"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>14+ 目标语言与多语界面</strong>
+                                <span>覆盖简繁中文、英、日、韩及主流欧亚语种。</span>
+                            </figcaption>
+                        </figure>
                     </div>
+                </div>
 
-                    <!-- Step Anchor 3 -->
-                    <div class="stacking-step-anchor" data-step="3"></div>
-                    <!-- Card 4: 本地与云端算力 -->
-                    <div
-                        class="stacking-card card-4"
-                        id="stack-card-4"
-                        style="--card-index: 4"
-                    >
-                        <div class="stacking-card-topbar">
-                            <span class="card-step-badge">FEATURE 04 / 04</span>
-                            <span class="card-step-hint"
-                                >自然滚动 · 自动磁吸 ↕</span
-                            >
-                            <div class="card-step-dots">
-                                <span
-                                    class="step-dot active"
-                                    data-goto="0"
-                                    title="第 1 项：影视双语字幕"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="1"
-                                    title="第 2 项：智能观影足迹"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="2"
-                                    title="第 3 项：语言学习"
-                                ></span>
-                                <span
-                                    class="step-dot"
-                                    data-goto="3"
-                                    title="第 4 项：隐私优先，兼顾服务"
-                                ></span>
-                            </div>
+                <!-- Chapter 5: Other Capabilities (Text-Only Minimalist Bento) -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">更多体验 · 即将呈现实机预览</span>
+                    <h2 class="apple-headline">不止字幕，更是顺手的追剧伴侣。</h2>
+                    <p class="apple-lead">
+                        除了双语字幕与术语记忆，CoWatcher 还把观影记录、点词学习与隐私保护整合在同一套轻量工作流里。
+                    </p>
+                    <div class="apple-text-bento">
+                        <div class="apple-bento-card">
+                            <div class="apple-bento-icon">⏱️</div>
+                            <h3>自动观影足迹</h3>
+                            <p>默默记录你看过的每一集与有效沉浸时长，无需手动打卡即可回顾追剧历程。</p>
                         </div>
-                        <div class="stacking-card-body">
-                            <div class="showcase-info">
-                                <span class="showcase-pill showcase-pill-ai"
-                                    >⚡ 隐私安全，当然也可云端大模型</span
-                                >
-                                <h2 class="showcase-heading">
-                                    支持本地部署的小模型<br />或云端顶级模型随心直连
-                                </h2>
-                                <p class="showcase-desc">
-                                    完全尊重你的数据与成本。拥有独显的用户可通过本地
-                                    Ollama 享受 0 成本、100%
-                                    隐私的流畅快译；亦可填入 OpenRouter API Key
-                                    直连 Claude 3.5、DeepSeek、Gemini
-                                    顶级大模型。
-                                </p>
-                                <div class="showcase-feature-list">
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >开源透明，专注安全：</strong
-                                            >代码完全开源，我们会将你的key隔离在阿奴安的扩展上下文中，不会被窃取，支持自定password，进行本地加密</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >本地 Ollama
-                                                零花费部署：</strong
-                                            >支持 translategemma:4b、gemma4:e2b
-                                            等轻量高效模型，显卡纯离线计算</span
-                                        >
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong>云端百模直连聚合：</strong
-                                            >如果您愿意放弃一些隐私，自备
-                                            OpenRoute
-                                            Key，即可享受顶级大模型绝佳译文，隐私条款见openrouter用户协议
-                                        </span>
-                                    </div>
-                                    <div class="showcase-feature-item">
-                                        <span class="showcase-feature-bullet"
-                                            >✓</span
-                                        >
-                                        <span
-                                            ><strong
-                                                >Google
-                                                Translate，开箱即用：</strong
-                                            >默认使用Google
-                                            Translate，然你不必去搞懂什么大模型</span
-                                        >
-                                    </div>
-                                </div>
-                                <div class="showcase-tags-row">
-                                    <span class="platform-pill">开源透明</span>
-                                    <span class="platform-pill"
-                                        >本地 Ollama (0 成本)</span
-                                    >
-                                    <span class="platform-pill"
-                                        >DeepSeek / Gemini</span
-                                    >
-                                    <span class="platform-pill"
-                                        >OpenRouter 聚合</span
-                                    >
-                                    <span class="platform-pill"
-                                        >开箱即用免费通道</span
-                                    >
-                                </div>
-                            </div>
-
-                            <div class="showcase-canvas">
-                                <div class="mock-models-body">
-                                    <div class="mock-model-card active">
-                                        <div class="mock-model-header">
-                                            <div>
-                                                <span class="mock-model-name"
-                                                    >🖥️ 本地 Ollama
-                                                    显卡部署</span
-                                                >
-                                                <span class="mock-model-sub"
-                                                    >localhost:11434 ·
-                                                    完全私有无外部流量</span
-                                                >
-                                            </div>
-                                            <span class="mock-model-tag active"
-                                                >推荐 · 零花费</span
-                                            >
-                                        </div>
-                                        <div class="mock-model-detail">
-                                            <span
-                                                >当前模型:
-                                                <code
-                                                    >translategemma:4b</code
-                                                ></span
-                                            >
-                                            <span style="color: #10b981"
-                                                >● 延迟 38ms</span
-                                            >
-                                        </div>
-                                    </div>
-                                    <div class="mock-model-card">
-                                        <div class="mock-model-header">
-                                            <div>
-                                                <span class="mock-model-name"
-                                                    >☁️ OpenRouter / DeepSeek /
-                                                    Gemini</span
-                                                >
-                                                <span class="mock-model-sub"
-                                                    >自带 API Key ·
-                                                    顶尖文学润色与翻译质量</span
-                                                >
-                                            </div>
-                                            <span class="mock-model-tag"
-                                                >云端高智</span
-                                            >
-                                        </div>
-                                        <div class="mock-model-detail">
-                                            <span
-                                                >支持:
-                                                <code>deepseek-v3</code> /
-                                                <code
-                                                    >gemini-2.0-flash</code
-                                                ></span
-                                            >
-                                            <span style="color: #38bdf8"
-                                                >● 跨集审校</span
-                                            >
-                                        </div>
-                                    </div>
-                                    <div class="mock-model-card">
-                                        <div class="mock-model-header">
-                                            <div>
-                                                <span class="mock-model-name"
-                                                    >🎁
-                                                    内置免费通用翻译服务</span
-                                                >
-                                                <span class="mock-model-sub"
-                                                    >无需任何配置 ·
-                                                    开启扩展即刻享受</span
-                                                >
-                                            </div>
-                                            <span class="mock-model-tag"
-                                                >开箱即用</span
-                                            >
-                                        </div>
-                                        <div class="mock-model-detail">
-                                            <span>公共通道服务</span>
-                                            <span style="color: #fbbf24"
-                                                >● 新手默认</span
-                                            >
-                                        </div>
-                                    </div>
-                                    <div class="mock-models-footer">
-                                        🔒 纯本地网络存储，所有 Key
-                                        与字幕数据绝不上报第三方服务器
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="apple-bento-card">
+                            <div class="apple-bento-icon">📚</div>
+                            <h3>点词查义与生词本</h3>
+                            <p>看剧时点击字幕单词即可查看释义并自动暂停，支持沉淀为词库并导出至 Anki。</p>
+                        </div>
+                        <div class="apple-bento-card">
+                            <div class="apple-bento-icon">🔒</div>
+                            <h3>本地存储与隐私优先</h3>
+                            <p>字幕缓存与观影历史均保存在本地浏览器中，API Key 支持 AES-256 主密码加密保护。</p>
                         </div>
                     </div>
                 </div>
@@ -2815,243 +2333,45 @@
                 }, 300);
             }, 4500);
 
-            // Sticky Stacking Cards: Progressive Real-Time Scrubbing + Soft Magnetic Snap
+            // Apple-Style Scroll Reveal & Screenshot Lightbox
             (function () {
-                const wrapper = document.querySelector(
-                    '.stacking-cards-wrapper',
-                );
-                const cards = document.querySelectorAll('.stacking-card');
-                const anchors = document.querySelectorAll(
-                    '.stacking-step-anchor',
-                );
-                if (!wrapper || !cards.length) return;
-
-                // 1. Progressive Scale & Brightness on Natural Scroll
-                function updateCardDepth() {
-                    if (window.innerWidth <= 900) {
-                        cards.forEach((card) => {
-                            card.style.transform = 'none';
-                            card.style.filter = 'none';
-                        });
-                        return;
-                    }
-
-                    const topThreshold = 80;
-                    cards.forEach((card, i) => {
-                        if (i === cards.length - 1) return; // Last card doesn't need to shrink
-                        const nextCard = cards[i + 1];
-                        const nextRect = nextCard.getBoundingClientRect();
-
-                        // When nextCard enters from window bottom and climbs toward topThreshold
-                        if (
-                            nextRect.top < window.innerHeight &&
-                            nextRect.top > topThreshold
-                        ) {
-                            const progress =
-                                (window.innerHeight - nextRect.top) /
-                                (window.innerHeight - topThreshold);
-                            const scale = 1 - progress * 0.045; // 1 -> 0.955
-                            const brightness = 1 - progress * 0.35; // 1 -> 0.65
-                            card.style.transform = `scale(${scale})`;
-                            card.style.filter = `brightness(${brightness})`;
-                        } else if (nextRect.top <= topThreshold) {
-                            card.style.transform = 'scale(0.955)';
-                            card.style.filter = 'brightness(0.65)';
-                        } else {
-                            card.style.transform = 'scale(1)';
-                            card.style.filter = 'brightness(1)';
-                        }
-                    });
-                }
-
-                // 2. Compute Target Scroll Position for Each Card
-                function getCardScrollY(index) {
-                    if (!anchors[index]) return 0;
-                    const stickyTop = 76 + index * 12;
-                    const docTop =
-                        anchors[index].getBoundingClientRect().top +
-                        window.pageYOffset;
-                    return Math.max(0, docTop - stickyTop);
-                }
-
-                // 3. Soft Magnetic Snap on Settle (Only when user stops scrolling)
-                let settleTimer = null;
-
-                function onScrollHandler() {
-                    updateCardDepth();
-
-                    if (window.innerWidth <= 900) return; // Native touch on mobile
-
-                    clearTimeout(settleTimer);
-                    settleTimer = setTimeout(settleToNearestCard, 170);
-                }
-
-                function settleToNearestCard() {
-                    const wrapRect = wrapper.getBoundingClientRect();
-                    // Only apply gentle magnetic snap when the stacking cards occupy the viewport
-                    if (
-                        wrapRect.top > 120 ||
-                        wrapRect.bottom < window.innerHeight * 0.4
-                    ) {
-                        return;
-                    }
-
-                    const currentY = window.pageYOffset;
-                    let closestIndex = 0;
-                    let minDistance = Infinity;
-
-                    for (let i = 0; i < cards.length; i++) {
-                        const targetY = getCardScrollY(i);
-                        const dist = Math.abs(currentY - targetY);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            closestIndex = i;
-                        }
-                    }
-
-                    // Gently snap to the closest resting card if within 240px and off by more than 10px
-                    if (minDistance > 10 && minDistance <= 240) {
-                        window.scrollTo({
-                            top: getCardScrollY(closestIndex),
-                            behavior: 'smooth',
-                        });
-                    }
-                }
-
-                // Cancel snap immediately if user starts rolling wheel again
-                window.addEventListener(
-                    'wheel',
-                    () => {
-                        clearTimeout(settleTimer);
-                    },
-                    { passive: true },
-                );
-
-                window.addEventListener('scroll', onScrollHandler, {
-                    passive: true,
-                });
-                window.addEventListener('resize', updateCardDepth, {
-                    passive: true,
-                });
-                updateCardDepth();
-
-                // 4. Smooth Target Navigation Helper
-                function scrollToCard(targetIdx) {
-                    if (targetIdx < 0) {
-                        const hero = document.querySelector('.hero');
-                        if (hero) {
-                            window.scrollTo({
-                                top: hero.offsetTop,
-                                behavior: 'smooth',
+                const chapters = document.querySelectorAll(.apple-chapter);
+                if (IntersectionObserver in window) {
+                    const observer = new IntersectionObserver(
+                        (entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    entry.target.classList.add(is-visible);
+                                    observer.unobserve(entry.target);
+                                }
                             });
-                        }
-                        return;
-                    }
-
-                    if (targetIdx >= cards.length) {
-                        const feat = document.getElementById('features');
-                        if (feat) {
-                            window.scrollTo({
-                                top: feat.offsetTop - 40,
-                                behavior: 'smooth',
-                            });
-                        }
-                        return;
-                    }
-
-                    window.scrollTo({
-                        top: getCardScrollY(targetIdx),
-                        behavior: 'smooth',
-                    });
+                        },
+                        { threshold: 0.12 }
+                    );
+                    chapters.forEach((ch) => observer.observe(ch));
+                } else {
+                    chapters.forEach((ch) => ch.classList.add(is-visible));
                 }
 
-                // 5. Detect Current Active Index for Keyboard Stepping
-                function getCurrentIndex() {
-                    let active = 0;
-                    cards.forEach((card, idx) => {
-                        const rect = card.getBoundingClientRect();
-                        const stickyTop = 76 + idx * 12;
-                        if (rect.top <= stickyTop + 35) {
-                            active = idx;
-                        }
-                    });
-                    return active;
-                }
-
-                // 6. Keyboard Stepping (ArrowDown / ArrowUp / PageDown / PageUp)
-                window.addEventListener('keydown', (e) => {
-                    if (window.innerWidth <= 900) return;
-                    const wrapRect = wrapper.getBoundingClientRect();
-                    const isStackInView =
-                        wrapRect.top <= 120 &&
-                        wrapRect.bottom >= window.innerHeight * 0.45;
-                    if (!isStackInView) return;
-
-                    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-                        const current = getCurrentIndex();
-                        if (current < cards.length) {
-                            e.preventDefault();
-                            scrollToCard(current + 1);
-                        }
-                    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-                        const current = getCurrentIndex();
-                        if (current > 0 || wrapRect.top <= 100) {
-                            e.preventDefault();
-                            scrollToCard(current - 1);
-                        }
-                    }
-                });
-
-                // 7. Clickable Dot Navigation
-                document
-                    .querySelectorAll('.step-dot[data-goto]')
-                    .forEach((dot) => {
-                        dot.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const target = parseInt(
-                                dot.getAttribute('data-goto'),
-                                10,
-                            );
-                            if (!isNaN(target)) {
-                                scrollToCard(target);
-                            }
-                        });
-                    });
-            })();
-
-            // Subtitle Screenshot Gallery Tabs & Lightbox
-            (function () {
-                const tabs = document.querySelectorAll('.sub-gallery-tab[data-sub-tab]');
-                const panels = document.querySelectorAll('.sub-gallery-panel[data-sub-panel]');
-                tabs.forEach((tab) => {
-                    tab.addEventListener('click', () => {
-                        const target = tab.getAttribute('data-sub-tab');
-                        tabs.forEach((t) => t.classList.toggle('active', t === tab));
-                        panels.forEach((p) => {
-                            p.classList.toggle('active', p.getAttribute('data-sub-panel') === target);
-                        });
-                    });
-                });
-
-                const lightbox = document.createElement('div');
-                lightbox.className = 'sub-lightbox';
-                const lightboxImg = document.createElement('img');
+                const lightbox = document.createElement(div);
+                lightbox.className = sub-lightbox;
+                const lightboxImg = document.createElement(img);
                 lightbox.appendChild(lightboxImg);
                 document.body.appendChild(lightbox);
 
-                document.querySelectorAll('.sub-shot-card img').forEach((img) => {
-                    img.addEventListener('click', () => {
+                document.querySelectorAll(.apple-zoomable).forEach((img) => {
+                    img.addEventListener(click, () => {
                         lightboxImg.src = img.src;
                         lightboxImg.alt = img.alt;
-                        lightbox.classList.add('open');
+                        lightbox.classList.add(open);
                     });
                 });
-                lightbox.addEventListener('click', () => {
-                    lightbox.classList.remove('open');
+                lightbox.addEventListener(click, () => {
+                    lightbox.classList.remove(open);
                 });
-                window.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') {
-                        lightbox.classList.remove('open');
+                window.addEventListener(keydown, (e) => {
+                    if (e.key === Escape) {
+                        lightbox.classList.remove(open);
                     }
                 });
             })();
