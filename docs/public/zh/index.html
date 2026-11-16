@@ -1572,6 +1572,14 @@
                 display: block;
                 cursor: zoom-in;
             }
+            .apple-media-card video {
+                width: 100%;
+                height: auto;
+                max-height: 360px;
+                object-fit: contain;
+                background: #06070b;
+                display: block;
+            }
             .apple-media-card-meta {
                 padding: 1.1rem 1.35rem;
                 text-align: left;
@@ -1953,12 +1961,137 @@
                     </div>
                 </div>
 
-                <!-- Chapter 5: Other Capabilities (Text-Only Minimalist Bento) -->
+                <!-- Chapter 5: Multi-Language Phonetic Annotations -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">05 · 沉浸式注音与分词</span>
+                    <h2 class="apple-headline">听不懂的台词，标上读音就能跟读。</h2>
+                    <p class="apple-lead">
+                        直接在视频字幕上方叠加精确注音——日语假名振假名、韩语连字符罗马音、简体汉语拼音与繁体注音符号，配合本地分词引擎，逐词读音一目了然。
+                    </p>
+                    <div class="apple-dual-grid">
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/learning-ja-furigana.webp"
+                                width="1017"
+                                height="416"
+                                decoding="async"
+                                alt="日语振假名标注效果"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>日语 · 振假名 (Furigana)</strong>
+                                <span>自动识别汉字并标注假名读音，保留地道日语分词节奏。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/learning-ko-romanization.webp"
+                                width="1017"
+                                height="416"
+                                decoding="async"
+                                alt="韩语罗马音标注效果"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>韩语 · 音节罗马音</strong>
+                                <span>支持连续与音节连字符两种拼读模式，轻松跟读韩剧台词。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/learning-zh-pinyin.webp"
+                                width="1017"
+                                height="416"
+                                decoding="async"
+                                alt="简体中文拼音标注效果"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>简体中文 · 汉语拼音</strong>
+                                <span>自动标出声调与分词边界，适合中文学习者边看边读。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <img
+                                src="../screenshots/learning-zh-zhuyin.webp"
+                                width="1017"
+                                height="416"
+                                decoding="async"
+                                alt="繁体中文注音符号标注效果"
+                                class="apple-zoomable"
+                            />
+                            <figcaption class="apple-media-card-meta">
+                                <strong>繁体中文 · 注音符号</strong>
+                                <span>可在设置中一键切换拼音或注音符号（Bopomofo）体系。</span>
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+
+                <!-- Chapter 6: Interactive Word & Phrase Lookup (Auto-Looping Video + Dict Card) -->
+                <div class="apple-chapter">
+                    <span class="apple-eyebrow">06 · 点击即查 · 划词成句</span>
+                    <h2 class="apple-headline">点一下单词，整句语境瞬间展开。</h2>
+                    <p class="apple-lead">
+                        点击单个分词或右键框选连续词组，视频自动暂停并弹出释义卡片——包含读音、词典释义、真人朗读与当前台词原句，一键即可收入生词本。
+                    </p>
+                    <div class="apple-dual-grid" style="margin-bottom: 1.5rem;">
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <video
+                                autoplay
+                                loop
+                                muted
+                                playsinline
+                                preload="metadata"
+                                poster="../screenshots/learning-word-select-poster.webp"
+                            >
+                                <source src="../screenshots/learning-word-select.mp4" type="video/mp4" />
+                            </video>
+                            <figcaption class="apple-media-card-meta">
+                                <strong>单词点击查义</strong>
+                                <span>悬停高亮分词，点击即刻暂停播放并查询词典。</span>
+                            </figcaption>
+                        </figure>
+                        <figure class="apple-media-card" style="margin: 0;">
+                            <video
+                                autoplay
+                                loop
+                                muted
+                                playsinline
+                                preload="metadata"
+                                poster="../screenshots/learning-phrase-select-poster.webp"
+                            >
+                                <source src="../screenshots/learning-phrase-select.mp4" type="video/mp4" />
+                            </video>
+                            <figcaption class="apple-media-card-meta">
+                                <strong>连续词组框选</strong>
+                                <span>遇到固定搭配或短语，直接划选多词合并翻译与查询。</span>
+                            </figcaption>
+                        </figure>
+                    </div>
+                    <figure class="apple-media-card" style="margin: 0 auto; max-width: 720px;">
+                        <img
+                            src="../screenshots/learning-dict-popup.webp"
+                            width="768"
+                            height="480"
+                            decoding="async"
+                            alt="字幕查词悬浮弹窗与原句语境"
+                            class="apple-zoomable"
+                            style="max-height: 400px;"
+                        />
+                        <figcaption class="apple-media-card-meta">
+                            <strong>离线词典 · 发音朗读 · 一键收藏</strong>
+                            <span>内置读音拼读、TTS 语音朗读与原句留存，关掉弹窗自动继续播放。</span>
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <!-- Chapter 7: Other Capabilities (Text-Only Minimalist Bento) -->
                 <div class="apple-chapter">
                     <span class="apple-eyebrow">更多体验 · 即将呈现实机预览</span>
                     <h2 class="apple-headline">不止字幕，更是顺手的追剧伴侣。</h2>
                     <p class="apple-lead">
-                        除了双语字幕与术语记忆，CoWatcher 还把观影记录、点词学习与隐私保护整合在同一套轻量工作流里。
+                        除了双语字幕与交互式语言学习，CoWatcher 还把观影记录、词库导出与隐私保护整合在同一套轻量工作流里。
                     </p>
                     <div class="apple-text-bento">
                         <div class="apple-bento-card">
@@ -1967,9 +2100,9 @@
                             <p>默默记录你看过的每一集与有效沉浸时长，无需手动打卡即可回顾追剧历程。</p>
                         </div>
                         <div class="apple-bento-card">
-                            <div class="apple-bento-icon">📚</div>
-                            <h3>点词查义与生词本</h3>
-                            <p>看剧时点击字幕单词即可查看释义并自动暂停，支持沉淀为词库并导出至 Anki。</p>
+                            <div class="apple-bento-icon">🗂️</div>
+                            <h3>生词本与 Anki 导出</h3>
+                            <p>收藏的生词自动附带剧名、台词原句与释义，支持筛选并一键导出 CSV 导入 Anki。</p>
                         </div>
                         <div class="apple-bento-card">
                             <div class="apple-bento-icon">🔒</div>
