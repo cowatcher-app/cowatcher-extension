@@ -1575,10 +1575,30 @@
             .apple-media-card video {
                 width: 100%;
                 height: auto;
+                aspect-ratio: 16 / 9;
                 max-height: 360px;
                 object-fit: contain;
                 background: #06070b;
                 display: block;
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+            .apple-media-card video.is-loaded {
+                opacity: 1;
+            }
+            .apple-video-wrap {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 16 / 9;
+                max-height: 360px;
+                background: linear-gradient(110deg, #0b0d14 30%, #141824 50%, #0b0d14 70%);
+                background-size: 200% 100%;
+                animation: appleShimmer 1.6s infinite linear;
+                overflow: hidden;
+            }
+            .apple-video-wrap.is-loaded {
+                background: #06070b;
+                animation: none;
             }
             .apple-media-card-meta {
                 padding: 1.1rem 1.35rem;
@@ -2037,32 +2057,38 @@
                     </p>
                     <div class="apple-dual-grid" style="margin-bottom: 1.5rem;">
                         <figure class="apple-media-card" style="margin: 0;">
-                            <video
-                                autoplay
-                                loop
-                                muted
-                                playsinline
-                                preload="metadata"
-                                poster="../screenshots/learning-word-select-poster.webp"
-                            >
-                                <source src="../screenshots/learning-word-select.mp4" type="video/mp4" />
-                            </video>
+                            <div class="apple-video-wrap">
+                                <video
+                                    autoplay
+                                    loop
+                                    muted
+                                    playsinline
+                                    preload="auto"
+                                    width="1920"
+                                    height="1080"
+                                >
+                                    <source src="../screenshots/learning-word-select.mp4" type="video/mp4" />
+                                </video>
+                            </div>
                             <figcaption class="apple-media-card-meta">
                                 <strong>单词点击查义</strong>
                                 <span>悬停高亮分词，点击即刻暂停播放并查询词典。</span>
                             </figcaption>
                         </figure>
                         <figure class="apple-media-card" style="margin: 0;">
-                            <video
-                                autoplay
-                                loop
-                                muted
-                                playsinline
-                                preload="metadata"
-                                poster="../screenshots/learning-phrase-select-poster.webp"
-                            >
-                                <source src="../screenshots/learning-phrase-select.mp4" type="video/mp4" />
-                            </video>
+                            <div class="apple-video-wrap">
+                                <video
+                                    autoplay
+                                    loop
+                                    muted
+                                    playsinline
+                                    preload="auto"
+                                    width="1920"
+                                    height="1080"
+                                >
+                                    <source src="../screenshots/learning-phrase-select.mp4" type="video/mp4" />
+                                </video>
+                            </div>
                             <figcaption class="apple-media-card-meta">
                                 <strong>连续词组框选</strong>
                                 <span>遇到固定搭配或短语，直接划选多词合并翻译与查询。</span>
@@ -2527,6 +2553,21 @@
                         }
                     });
                 }
+
+                document.querySelectorAll('.apple-video-wrap video').forEach((vid) => {
+                    const markVideoLoaded = () => {
+                        vid.classList.add('is-loaded');
+                        if (vid.parentElement) {
+                            vid.parentElement.classList.add('is-loaded');
+                        }
+                    };
+                    if (vid.readyState >= 2) {
+                        markVideoLoaded();
+                    } else {
+                        vid.addEventListener('loadeddata', markVideoLoaded, { once: true });
+                        vid.addEventListener('canplay', markVideoLoaded, { once: true });
+                    }
+                });
 
                 const lightbox = document.createElement('div');
                 lightbox.className = 'sub-lightbox';
