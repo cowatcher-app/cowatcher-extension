@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="msvalidate.01" content="74D1D82251CCD15C73F83C9A3298381E" />
+    <title>CoWatcher - 智能观影记录 · 双语字幕 · AI实时翻译 · 沉浸式外语学习助手</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon48.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon16.png" />
+    <link rel="apple-touch-icon" href="icons/icon128.png" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("ncw_page_lang");
+          var lang = saved;
+          if (!lang || (lang !== "zh" && lang !== "en")) {
+            var navLang = (
+              navigator.language ||
+              navigator.userLanguage ||
+              ""
+            ).toLowerCase();
+            lang = navLang.startsWith("zh") ? "zh" : "en";
+          }
+          var target = lang === "zh" ? "zh/" : "en/";
+          window.location.replace(target);
+        } catch (e) {
+          window.location.replace("zh/");
+        }
+      })();
+    </script>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=zh/" />
+    </noscript>
+    <style>
+      body {
+        background-color: #090a0f;
+        color: #f3f4f6;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .redirect-box {
+        text-align: center;
+        padding: 32px;
+        background: rgba(22, 24, 35, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 16px;
+      }
+      a {
+        color: #e50914;
+        text-decoration: none;
+        margin: 0 8px;
+        font-weight: 600;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="redirect-box">
+      <h1>CoWatcher</h1>
+      <p>Redirecting to <a href="zh/">中文主页 (Chinese)</a> or <a href="en/" style="color: #38bdf8;">English Homepage</a>...</p>
+    </div>
+  </body>
+</html>
