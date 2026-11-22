@@ -133,12 +133,12 @@ describe('LlmTranslatorService glossary scoping & programmatic self-repair', () 
         const [role, repairPayload] = mockCallChat.mock.calls[1];
         expect(role).toBe('translator');
         const userMsg = repairPayload.messages[1].content as string;
-        expect(userMsg).toContain('Source mentions "nobi"');
-        expect(userMsg).toContain('You MUST use "阿比"');
+        expect(userMsg).toContain('ADVISORY (character): Source contains "nobi"');
+        expect(userMsg).toContain('glossary canonical: "阿比"');
         expect(res.results?.[1]).toBe('野比大雄叫了阿比。');
     });
 
-    it('routes programmatic glossary violations to translator model first with explicit error details', async () => {
+    it('routes programmatic glossary advisories to translator model first with explicit context details', async () => {
         const ctx = createWarmedContext();
         mockCallChat
             .mockResolvedValueOnce(
@@ -163,29 +163,33 @@ describe('LlmTranslatorService glossary scoping & programmatic self-repair', () 
         const repairUserPrompt = repairPayload.messages[1].content as string;
         expect(repairUserPrompt).toContain('[1]');
         expect(repairUserPrompt).not.toContain('[2]');
-        expect(repairUserPrompt).toContain('ERROR (character): Source mentions "nobi nobida"');
-        expect(repairUserPrompt).toContain('You MUST use "野比大雄"');
-        expect(repairUserPrompt).toContain('ERROR (term): Source mentions "Anywhere Door"');
-        expect(repairUserPrompt).toContain('You MUST use "任意门"');
+        expect(repairUserPrompt).toContain('ADVISORY (character): Source contains "nobi nobida"');
+        expect(repairUserPrompt).toContain('glossary canonical: "野比大雄"');
+        expect(repairUserPrompt).toContain('ADVISORY (term): Source contains "Anywhere Door"');
+        expect(repairUserPrompt).toContain('glossary canonical: "任意门"');
 
         expect(res.results?.[1]).toBe('野比大雄打开了任意门。');
         expect(res.results?.[2]).toBe('今天天气不错。');
     });
 
-    it('keeps original translation safely if translator self-repair does not resolve the violation', async () => {
-        const ctx = createWarmedContext();
+    it('allows translator to keep natural translation unchanged when advisory matches a compound or ordinary word', async () => {
+        const ctx = createWarmedContext({
+            manualSetupTerms: {
+                Light: '莱特',
+            },
+        });
         mockCallChat
-            .mockResolvedValueOnce('[1]: 希里推开了门。')
-            .mockResolvedValueOnce('[1]: 西里推开了门。');
+            .mockResolvedValueOnce('[1]: 请把灯打开。')
+            .mockResolvedValueOnce('[1]: 请把灯打开。');
 
         const res = await translator.translateBatch({
-            items: [{ id: 1, rawText: 'Scott opened the door.' }],
+            items: [{ id: 1, rawText: 'Please turn on the light.' }],
             targetLang: Language.resolve('简体中文'),
             context: ctx,
         });
 
         expect(res.success).toBe(true);
         expect(mockCallChat).toHaveBeenCalledTimes(2);
-        expect(res.results?.[1]).toBe('希里推开了门。');
+        expect(res.results?.[1]).toBe('请把灯打开。');
     });
 });

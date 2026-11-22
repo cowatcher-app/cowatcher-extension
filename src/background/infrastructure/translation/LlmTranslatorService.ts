@@ -626,8 +626,8 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
     }
 
     /**
-     * Prompts the translation model directly to fix programmatic glossary violations,
-     * explicitly stating which character/term was missed or mistranslated on each line.
+     * Prompts the translation model with advisory glossary notices so it can fix genuine
+     * terminology/name misses while preserving natural translations for compound words or idioms.
      */
     private async repairGlossaryViolations(
         items: Array<{ id: number; rawText: string }>,
@@ -645,26 +645,28 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
 
         this.logger.info(
             'Translator',
-            `Programmatic glossary check found ${violations.length} cue(s) violating glossary constraints: [${violations.map((v) => v.id).join(', ')}]. Requesting translator model repair...`,
+            `Programmatic glossary check raised ${violations.length} advisory cue(s): [${violations.map((v) => v.id).join(', ')}]. Requesting translator model review...`,
         );
 
-        const systemPrompt = `You are a professional subtitle translator. Fix ONLY the glossary compliance errors listed below in ${targetLangPrompt}.
-Preserve the original meaning, natural dialogue tone, and sentence structure, while strictly using the exact required canonical translation for every flagged character name or term.
+        const systemPrompt = `You are a professional subtitle translator. Review the advisory glossary notices below in ${targetLangPrompt}.
+For each cue, evaluate the full sentence context:
+- If the flagged source text actually refers to that glossary character or term, revise the translation to use the exact canonical translation.
+- If the flagged source text is merely part of a larger compound word, idiom, or unrelated ordinary meaning, KEEP the current natural translation unchanged (output it as-is).
 
 CRITICAL FORMAT RULES:
 1. Output strictly line by line in this format:
-[index]: corrected_translation
+[index]: reviewed_translation
 2. Include ONLY the cue IDs listed below. Do NOT add explanations or commentary.`;
 
         const userPrompt = violations
             .map((v) => {
-                const errLines = v.errors
+                const advisoryLines = v.errors
                     .map(
                         (e) =>
-                            `  - ERROR (${e.kind}): Source mentions "${e.sourceMatch}", but your current translation is missing the required translation "${e.canonical}". You MUST use "${e.canonical}".`,
+                            `  - ADVISORY (${e.kind}): Source contains "${e.sourceMatch}" (glossary canonical: "${e.canonical}"), which was not found in Current Translation. If it refers to this ${e.kind} in context, use "${e.canonical}"; if it is part of a larger word or unrelated meaning, keep the current translation.`,
                     )
                     .join('\n');
-                return `[${v.id}]\nSource: "${v.rawText}"\nCurrent Translation: "${v.currentTrans}"\n${errLines}`;
+                return `[${v.id}]\nSource: "${v.rawText}"\nCurrent Translation: "${v.currentTrans}"\n${advisoryLines}`;
             })
             .join('\n\n');
 
@@ -690,32 +692,26 @@ CRITICAL FORMAT RULES:
                 violations.map((v) => ({ id: v.id })),
             );
 
-            let fixedCount = 0;
+            let revisedCount = 0;
             for (const v of violations) {
                 const candidate = (repairedMap[v.id] || '').trim();
                 if (!candidate) continue;
 
-                const remaining = this.findGlossaryViolations(
-                    [{ id: v.id, rawText: v.rawText }],
-                    { [v.id]: candidate },
-                    context,
-                );
-                const remainingCount = remaining[0]?.errors.length ?? 0;
-                if (remainingCount < v.errors.length) {
-                    resultMap[v.id] = candidate;
-                    fixedCount++;
+                if (candidate !== v.currentTrans) {
+                    revisedCount++;
                 }
+                resultMap[v.id] = candidate;
             }
 
             this.logger.info(
                 'Translator',
-                `Translator glossary self-repair resolved ${fixedCount}/${violations.length} violating cue(s).`,
+                `Translator glossary advisory review completed (${revisedCount}/${violations.length} cue(s) revised).`,
             );
         } catch (err: unknown) {
             const errMsg = err instanceof Error ? err.message : String(err);
             this.logger.warn(
                 'Translator',
-                `Translator glossary self-repair failed (keeping original translations): ${errMsg}`,
+                `Translator glossary advisory review failed (keeping original translations): ${errMsg}`,
             );
         }
     }
