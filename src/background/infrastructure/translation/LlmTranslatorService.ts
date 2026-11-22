@@ -53,6 +53,53 @@ export class LlmTranslatorService implements ITranslatorService {
         });
     }
 
+    private escapeRegExp(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /**
+     * Finds `needle` in `haystack` and returns the remaining string with matched spans
+     * replaced by spaces (preserving word boundaries), or `null` if no match was found.
+     */
+    private consumeGlossaryNeedle(
+        haystack: string,
+        needle: string,
+    ): string | null {
+        const trimmed = needle.trim();
+        if (!trimmed || !haystack) return null;
+
+        if (/^[\u0020-\u007E]+$/.test(trimmed)) {
+            const pattern = new RegExp(
+                `(?<![a-z0-9])${this.escapeRegExp(trimmed)}(?![a-z0-9])`,
+                'gi',
+            );
+            let matched = false;
+            const masked = haystack.replace(pattern, (m) => {
+                matched = true;
+                return ' '.repeat(m.length);
+            });
+            return matched ? masked : null;
+        }
+
+        const lowerHay = haystack.toLowerCase();
+        const lowerNeedle = trimmed.toLowerCase();
+        let idx = lowerHay.indexOf(lowerNeedle);
+        if (idx === -1) return null;
+
+        const chars = haystack.split('');
+        while (idx !== -1) {
+            for (let i = idx; i < idx + trimmed.length; i++) {
+                chars[i] = ' ';
+            }
+            idx = lowerHay.indexOf(lowerNeedle, idx + trimmed.length);
+        }
+        return chars.join('');
+    }
+
+    private matchesGlossaryNeedle(haystack: string, needle: string): boolean {
+        return this.consumeGlossaryNeedle(haystack, needle) !== null;
+    }
+
     private formatGlossaryForPrompt(
         characters: Record<string, CharacterItem> = {},
         terms: Record<string, string> = {},
@@ -90,7 +137,15 @@ export class LlmTranslatorService implements ITranslatorService {
     private buildGlossaryBlocks(
         context: Context,
         isSupervisor: boolean,
+        relevantText?: string,
     ): string {
+        const shouldInclude = (candidates: string[]): boolean => {
+            if (!relevantText) return true;
+            return candidates.some((c) =>
+                this.matchesGlossaryNeedle(relevantText, c),
+            );
+        };
+
         const manualChars: Record<string, CharacterItem> = {};
         for (const [name, manualChar] of Object.entries(
             context.manualSetupCharacters || {},
@@ -102,6 +157,7 @@ export class LlmTranslatorService implements ITranslatorService {
                     ...(modelChar?.aliases || []),
                 ]),
             );
+            if (!shouldInclude([name, ...mergedAliases])) continue;
             manualChars[name] = {
                 canonical: manualChar.canonical,
                 aliases: mergedAliases,
@@ -112,17 +168,22 @@ export class LlmTranslatorService implements ITranslatorService {
         const autoChars: Record<string, CharacterItem> = {};
         for (const [name, char] of Object.entries(context.characters || {})) {
             if (!context.manualSetupCharacters[name]) {
+                const aliases = Array.isArray(char?.aliases) ? char.aliases : [];
+                if (!shouldInclude([name, ...aliases])) continue;
                 autoChars[name] = char;
             }
         }
 
-        const manualTerms: Record<string, string> = {
-            ...(context.manualSetupTerms || {}),
-        };
+        const manualTerms: Record<string, string> = {};
+        for (const [k, v] of Object.entries(context.manualSetupTerms || {})) {
+            if (!shouldInclude([k])) continue;
+            manualTerms[k] = v;
+        }
 
         const autoTerms: Record<string, string> = {};
         for (const [k, v] of Object.entries(context.terms || {})) {
             if (!context.manualSetupTerms[k]) {
+                if (!shouldInclude([k])) continue;
                 autoTerms[k] = v;
             }
         }
@@ -287,6 +348,10 @@ export class LlmTranslatorService implements ITranslatorService {
         } = req;
         if (!items || items.length === 0) return { success: true, results: {} };
 
+        const relevantText = [...items, ...contextItems]
+            .map((c) => c.rawText || '')
+            .join('\n');
+
         const ctx = context;
         let contextBlock = '';
         if (ctx && ctx.isWarmedUp) {
@@ -300,7 +365,7 @@ export class LlmTranslatorService implements ITranslatorService {
                 contextBlock += `Background Synopsis:\n${synopsisParts.join('\n')}\n`;
             }
 
-            contextBlock += this.buildGlossaryBlocks(ctx, false);
+            contextBlock += this.buildGlossaryBlocks(ctx, false, relevantText);
         }
 
         let contextDialogues = '';
@@ -389,7 +454,17 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                             for (const m of missingIds) {
                                 resultMap[m.id] = m.rawText;
                             }
-                            return { success: true, results: resultMap };
+                            if (ctx && ctx.isWarmedUp && !signal?.aborted) {
+                    await this.repairGlossaryViolations(
+                        items,
+                        resultMap,
+                        targetLangPrompt,
+                        ctx,
+                        signal,
+                    );
+                }
+
+                return { success: true, results: resultMap };
                         }
                         this.logger.error(
                             'Translator',
@@ -397,6 +472,16 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                         );
                         return { success: false, error: warnMsg };
                     }
+                }
+
+                if (ctx && ctx.isWarmedUp && !signal?.aborted) {
+                    await this.repairGlossaryViolations(
+                        items,
+                        resultMap,
+                        targetLangPrompt,
+                        ctx,
+                        signal,
+                    );
                 }
 
                 return { success: true, results: resultMap };
@@ -419,6 +504,220 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
             success: false,
             error: 'Batch translation failed after retries',
         };
+    }
+
+    /**
+     * Programmatically checks translated cues against effective glossary characters and terms.
+     */
+    private findGlossaryViolations(
+        items: Array<{ id: number; rawText: string }>,
+        resultMap: Record<number, string>,
+        context: Context,
+    ): Array<{
+        id: number;
+        rawText: string;
+        currentTrans: string;
+        errors: Array<{
+            kind: 'character' | 'term';
+            sourceMatch: string;
+            canonical: string;
+        }>;
+    }> {
+        const effectiveChars = context.getEffectiveCharacters();
+        const effectiveTerms = context.getEffectiveTerms();
+        const violations: Array<{
+            id: number;
+            rawText: string;
+            currentTrans: string;
+            errors: Array<{
+                kind: 'character' | 'term';
+                sourceMatch: string;
+                canonical: string;
+            }>;
+        }> = [];
+
+        // Flatten all active glossary rules and sort longest-first so longer phrases
+        // (e.g. "nobi nobida") consume their span before shorter sub-phrases ("nobi").
+        const rules: Array<{
+            kind: 'character' | 'term';
+            candidates: string[];
+            canonical: string;
+            maxLen: number;
+        }> = [];
+
+        for (const [name, charItem] of Object.entries(effectiveChars)) {
+            const canonical = (charItem?.canonical || '').trim();
+            if (!canonical) continue;
+            const candidates = [name, ...(charItem.aliases || [])]
+                .map((c) => c.trim())
+                .filter(Boolean)
+                .sort((a, b) => b.length - a.length);
+            if (candidates.length === 0) continue;
+            rules.push({
+                kind: 'character',
+                candidates,
+                canonical,
+                maxLen: candidates[0].length,
+            });
+        }
+
+        for (const [term, targetTerm] of Object.entries(effectiveTerms)) {
+            const canonical = (targetTerm || '').trim();
+            const trimmedTerm = term.trim();
+            if (!canonical || !trimmedTerm) continue;
+            rules.push({
+                kind: 'term',
+                candidates: [trimmedTerm],
+                canonical,
+                maxLen: trimmedTerm.length,
+            });
+        }
+
+        rules.sort((a, b) => b.maxLen - a.maxLen);
+
+        for (const item of items) {
+            const raw = (item.rawText || '').trim();
+            const trans = (resultMap[item.id] || '').trim();
+            if (!raw || !trans || trans === raw) continue;
+
+            let remainingRaw = raw;
+            const errors: Array<{
+                kind: 'character' | 'term';
+                sourceMatch: string;
+                canonical: string;
+            }> = [];
+
+            for (const rule of rules) {
+                let matchedCandidate: string | null = null;
+                for (const candidate of rule.candidates) {
+                    const nextRaw = this.consumeGlossaryNeedle(
+                        remainingRaw,
+                        candidate,
+                    );
+                    if (nextRaw !== null) {
+                        matchedCandidate = candidate;
+                        remainingRaw = nextRaw;
+                        break;
+                    }
+                }
+                if (
+                    matchedCandidate &&
+                    !this.matchesGlossaryNeedle(trans, rule.canonical)
+                ) {
+                    errors.push({
+                        kind: rule.kind,
+                        sourceMatch: matchedCandidate,
+                        canonical: rule.canonical,
+                    });
+                }
+            }
+
+            if (errors.length > 0) {
+                violations.push({
+                    id: item.id,
+                    rawText: raw.replace(/\n+/g, ' '),
+                    currentTrans: trans.replace(/\n+/g, ' '),
+                    errors,
+                });
+            }
+        }
+
+        return violations;
+    }
+
+    /**
+     * Prompts the translation model directly to fix programmatic glossary violations,
+     * explicitly stating which character/term was missed or mistranslated on each line.
+     */
+    private async repairGlossaryViolations(
+        items: Array<{ id: number; rawText: string }>,
+        resultMap: Record<number, string>,
+        targetLangPrompt: string,
+        context: Context,
+        signal?: AbortSignal,
+    ): Promise<void> {
+        const violations = this.findGlossaryViolations(
+            items,
+            resultMap,
+            context,
+        );
+        if (violations.length === 0) return;
+
+        this.logger.info(
+            'Translator',
+            `Programmatic glossary check found ${violations.length} cue(s) violating glossary constraints: [${violations.map((v) => v.id).join(', ')}]. Requesting translator model repair...`,
+        );
+
+        const systemPrompt = `You are a professional subtitle translator. Fix ONLY the glossary compliance errors listed below in ${targetLangPrompt}.
+Preserve the original meaning, natural dialogue tone, and sentence structure, while strictly using the exact required canonical translation for every flagged character name or term.
+
+CRITICAL FORMAT RULES:
+1. Output strictly line by line in this format:
+[index]: corrected_translation
+2. Include ONLY the cue IDs listed below. Do NOT add explanations or commentary.`;
+
+        const userPrompt = violations
+            .map((v) => {
+                const errLines = v.errors
+                    .map(
+                        (e) =>
+                            `  - ERROR (${e.kind}): Source mentions "${e.sourceMatch}", but your current translation is missing the required translation "${e.canonical}". You MUST use "${e.canonical}".`,
+                    )
+                    .join('\n');
+                return `[${v.id}]\nSource: "${v.rawText}"\nCurrent Translation: "${v.currentTrans}"\n${errLines}`;
+            })
+            .join('\n\n');
+
+        try {
+            const rawRepair = await this.llmService.callChat('translator', {
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt },
+                ],
+                temperature: 0.1,
+                signal,
+            });
+
+            const cleanRepair = rawRepair
+                .replace(/<think[\s\S]*?<\/think>/gi, '')
+                .replace(/<thought[\s\S]*?<\/thought>/gi, '')
+                .trim();
+
+            const violatingIds = new Set(violations.map((v) => v.id));
+            const repairedMap = this.parseNumberedSubtitles(
+                cleanRepair,
+                violatingIds,
+                violations.map((v) => ({ id: v.id })),
+            );
+
+            let fixedCount = 0;
+            for (const v of violations) {
+                const candidate = (repairedMap[v.id] || '').trim();
+                if (!candidate) continue;
+
+                const remaining = this.findGlossaryViolations(
+                    [{ id: v.id, rawText: v.rawText }],
+                    { [v.id]: candidate },
+                    context,
+                );
+                const remainingCount = remaining[0]?.errors.length ?? 0;
+                if (remainingCount < v.errors.length) {
+                    resultMap[v.id] = candidate;
+                    fixedCount++;
+                }
+            }
+
+            this.logger.info(
+                'Translator',
+                `Translator glossary self-repair resolved ${fixedCount}/${violations.length} violating cue(s).`,
+            );
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            this.logger.warn(
+                'Translator',
+                `Translator glossary self-repair failed (keeping original translations): ${errMsg}`,
+            );
+        }
     }
 
     private fallbackExtractSupervisorJson(text: string): {
@@ -593,7 +892,11 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                 synopsisLine = `Background Synopsis:\n${synopsisParts.join('\n')}\n`;
             }
 
-            glossaryBlock = this.buildGlossaryBlocks(context, true);
+            glossaryBlock = this.buildGlossaryBlocks(
+                context,
+                true,
+                [...items, ...contextItems].map((c) => c.rawText || '').join('\n'),
+            );
         }
 
         const systemPrompt = `You are a senior subtitle translation supervisor and editor.
