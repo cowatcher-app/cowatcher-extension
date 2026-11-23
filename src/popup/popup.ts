@@ -222,6 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const enableSupervisorCheckbox = document.getElementById(
         'enable-supervisor',
     ) as HTMLInputElement;
+    const autoMarkReviewedCheckbox = document.getElementById(
+        'auto-mark-reviewed-no-sup',
+    ) as HTMLInputElement;
+    const extractGlossaryInTranslatorCheckbox = document.getElementById(
+        'extract-glossary-in-translator',
+    ) as HTMLInputElement;
     const supervisorModelGroup = document.getElementById(
         'supervisor-model-group',
     ) as HTMLElement;
@@ -580,6 +586,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (enableSupervisorCheckbox) {
             enableSupervisorCheckbox.checked =
                 currentSettings.enableSupervisor !== false;
+        }
+        if (autoMarkReviewedCheckbox) {
+            autoMarkReviewedCheckbox.checked =
+                currentSettings.autoMarkReviewedWhenNoSupervisor === true;
+        }
+        if (extractGlossaryInTranslatorCheckbox) {
+            extractGlossaryInTranslatorCheckbox.checked =
+                currentSettings.extractGlossaryInTranslator === true;
         }
         const supEnabled = currentSettings.enableSupervisor !== false;
         if (supervisorModelGroup) {
@@ -2214,6 +2228,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
             if (reviewBatchGroup)
                 reviewBatchGroup.classList.toggle('disabled', !enabled);
+        });
+    }
+
+    if (autoMarkReviewedCheckbox) {
+        autoMarkReviewedCheckbox.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            saveSettings({
+                autoMarkReviewedWhenNoSupervisor: target.checked,
+            });
+        });
+    }
+
+    if (extractGlossaryInTranslatorCheckbox) {
+        extractGlossaryInTranslatorCheckbox.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            saveSettings({
+                extractGlossaryInTranslator: target.checked,
+            });
         });
     }
 

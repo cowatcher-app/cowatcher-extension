@@ -160,6 +160,8 @@ export class ChromeCacheRepository implements ITrackCacheRepository {
         supervisorModel?: string;
         items?: Array<{ id: number; text?: string }>;
         results: Record<string | number, string>;
+        status?: 'raw' | 'reviewed';
+        usedTermsMap?: Record<number, Record<string, number>>;
     }): Promise<boolean> {
         const {
             trackHash,
@@ -171,6 +173,8 @@ export class ChromeCacheRepository implements ITrackCacheRepository {
             supervisorModel,
             items,
             results,
+            status,
+            usedTermsMap,
         } = params;
         if (!trackHash || !results || Object.keys(results).length === 0)
             return false;
@@ -224,6 +228,7 @@ export class ChromeCacheRepository implements ITrackCacheRepository {
                 rawText: existing?.rawText,
                 transText: translatedText,
                 status:
+                    status === 'reviewed' ||
                     existing?.status === 'reviewed' ||
                     provider === 'netflix_native'
                         ? 'reviewed'
@@ -231,7 +236,7 @@ export class ChromeCacheRepository implements ITrackCacheRepository {
                           ? 'pre_reviewed'
                           : 'raw',
                 vocabScanned: existing?.vocabScanned || false,
-                usedTerms: existing?.usedTerms,
+                usedTerms: usedTermsMap?.[id] ?? existing?.usedTerms,
                 startTime: existing?.startTime ?? 0,
                 endTime: existing?.endTime ?? 0,
                 updatedAt: now,

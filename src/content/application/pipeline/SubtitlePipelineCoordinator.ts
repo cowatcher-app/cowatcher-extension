@@ -497,6 +497,7 @@ export class SubtitlePipelineCoordinator {
                         batch,
                         response.results,
                         response.merged,
+                        response.autoReviewed,
                     );
                     resolve();
                 })
@@ -520,6 +521,7 @@ export class SubtitlePipelineCoordinator {
         batch: SubtitleCue[],
         results: Record<number, string>,
         merged?: Record<number, number[]>,
+        autoReviewed?: boolean,
     ): void {
         const resEntries = Object.entries(results);
         this.logger.info(
@@ -527,6 +529,9 @@ export class SubtitlePipelineCoordinator {
             `Received translation for ${resEntries.length} cues.`,
         );
 
+        const targetStatus: TranslationStatus = autoReviewed
+            ? 'reviewed'
+            : 'raw';
         const batchCueMap = new Map(batch.map((c) => [c.id, c]));
         for (const [idStr, translatedText] of resEntries) {
             const id = parseInt(idStr, 10);
@@ -539,12 +544,12 @@ export class SubtitlePipelineCoordinator {
                 this.store.setTranslation(
                     id,
                     String(translatedText),
-                    'raw',
+                    targetStatus,
                     undefined,
                     cueMerged,
                 );
             } else {
-                this.store.setCueStatus(id, 'raw');
+                this.store.setCueStatus(id, targetStatus);
             }
         }
         this.resetBatchToUntranslated(batch);

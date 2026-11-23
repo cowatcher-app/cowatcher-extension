@@ -96,6 +96,9 @@ export class TranslationPipelineService {
     private isCurrentTaskUrgent: boolean = false;
     private activeProvider: TranslationProvider = 'google';
     private targetLanguage: LanguageInfo = Language.DEFAULT;
+    private enableSupervisor: boolean = true;
+    private autoMarkReviewedWhenNoSupervisor: boolean = false;
+    private extractGlossaryInTranslator: boolean = false;
 
     private logger: Logger = new Logger('TranslationPipelineService');
 
@@ -117,12 +120,34 @@ export class TranslationPipelineService {
                 const s = res[NCW_STORAGE_KEYS.SETTINGS];
                 if (s?.aiProvider) this.activeProvider = s.aiProvider;
                 if (s?.targetLanguage) this.targetLanguage = s.targetLanguage;
+                if (typeof s?.enableSupervisor === 'boolean') {
+                    this.enableSupervisor = s.enableSupervisor;
+                }
+                if (typeof s?.autoMarkReviewedWhenNoSupervisor === 'boolean') {
+                    this.autoMarkReviewedWhenNoSupervisor =
+                        s.autoMarkReviewedWhenNoSupervisor;
+                }
+                if (typeof s?.extractGlossaryInTranslator === 'boolean') {
+                    this.extractGlossaryInTranslator =
+                        s.extractGlossaryInTranslator;
+                }
             });
 
         storage.onChanged((changes) => {
             if (changes[NCW_STORAGE_KEYS.SETTINGS]?.newValue) {
                 const s = changes[NCW_STORAGE_KEYS.SETTINGS]
                     .newValue as Partial<ExtensionSettings>;
+                if (typeof s.enableSupervisor === 'boolean') {
+                    this.enableSupervisor = s.enableSupervisor;
+                }
+                if (typeof s.autoMarkReviewedWhenNoSupervisor === 'boolean') {
+                    this.autoMarkReviewedWhenNoSupervisor =
+                        s.autoMarkReviewedWhenNoSupervisor;
+                }
+                if (typeof s.extractGlossaryInTranslator === 'boolean') {
+                    this.extractGlossaryInTranslator =
+                        s.extractGlossaryInTranslator;
+                }
                 if (s.aiProvider && s.aiProvider !== this.activeProvider) {
                     this.logger.info(
                         'Translation',
@@ -382,6 +407,7 @@ export class TranslationPipelineService {
         success: boolean;
         results?: Record<number, string>;
         merged?: Record<number, number[]>;
+        autoReviewed?: boolean;
         error?: string;
     }> {
         const isUrgent = Boolean(params.urgent);
@@ -423,7 +449,7 @@ export class TranslationPipelineService {
                 // If there is not a show id, which means we will not persist this context, which means even we give a temporaray one, it still has no meaning. So we don't give any context currently.
                 // If we find some platform without a valid show id, we will consider to give some temporaray one.
                 // But right now, we don't support it.
-                const ctx = showId
+                let ctx = showId
                     ? await this.glossaryService.getContextForShow(
                           showId,
                           this.targetLanguage,
@@ -441,6 +467,7 @@ export class TranslationPipelineService {
                     context: ctx,
                     signal,
                     mainTitle,
+                    extractGlossary: this.extractGlossaryInTranslator,
                 });
 
                 if (!response.success || !response.results) {
@@ -452,6 +479,24 @@ export class TranslationPipelineService {
 
                 const resultMap = response.results;
 
+                if (
+                    ctx &&
+                    ctx.showId &&
+                    (response.newCharacters || response.newTerms)
+                ) {
+                    ctx = await this.glossaryService.updateWarmupContext({
+                        showId: ctx.showId,
+                        targetLanguage: this.targetLanguage,
+                        characters: response.newCharacters || {},
+                        terms: response.newTerms || {},
+                    });
+                }
+
+                const autoReviewed =
+                    !this.enableSupervisor &&
+                    this.autoMarkReviewedWhenNoSupervisor &&
+                    activeProvider !== 'google';
+
                 // Cache translated cues
                 if (trackHash && Object.keys(resultMap).length > 0) {
                     const activeTranslationModel =
@@ -459,6 +504,46 @@ export class TranslationPipelineService {
                             ? 'google'
                             : (await this.llmService.getClient('translator'))
                                   .model;
+
+                    let usedTermsMap:
+                        | Record<number, Record<string, number>>
+                        | undefined;
+                    if (autoReviewed && ctx) {
+                        usedTermsMap = {};
+                        const effectiveTerms = ctx.getEffectiveTerms();
+                        const effectiveChars = ctx.getEffectiveCharacters();
+                        for (const item of items) {
+                            const finalText = (resultMap[item.id] || '').trim();
+                            const used: Record<string, number> = {};
+                            for (const [k, v] of Object.entries(
+                                effectiveTerms,
+                            )) {
+                                if (
+                                    (v && finalText.includes(v)) ||
+                                    (k && item.rawText?.includes(k))
+                                ) {
+                                    used[k] = ctx.getTermVersion(k);
+                                }
+                            }
+                            for (const [k, v] of Object.entries(
+                                effectiveChars,
+                            )) {
+                                const val =
+                                    typeof v === 'string'
+                                        ? v
+                                        : v?.canonical || '';
+                                if (
+                                    (val && finalText.includes(val)) ||
+                                    (k && item.rawText?.includes(k))
+                                ) {
+                                    used[k] = ctx.getTermVersion(k);
+                                }
+                            }
+                            if (Object.keys(used).length > 0) {
+                                usedTermsMap[item.id] = used;
+                            }
+                        }
+                    }
 
                     if (movieId) {
                         this.cacheRepository
@@ -476,6 +561,8 @@ export class TranslationPipelineService {
                                 supervisorModel: 'none',
                                 items,
                                 results: resultMap,
+                                status: autoReviewed ? 'reviewed' : 'raw',
+                                usedTermsMap,
                             })
                             .catch((e) => this.logger.warn('Translation', e));
                     }
@@ -485,6 +572,7 @@ export class TranslationPipelineService {
                     success: true,
                     results: resultMap,
                     merged: response.merged,
+                    autoReviewed,
                 };
             } catch (err: unknown) {
                 return {

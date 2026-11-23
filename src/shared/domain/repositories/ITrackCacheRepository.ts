@@ -18,6 +18,8 @@ export interface SaveTranslatedCuesParams {
     supervisorModel?: string;
     items?: Array<{ id: number; text?: string; start?: number; end?: number }>;
     results: Record<string | number, string>;
+    status?: 'raw' | 'reviewed';
+    usedTermsMap?: Record<number, Record<string, number>>;
 }
 
 export interface SaveReviewedCuesParams {

@@ -358,6 +358,7 @@ export class LlmTranslatorService implements ITranslatorService {
             context,
             signal,
             movieId,
+            extractGlossary = false,
         } = req;
         if (!items || items.length === 0) return { success: true, results: {} };
 
@@ -407,7 +408,18 @@ CRITICAL NUMBERING & FORMAT RULES:
 If consecutive lines belong to a single split sentence that must be translated together (e.g. [103] and [104]), combine their line IDs into a range:
 [103-104]: translated_text
 The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...).
-3. NEVER shift, renumber, or omit line numbers. Every input line ID must be accounted for either individually or in a [start-end] range.`;
+3. NEVER shift, renumber, or omit line numbers. Every input line ID must be accounted for either individually or in a [start-end] range.${
+            extractGlossary
+                ? `
+
+GLOSSARY EXTRACTION (OPTIONAL AT THE VERY END):
+After outputting ALL numbered subtitle lines above, if you encounter any recurring character names, nicknames, locations, or specialized proper nouns that are NOT already in the glossary above, append a single XML-wrapped JSON block at the very end:
+<glossary_json>
+{"new_characters":{"Original Name":{"canonical":"Target Name","aliases":[]}},"new_terms":{"Term":"Translation"}}
+</glossary_json>
+Do NOT include placeholder entries ("Original Name", "Target Name", "Term"). Omit <glossary_json> if nothing new is found.`
+                : ''
+        }`;
 
         const userLines = items
             .map((item) => `[${item.id}]: ${item.rawText.replace(/\n+/g, ' ')}`)
@@ -433,10 +445,24 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                     },
                 );
 
-                const cleanResponse = rawResponse
+                const strippedResponse = rawResponse
                     .replace(/<think[\s\S]*?<\/think>/gi, '')
                     .replace(/<thought[\s\S]*?<\/thought>/gi, '')
                     .trim();
+
+                const {
+                    cleanText: cleanResponse,
+                    newCharacters,
+                    newTerms,
+                } = extractGlossary
+                    ? this.extractGlossaryFromTranslatorResponse(
+                          strippedResponse,
+                      )
+                    : {
+                          cleanText: strippedResponse,
+                          newCharacters: undefined,
+                          newTerms: undefined,
+                      };
 
                 const targetIds = new Set(items.map((it) => it.id));
                 const { results: resultMap, mergedGroups } =
@@ -484,6 +510,8 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                                 success: true,
                                 results: resultMap,
                                 merged: mergedMap,
+                                newCharacters,
+                                newTerms,
                             };
                         }
                         this.logger.error(
@@ -507,6 +535,8 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                     success: true,
                     results: resultMap,
                     merged: mergedMap,
+                    newCharacters,
+                    newTerms,
                 };
             } catch (err: unknown) {
                 const isAbort =
@@ -898,6 +928,101 @@ CRITICAL FORMAT RULES:
         }
     }
 
+    private normalizeExtractedGlossary(parsed: {
+        new_characters?: unknown;
+        new_terms?: unknown;
+    }): {
+        newCharacters?: Record<string, CharacterItem>;
+        newTerms?: Record<string, string>;
+    } {
+        const newCharacters: Record<string, CharacterItem> = {};
+        if (parsed.new_characters && typeof parsed.new_characters === 'object') {
+            for (const [k, v] of Object.entries(parsed.new_characters)) {
+                const key = k.trim();
+                if (!key || key.toLowerCase() === 'original name') continue;
+
+                if (typeof v === 'string') {
+                    const canonical = v.trim();
+                    if (
+                        canonical &&
+                        canonical.toLowerCase() !== 'target name'
+                    ) {
+                        newCharacters[key] = { canonical, aliases: [] };
+                    }
+                } else if (v && typeof v === 'object') {
+                    const obj = v as Record<string, unknown>;
+                    const canonical = String(
+                        obj.canonical || obj.name || key,
+                    ).trim();
+                    if (
+                        canonical &&
+                        canonical.toLowerCase() !== 'target name'
+                    ) {
+                        const aliases = Array.isArray(obj.aliases)
+                            ? obj.aliases
+                                  .map((a: unknown) => String(a).trim())
+                                  .filter(Boolean)
+                            : [];
+                        newCharacters[key] = {
+                            canonical,
+                            aliases: aliases.filter(
+                                (a: string) => a.toLowerCase() !== 'new_alias',
+                            ),
+                        };
+                    }
+                }
+            }
+        }
+
+        const newTerms: Record<string, string> = {};
+        if (
+            parsed.new_terms &&
+            typeof parsed.new_terms === 'object' &&
+            !Array.isArray(parsed.new_terms)
+        ) {
+            for (const [k, v] of Object.entries(parsed.new_terms)) {
+                const key = k.trim();
+                const val = typeof v === 'string' ? v.trim() : '';
+                if (
+                    key &&
+                    val &&
+                    !(
+                        key.toLowerCase() === 'term' &&
+                        val.toLowerCase() === 'translation'
+                    )
+                ) {
+                    newTerms[key] = val;
+                }
+            }
+        }
+
+        return {
+            newCharacters:
+                Object.keys(newCharacters).length > 0
+                    ? newCharacters
+                    : undefined,
+            newTerms: Object.keys(newTerms).length > 0 ? newTerms : undefined,
+        };
+    }
+
+    private extractGlossaryFromTranslatorResponse(text: string): {
+        cleanText: string;
+        newCharacters?: Record<string, CharacterItem>;
+        newTerms?: Record<string, string>;
+    } {
+        const match = text.match(/<glossary_json>([\s\S]*?)(?:<\/glossary_json>|$)/i);
+        if (!match) {
+            return { cleanText: text };
+        }
+        const cleanText = text
+            .replace(/<glossary_json>[\s\S]*?(?:<\/glossary_json>|$)/gi, '')
+            .trim();
+        const parsed = this.parseSupervisorJson(match[1]);
+        const { newCharacters, newTerms } =
+            this.normalizeExtractedGlossary(parsed);
+        return { cleanText, newCharacters, newTerms };
+    }
+
     private fallbackExtractSupervisorJson(text: string): {
         corrections: Record<string, string>;
         new_characters: Record<string, unknown>;
@@ -913,9 +1038,9 @@ CRITICAL FORMAT RULES:
             new_terms: {},
         };
 
-        // 1. Extract corrections section
+        // 1. Extract corrections section (tolerates missing closing brace if truncated)
         const corrMatch = text.match(
-            /"corrections"\s*:\s*\{([\s\S]*?)\}(?:\s*,|\s*\}|\s*$)/i,
+            /"corrections"\s*:\s*\{([\s\S]*?)(?:\}|"(?:new_characters|new_terms)"|$)/i,
         );
         if (corrMatch) {
             const corrBody = corrMatch[1];
@@ -926,9 +1051,9 @@ CRITICAL FORMAT RULES:
             }
         }
 
-        // 2. Extract new_terms section
+        // 2. Extract new_terms section (tolerates missing closing brace if truncated)
         const termsMatch = text.match(
-            /"new_terms"\s*:\s*\{([\s\S]*?)\}(?:\s*,|\s*\}|\s*$)/i,
+            /"new_terms"\s*:\s*\{([\s\S]*?)(?:\}|"(?:new_characters|corrections)"|$)/i,
         );
         if (termsMatch) {
             const termsBody = termsMatch[1];
@@ -976,8 +1101,8 @@ CRITICAL FORMAT RULES:
             // Proceed to repair strategies
         }
 
-        // 4. Repair strategy 1: Trailing commas
-        let repaired = jsonStr.replace(/,\s*([\]}])/g, '$1');
+        // 4. Repair strategy 1: Trailing commas (preserve newline/whitespace before closing bracket)
+        const repaired = jsonStr.replace(/,(\s*[\]}])/g, '$1');
         try {
             return JSON.parse(repaired);
         } catch {
@@ -1190,80 +1315,14 @@ Guidelines for new_characters and new_terms:
                 }
             }
 
-            const newCharacters: Record<string, CharacterItem> = {};
-            if (
-                parsed.new_characters &&
-                typeof parsed.new_characters === 'object'
-            ) {
-                for (const [k, v] of Object.entries(parsed.new_characters)) {
-                    const key = k.trim();
-                    if (!key || key.toLowerCase() === 'original name') continue;
-
-                    if (typeof v === 'string') {
-                        const canonical = v.trim();
-                        if (
-                            canonical &&
-                            canonical.toLowerCase() !== 'target name'
-                        ) {
-                            newCharacters[key] = { canonical, aliases: [] };
-                        }
-                    } else if (v && typeof v === 'object') {
-                        const obj = v as Record<string, unknown>;
-                        const canonical = String(
-                            obj.canonical || obj.name || key,
-                        ).trim();
-                        if (
-                            canonical &&
-                            canonical.toLowerCase() !== 'target name'
-                        ) {
-                            const aliases = Array.isArray(obj.aliases)
-                                ? obj.aliases
-                                      .map((a: unknown) => String(a).trim())
-                                      .filter(Boolean)
-                                : [];
-                            newCharacters[key] = {
-                                canonical,
-                                aliases: aliases.filter(
-                                    (a: string) =>
-                                        a.toLowerCase() !== 'new_alias',
-                                ),
-                            };
-                        }
-                    }
-                }
-            }
-
-            const newTerms: Record<string, string> = {};
-            if (
-                parsed.new_terms &&
-                typeof parsed.new_terms === 'object' &&
-                !Array.isArray(parsed.new_terms)
-            ) {
-                for (const [k, v] of Object.entries(parsed.new_terms)) {
-                    const key = k.trim();
-                    const val = typeof v === 'string' ? v.trim() : '';
-                    if (
-                        key &&
-                        val &&
-                        !(
-                            key.toLowerCase() === 'term' &&
-                            val.toLowerCase() === 'translation'
-                        )
-                    ) {
-                        newTerms[key] = val;
-                    }
-                }
-            }
+            const { newCharacters, newTerms } =
+                this.normalizeExtractedGlossary(parsed);
 
             return {
                 success: true,
                 corrections,
-                newCharacters:
-                    Object.keys(newCharacters).length > 0
-                        ? newCharacters
-                        : undefined,
-                newTerms:
-                    Object.keys(newTerms).length > 0 ? newTerms : undefined,
+                newCharacters,
+                newTerms,
             };
         } catch (err: unknown) {
             this.logger.warn(

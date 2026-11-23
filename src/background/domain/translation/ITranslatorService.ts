@@ -17,12 +17,15 @@ export interface TranslateBatchRequest {
     signal?: AbortSignal;
     movieId?: string;
     mainTitle?: string;
+    extractGlossary?: boolean;
 }
 
 export interface TranslateBatchResponse {
     success: boolean;
     results?: Record<number, string>;
     merged?: Record<number, number[]>;
+    newCharacters?: Record<string, CharacterItem>;
+    newTerms?: Record<string, string>;
     error?: string;
 }
 

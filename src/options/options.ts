@@ -255,6 +255,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cfgEnableSupervisor = document.getElementById(
         'cfg-enable-supervisor',
     ) as HTMLInputElement | null;
+    const cfgAutoMarkReviewedNoSup = document.getElementById(
+        'cfg-auto-mark-reviewed-no-sup',
+    ) as HTMLInputElement | null;
+    const cfgExtractGlossaryInTranslator = document.getElementById(
+        'cfg-extract-glossary-in-translator',
+    ) as HTMLInputElement | null;
     const cfgTargetLang = document.getElementById(
         'cfg-target-lang',
     ) as HTMLInputElement | null;
@@ -3209,6 +3215,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (cfgEnableSupervisor)
             cfgEnableSupervisor.checked =
                 currentSettings.enableSupervisor !== false;
+        if (cfgAutoMarkReviewedNoSup)
+            cfgAutoMarkReviewedNoSup.checked =
+                currentSettings.autoMarkReviewedWhenNoSupervisor === true;
+        if (cfgExtractGlossaryInTranslator)
+            cfgExtractGlossaryInTranslator.checked =
+                currentSettings.extractGlossaryInTranslator === true;
         if (cfgTargetLang) {
             cfgTargetLang.innerHTML = Language.getAll()
                 .map((l) => `<option value="${l.code}">${l.label}</option>`)
@@ -3787,6 +3799,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             enableSupervisor: cfgEnableSupervisor
                 ? cfgEnableSupervisor.checked
                 : currentSettings.enableSupervisor,
+            autoMarkReviewedWhenNoSupervisor: cfgAutoMarkReviewedNoSup
+                ? cfgAutoMarkReviewedNoSup.checked
+                : currentSettings.autoMarkReviewedWhenNoSupervisor,
+            extractGlossaryInTranslator: cfgExtractGlossaryInTranslator
+                ? cfgExtractGlossaryInTranslator.checked
+                : currentSettings.extractGlossaryInTranslator,
             targetLanguage: cfgTargetLang
                 ? Language.resolve(cfgTargetLang.value)
                 : currentSettings.targetLanguage,

@@ -125,6 +125,14 @@ const NCW_I18N = {
                 'Enable Supervisor Model (Audit & Character Glossary)',
             enableSupervisorHint:
                 'Audits terminology consistency & maintains character memory (Turn off to save GPU VRAM)',
+            autoMarkReviewedWhenNoSupervisor:
+                'Auto-mark as Reviewed when Supervisor is Off',
+            autoMarkReviewedWhenNoSupervisorHint:
+                'Save translator outputs directly as reviewed in cache (ideal for strong cloud LLMs)',
+            extractGlossaryInTranslator:
+                'Extract Glossary during Translation',
+            extractGlossaryInTranslatorHint:
+                'Let the translation model extract new character names & terms in the same pass',
             pipelineSettingsTitle: 'Dual-Model Pipeline Settings',
             pipelineGroupTranslation: '⚡ Dynamic Cue Batch & Buffer',
             minCues: 'Min Batch Cues (min_cue)',
@@ -717,6 +725,14 @@ const NCW_I18N = {
             enableSupervisor: '启用监督模型（上下文审查与人物表）',
             enableSupervisorHint:
                 '自动审查术语统一并构建人物记忆（显存较小如 4G/6G 时可关闭以提升流畅度）',
+            autoMarkReviewedWhenNoSupervisor:
+                '关闭监督模型时自动标记为已校阅',
+            autoMarkReviewedWhenNoSupervisorHint:
+                '将翻译模型结果直接按“已校阅”写入缓存（适合云端大模型单模型直出）',
+            extractGlossaryInTranslator:
+                '翻译时顺便自动提取术语表 (Glossary)',
+            extractGlossaryInTranslatorHint:
+                '让翻译模型在翻译台词的同时提取新角色名与专有名词，省去独立监督步骤',
             pipelineSettingsTitle: '双模型流水线参数配置',
             pipelineGroupTranslation: '⚡ 动态 Cue 批量与缓冲参数',
             minCues: '单次最小下发句数 (min_cue)',
@@ -1304,6 +1320,14 @@ const NCW_I18N = {
             enableSupervisor: '監督モデルを有効化（文脈校正・用語集）',
             enableSupervisorHint:
                 '用語の統一と登場人物の記憶を維持します（VRAMが少ない場合はOFF推奨）',
+            autoMarkReviewedWhenNoSupervisor:
+                '監督モデルOFF時に自動校正済みにする',
+            autoMarkReviewedWhenNoSupervisorHint:
+                '翻訳結果を直接「校正済み」としてキャッシュ保存します（高性能クラウドLLM向け）',
+            extractGlossaryInTranslator:
+                '翻訳と同時に用語集を自動抽出する',
+            extractGlossaryInTranslatorHint:
+                '翻訳モデルがセリフ翻訳と同時に新しい登場人物名や専門用語を抽出します',
             pipelineSettingsTitle: 'デュアルモデルパイプライン設定',
             pipelineGroupTranslation: '⚡ 動的 Cue バッチとバッファ設定',
             minCues: '最小バッチ行数 (min_cue)',
@@ -1894,6 +1918,14 @@ const NCW_I18N = {
             enableSupervisor: '감수 모델 활성화 (문맥 검토 및 인물 사전)',
             enableSupervisorHint:
                 '용어 일관성 및 인물 사전을 관리합니다 (VRAM이 부족할 경우 끄기 권장)',
+            autoMarkReviewedWhenNoSupervisor:
+                '감수 모델 OFF 시 자동 검토 완료 처리',
+            autoMarkReviewedWhenNoSupervisorHint:
+                '번역 결과를 캐시에 바로 검토 완료 상태로 저장합니다 (고성능 클라우드 LLM에 적합)',
+            extractGlossaryInTranslator:
+                '번역 중 용어집(Glossary) 자동 추출',
+            extractGlossaryInTranslatorHint:
+                '번역 모델이 대사를 번역하면서 새 등장인물과 고유명사를 함께 추출합니다',
             pipelineSettingsTitle: '듀얼 모델 파이프라인 설정',
             pipelineGroupTranslation: '⚡ 동적 Cue 일괄 처리 및 버퍼 설정',
             minCues: '최소 배치 자막 수 (min_cue)',

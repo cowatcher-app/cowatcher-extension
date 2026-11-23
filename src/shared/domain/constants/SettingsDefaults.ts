@@ -28,6 +28,8 @@ export interface ExtensionSettings {
     translationModel: string;
     supervisorModel: string;
     enableSupervisor: boolean;
+    autoMarkReviewedWhenNoSupervisor: boolean;
+    extractGlossaryInTranslator: boolean;
     targetLanguage: LanguageInfo;
     displayMode: 'bilingual' | 'translated' | 'original';
 
@@ -118,6 +120,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     translationModel: 'translategemma:4b',
     supervisorModel: 'translategemma:4b',
     enableSupervisor: true,
+    autoMarkReviewedWhenNoSupervisor: false,
+    extractGlossaryInTranslator: false,
     targetLanguage: Language.DEFAULT,
     displayMode: 'bilingual',
     ollamaMinTranslateCues: 1,

@@ -173,6 +173,7 @@ export class ContentMessageService {
         success: boolean;
         results?: Record<number, string>;
         merged?: Record<number, number[]>;
+        autoReviewed?: boolean;
         error?: string;
     }> {
         return await ContentBackgroundBus.send(

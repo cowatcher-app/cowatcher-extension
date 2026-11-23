@@ -203,6 +203,7 @@ export type MessagePayloadMap = {
             success: boolean;
             results?: BatchTranslationResult;
             merged?: Record<number, number[]>;
+            autoReviewed?: boolean;
             error?: string;
         };
     };

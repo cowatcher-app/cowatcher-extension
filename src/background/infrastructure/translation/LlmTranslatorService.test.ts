@@ -307,4 +307,40 @@ describe('LlmTranslatorService merged subtitle splitting & supervisor grouping',
         expect(res.corrections?.[1]).toBe('(仲井户)下下个月的党首选举');
         expect(res.corrections?.[2]).toBe('正是绝佳良机。');
     });
+
+    it('extracts new characters and terms cleanly from translator output when extractGlossary is enabled', async () => {
+        const ctx = new Context({
+            showId: 'show-2',
+            title: 'Politics Drama',
+            mainTitle: 'Politics Drama',
+            targetLanguage: Language.resolve('简体中文'),
+            isWarmedUp: true,
+        });
+
+        mockCallChat.mockResolvedValueOnce(
+            [
+                '[1]: (仲井户)准备参加党首选举。',
+                '<glossary_json>',
+                '{"new_characters":{"仲井戸":{"canonical":"仲井户","aliases":["Nakaido"]}},"new_terms":{"党首選":"党首选举"}}',
+                '</glossary_json>',
+            ].join('\n'),
+        );
+
+        const res = await translator.translateBatch({
+            items: [{ id: 1, rawText: '(仲井戸)党首選に出馬する。' }],
+            targetLang: Language.resolve('简体中文'),
+            context: ctx,
+            extractGlossary: true,
+        });
+
+        expect(res.success).toBe(true);
+        // Ensure <glossary_json> is completely stripped from subtitle translation
+        expect(res.results?.[1]).toBe('(仲井户)准备参加党首选举。');
+        expect(res.newCharacters).toEqual({
+            仲井戸: { canonical: '仲井户', aliases: ['Nakaido'] },
+        });
+        expect(res.newTerms).toEqual({
+            党首選: '党首选举',
+        });
+    });
 });
