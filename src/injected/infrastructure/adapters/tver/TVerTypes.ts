@@ -57,6 +57,31 @@ export interface TVerSeriesEpisodesResponse {
     };
 }
 
+export interface TVerV2EpisodeResponse {
+    readonly episode?: {
+        readonly id: string;
+        readonly title?: string;
+        readonly description?: string;
+        readonly broadcast_date_label?: string;
+        readonly date_label?: string;
+        readonly share?: {
+            readonly text?: string;
+            readonly url?: string;
+        };
+        readonly talents?: readonly { readonly name?: string }[];
+    };
+    readonly season?: {
+        readonly id?: string;
+        readonly season_number?: number;
+        readonly title?: string;
+    };
+    readonly series?: {
+        readonly id?: string;
+        readonly title?: string;
+        readonly description?: string;
+    };
+}
+
 export interface TVerStreaksPlayer {
     getMedia?(): {
         adFields?: {

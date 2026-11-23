@@ -13,7 +13,12 @@ import { PlaybackDatasetHelper } from '@shared/domain/entities/PlaybackDatasetPa
 import { Logger } from '@shared/utils/logger';
 import { TVerTrackRegistry } from './TVerTrackRegistry';
 import { TVerMetadataManager } from './TVerMetadataManager';
-import { TVerStreaksPlayer, TVerTextTrackLike, TVerSeriesEpisodesResponse } from './TVerTypes';
+import {
+    TVerStreaksPlayer,
+    TVerTextTrackLike,
+    TVerSeriesEpisodesResponse,
+    TVerV2EpisodeResponse,
+} from './TVerTypes';
 
 export class TVerInjectedAdapter implements IInjectedAdapter {
     readonly platformId: StreamingPlatformId = STREAMING_PLATFORMS.TVER;
@@ -212,8 +217,18 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
                     } catch {}
                 }
 
-                // 2. Intercept series episodes response directly
-                if (lowerUrl.includes('/callseriesepisodes/')) {
+                // 2. Intercept v2 episode metadata & legacy series episodes response
+                if (lowerUrl.includes('/contents/api/v2/episodes/')) {
+                    const clone = response.clone();
+                    clone
+                        .json()
+                        .then((data: unknown) => {
+                            this.handleV2EpisodeApiResponse(
+                                data as TVerV2EpisodeResponse,
+                            );
+                        })
+                        .catch(() => {});
+                } else if (lowerUrl.includes('/callseriesepisodes/')) {
                     const clone = response.clone();
                     clone
                         .json()
@@ -716,25 +731,58 @@ export class TVerInjectedAdapter implements IInjectedAdapter {
             const adFields = player?.getMedia?.()?.adFields || {};
             const seriesId = adFields.ad_series_id;
             const currentEpId =
-                this.lastObservedEpisodeId || this.extractEpisodeId(window.location.href);
+                this.lastObservedEpisodeId ||
+                this.extractEpisodeId(window.location.href);
 
-            if (!seriesId || !currentEpId) return;
+            if (!currentEpId) return;
 
             // If already cached, no need to re-fetch
             if (this.metadataManager.isEpisodeCached(currentEpId)) {
                 return;
             }
 
-            this.metadataManager.fetchSeriesEpisodes(seriesId, currentEpId).then((payload) => {
-                if (payload) {
-                    window.postMessage(payload, '*');
-                    this.logger.info(
-                        'TVer-AI-Sub',
-                        `Dispatched METADATA_LOADED for movie: ${payload.movieId} (Series "${payload.showTitle}")`,
-                    );
-                }
-            });
+            this.metadataManager
+                .fetchV2EpisodeMetadata(currentEpId)
+                .then((v2Payload) => {
+                    if (v2Payload) {
+                        window.postMessage(v2Payload, '*');
+                        this.logger.info(
+                            'TVer-AI-Sub',
+                            `Dispatched METADATA_LOADED (v2) for movie: ${v2Payload.movieId} (Series "${v2Payload.showTitle}")`,
+                        );
+                        return;
+                    }
+                    if (!seriesId) return;
+                    return this.metadataManager
+                        .fetchSeriesEpisodes(seriesId, currentEpId)
+                        .then((payload) => {
+                            if (payload) {
+                                window.postMessage(payload, '*');
+                                this.logger.info(
+                                    'TVer-AI-Sub',
+                                    `Dispatched METADATA_LOADED for movie: ${payload.movieId} (Series "${payload.showTitle}")`,
+                                );
+                            }
+                        });
+                });
         } catch {}
+    }
+
+    private handleV2EpisodeApiResponse(data: TVerV2EpisodeResponse): void {
+        const currentEpId =
+            this.lastObservedEpisodeId ||
+            this.extractEpisodeId(window.location.href);
+        const payload = this.metadataManager.handleV2EpisodeResponse(
+            data,
+            currentEpId,
+        );
+        if (payload) {
+            window.postMessage(payload, '*');
+            this.logger.info(
+                'TVer-AI-Sub',
+                `Dispatched METADATA_LOADED from v2 episode API: Series "${payload.showTitle}" [${payload.showId}]`,
+            );
+        }
     }
 
     private handleSeriesEpisodesApiResponse(

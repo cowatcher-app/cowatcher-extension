@@ -2,7 +2,11 @@ import { VideoMetadata } from '../../../../content/domain/adapters/IStreamingAda
 import { InjectedMetadataLoadedPayload } from '../../../domain/IInjectedAdapter';
 import { NCW_MESSAGE_TYPES } from '@shared/domain/constants/MessageTypes';
 import { Logger } from '@shared/utils/logger';
-import { TVerSeriesEpisodesResponse, TVerEpisodeContent } from './TVerTypes';
+import {
+    TVerSeriesEpisodesResponse,
+    TVerEpisodeContent,
+    TVerV2EpisodeResponse,
+} from './TVerTypes';
 
 export class TVerMetadataManager {
     private readonly logger = new Logger('TVerMetadataManager');
@@ -14,6 +18,7 @@ export class TVerMetadataManager {
     private readonly episodeMetadataCache = new Map<string, VideoMetadata>();
     private readonly seriesPayloadCache = new Map<string, TVerSeriesEpisodesResponse>();
     private readonly inFlightSeriesFetches = new Set<string>();
+    private readonly inFlightEpisodeFetches = new Set<string>();
 
     setCapturedToken(token: string, uid?: string): void {
         this.capturedToken = token;
@@ -49,6 +54,106 @@ export class TVerMetadataManager {
 
     getCachedMetadata(episodeId: string): VideoMetadata | null {
         return this.episodeMetadataCache.get(episodeId) || null;
+    }
+
+    handleV2EpisodeResponse(
+        data: TVerV2EpisodeResponse | null | undefined,
+        currentEpisodeId?: string | null,
+    ): InjectedMetadataLoadedPayload | null {
+        try {
+            const ep = data?.episode;
+            if (!ep?.id) return null;
+
+            const epId = String(ep.id);
+            const seriesId = String(data?.series?.id || '');
+            const mainTitle =
+                data?.series?.title ||
+                ep.share?.text ||
+                (typeof document !== 'undefined' ? document.title : '');
+            const episodeTitle = ep.title || '';
+            const fullTitle = episodeTitle
+                ? mainTitle
+                    ? `${mainTitle} - ${episodeTitle}`
+                    : episodeTitle
+                : mainTitle;
+            const episodeSynopsis =
+                ep.description || ep.broadcast_date_label || ep.date_label || '';
+            const showSummary = data?.series?.description || '';
+
+            if (seriesId) {
+                this.episodeToSeriesMap.set(epId, seriesId);
+            }
+
+            const meta: VideoMetadata = {
+                mainTitle,
+                episodeTitle,
+                fullTitle,
+                videoId: epId,
+                showId: seriesId || epId,
+                showSummary,
+                episodeSummary: episodeSynopsis,
+            };
+            this.episodeMetadataCache.set(epId, meta);
+            if (currentEpisodeId && currentEpisodeId !== epId) {
+                this.episodeMetadataCache.set(currentEpisodeId, meta);
+            }
+
+            return {
+                type: NCW_MESSAGE_TYPES.METADATA_LOADED,
+                movieId: epId,
+                showId: seriesId || epId,
+                showTitle: mainTitle,
+                showSynopsis: showSummary || undefined,
+                seasonId: data?.season?.id,
+                seasonTitle: data?.season?.title,
+                currentEpisode: {
+                    episodeId: epId,
+                    episodeTitle,
+                    episodeSynopsis,
+                },
+                rawMetadata: data,
+            };
+        } catch (err) {
+            this.logger.warn(
+                'TVer-AI-Sub',
+                'Error parsing v2 episode response:',
+                err,
+            );
+            return null;
+        }
+    }
+
+    async fetchV2EpisodeMetadata(
+        episodeId: string,
+    ): Promise<InjectedMetadataLoadedPayload | null> {
+        if (!episodeId || this.inFlightEpisodeFetches.has(episodeId)) {
+            return null;
+        }
+        this.inFlightEpisodeFetches.add(episodeId);
+
+        try {
+            const resp = await fetch(
+                `https://contents-api.tver.jp/contents/api/v2/episodes/${encodeURIComponent(episodeId)}`,
+                {
+                    headers: {
+                        'x-tver-platform-type': 'web',
+                        accept: '*/*',
+                    },
+                },
+            );
+            if (!resp.ok) return null;
+            const data = (await resp.json()) as TVerV2EpisodeResponse;
+            return this.handleV2EpisodeResponse(data, episodeId);
+        } catch (err) {
+            this.logger.warn(
+                'TVer-AI-Sub',
+                `Failed fetching v2 episode ${episodeId}:`,
+                err,
+            );
+            return null;
+        } finally {
+            this.inFlightEpisodeFetches.delete(episodeId);
+        }
     }
 
     handleSeriesEpisodesResponse(
