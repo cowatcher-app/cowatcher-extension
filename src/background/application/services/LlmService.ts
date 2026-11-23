@@ -17,7 +17,7 @@ import { LlmRole, AiCapability } from '../../domain/llm/LlmRole';
 import { ILlmClient, LlmChatMessage } from '../../domain/llm/ILlmClient';
 import { LlmClientFactory } from '../../infrastructure/llm/LlmClientFactory';
 import { OllamaClient } from '../../infrastructure/llm/OllamaClient';
-import { OpenRouterClient } from '../../infrastructure/llm/OpenRouterClient';
+import { OpenAiClient } from '../../infrastructure/llm/OpenAiClient';
 import { CredentialVaultService } from './CredentialVaultService';
 
 export interface LlmRoleChatParams {
@@ -40,6 +40,7 @@ export class LlmService {
     private vocabModel: string = DEFAULT_SETTINGS.vocabExtractorModel;
 
     private openrouterApiKey: string = DEFAULT_SETTINGS.openrouterApiKey || '';
+    private openaiApiKey: string = DEFAULT_SETTINGS.openaiApiKey || '';
     private ollamaHost: string =
         DEFAULT_SETTINGS.ollamaHost || 'http://localhost:11434';
     private ollamaAliveCache: { alive: boolean; timestamp: number } | null =
@@ -84,7 +85,9 @@ export class LlmService {
     }
 
     private resolveProvider(rawProvider?: string): LLMProvider {
-        return rawProvider === 'openrouter' ? 'openrouter' : 'ollama';
+        if (rawProvider === 'openrouter') return 'openrouter';
+        if (rawProvider === 'openai') return 'openai';
+        return 'ollama';
     }
 
     private resolveVocabProvider(rawProvider?: string): LLMProvider {
@@ -125,6 +128,18 @@ export class LlmService {
             return { translatorModel, supervisorModel };
         }
 
+        if (provider === 'openai') {
+            const translatorModel =
+                settings.openaiTranslationModel?.trim() ||
+                DEFAULT_SETTINGS.openaiTranslationModel ||
+                'gpt-4o-mini';
+            const supervisorModel =
+                settings.openaiSupervisorModel?.trim() ||
+                DEFAULT_SETTINGS.openaiSupervisorModel ||
+                'gpt-4o-mini';
+            return { translatorModel, supervisorModel };
+        }
+
         const translatorModel =
             settings.translationModel?.trim() ||
             settings.ollamaModel?.trim() ||
@@ -159,6 +174,9 @@ export class LlmService {
 
         if (settings.openrouterApiKey !== undefined) {
             this.openrouterApiKey = settings.openrouterApiKey;
+        }
+        if (settings.openaiApiKey !== undefined) {
+            this.openaiApiKey = settings.openaiApiKey;
         }
         if (settings.ollamaHost !== undefined) {
             this.ollamaHost = settings.ollamaHost;
@@ -223,6 +241,9 @@ export class LlmService {
 
         if (settings.openrouterApiKey !== undefined) {
             this.openrouterApiKey = settings.openrouterApiKey;
+        }
+        if (settings.openaiApiKey !== undefined) {
+            this.openaiApiKey = settings.openaiApiKey;
         }
         if (settings.ollamaHost !== undefined) {
             if (settings.ollamaHost !== this.ollamaHost) {
@@ -392,6 +413,12 @@ export class LlmService {
                   );
         }
 
+        if (this.activeProvider === 'openai') {
+            return Boolean(
+                this.openaiApiKey && this.openaiApiKey.trim().length > 0,
+            );
+        }
+
         if (this.activeProvider === 'ollama') {
             return await this.pingOllama();
         }
@@ -410,6 +437,12 @@ export class LlmService {
                       this.openrouterApiKey &&
                           this.openrouterApiKey.trim().length > 0,
                   );
+        }
+
+        if (this.activeProvider === 'openai') {
+            return Boolean(
+                this.openaiApiKey && this.openaiApiKey.trim().length > 0,
+            );
         }
 
         if (this.activeProvider === 'ollama') {
@@ -455,9 +488,11 @@ export class LlmService {
     async fetchOpenRouterModels(
         forceRefresh: boolean = false,
     ): Promise<OpenRouterModelItem[]> {
-        const client = new OpenRouterClient(
+        const client = new OpenAiClient(
             'translator',
             this.translatorModel,
+            'openrouter',
+            DEFAULT_SETTINGS.openrouterBaseUrl,
             this.storage,
         );
         await client.init();
@@ -468,9 +503,11 @@ export class LlmService {
         keyInfo: Record<string, unknown>;
         models: OpenRouterModelItem[];
     }> {
-        const client = new OpenRouterClient(
+        const client = new OpenAiClient(
             'translator',
             this.translatorModel,
+            'openrouter',
+            DEFAULT_SETTINGS.openrouterBaseUrl,
             this.storage,
         );
         await client.init();

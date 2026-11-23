@@ -66,6 +66,11 @@ export interface ExtensionSettings {
     openrouterTranslationModel: string;
     openrouterSupervisorModel: string;
 
+    openaiApiKey: string;
+    openaiBaseUrl: string;
+    openaiTranslationModel: string;
+    openaiSupervisorModel: string;
+
     vocabExtractorEnabled: boolean;
     vocabExtractorProvider: LLMProvider;
     vocabExtractorModel: string;
@@ -161,6 +166,11 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     openrouterTranslationModel: 'deepseek/deepseek-chat',
     openrouterSupervisorModel: 'google/gemini-2.5-flash',
 
+    openaiApiKey: '',
+    openaiBaseUrl: 'https://api.openai.com/v1',
+    openaiTranslationModel: 'gpt-4o-mini',
+    openaiSupervisorModel: 'gpt-4o-mini',
+
     vocabExtractorEnabled: false,
     vocabExtractorProvider: 'openrouter',
     vocabExtractorModel: 'deepseek/deepseek-chat',
@@ -214,6 +224,12 @@ export const PROVIDER_PRESETS: Record<string, PipelineConfig> = {
         refillThreshold: 20,
         reviewBatchSize: 20,
     },
+    openai: {
+        minTranslateCues: 1,
+        maxTranslateCues: 100,
+        refillThreshold: 20,
+        reviewBatchSize: 20,
+    },
 };
 
 export function getPipelineConfig(
@@ -230,7 +246,7 @@ export function getPipelineConfig(
             refillThreshold: 15,
             reviewBatchSize: 0,
         };
-    } else if (provider === 'openrouter') {
+    } else if (provider === 'openrouter' || provider === 'openai') {
         return {
             minTranslateCues:
                 typeof s.openrouterMinTranslateCues === 'number'

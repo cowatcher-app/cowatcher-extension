@@ -24,6 +24,9 @@ export class TranslatorRegistry {
         );
         await openRouterTranslatorService.init();
         this.register(openRouterTranslatorService);
+        const openAiTranslatorService = new LlmTranslatorService('openai');
+        await openAiTranslatorService.init();
+        this.register(openAiTranslatorService);
 
         this.initialized = true;
     }

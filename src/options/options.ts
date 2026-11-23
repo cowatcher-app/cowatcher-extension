@@ -195,6 +195,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cfgOpenrouterSection = document.getElementById(
         'cfg-openrouter-section',
     );
+    const cfgOpenaiSection = document.getElementById('cfg-openai-section');
+    const cfgOpenaiBaseUrl = document.getElementById(
+        'cfg-openai-base-url',
+    ) as HTMLInputElement | null;
+    const cfgOpenaiKey = document.getElementById(
+        'cfg-openai-key',
+    ) as HTMLInputElement | null;
+    const cfgOpenaiTransModel = document.getElementById(
+        'cfg-openai-trans-model',
+    ) as HTMLInputElement | null;
+    const cfgOpenaiSupModel = document.getElementById(
+        'cfg-openai-sup-model',
+    ) as HTMLInputElement | null;
     const cfgOllamaHost = document.getElementById(
         'cfg-ollama-host',
     ) as HTMLInputElement | null;
@@ -3210,6 +3223,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (cfgSupervisorModel)
             cfgSupervisorModel.value =
                 currentSettings.supervisorModel || 'translategemma:4b';
+        if (cfgOpenaiBaseUrl)
+            cfgOpenaiBaseUrl.value =
+                currentSettings.openaiBaseUrl || 'https://api.openai.com/v1';
+        if (cfgOpenaiKey)
+            cfgOpenaiKey.value = currentSettings.openaiApiKey || '';
+        if (cfgOpenaiTransModel)
+            cfgOpenaiTransModel.value =
+                currentSettings.openaiTranslationModel || 'gpt-4o-mini';
+        if (cfgOpenaiSupModel)
+            cfgOpenaiSupModel.value =
+                currentSettings.openaiSupervisorModel || 'gpt-4o-mini';
 
         refreshVaultStatus().catch(() => {});
         if (cfgEnableSupervisor)
@@ -3476,12 +3500,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     function toggleProviderVisibility(provider: string): void {
         const isOllama = provider === 'ollama';
         const isOpenRouter = provider === 'openrouter';
+        const isOpenAi = provider === 'openai';
         if (cfgOllamaSection)
             cfgOllamaSection.style.display = isOllama ? 'block' : 'none';
         if (cfgOpenrouterSection)
             cfgOpenrouterSection.style.display = isOpenRouter
                 ? 'block'
                 : 'none';
+        if (cfgOpenaiSection)
+            cfgOpenaiSection.style.display = isOpenAi ? 'block' : 'none';
     }
 
     function updateVocabProviderVisibility(provider: string): void {
@@ -3796,6 +3823,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             openrouterSupervisorModel: cfgOpenrouterSupModel
                 ? cfgOpenrouterSupModel.value
                 : currentSettings.openrouterSupervisorModel,
+            openaiBaseUrl: cfgOpenaiBaseUrl
+                ? cfgOpenaiBaseUrl.value.trim() || 'https://api.openai.com/v1'
+                : currentSettings.openaiBaseUrl,
+            openaiApiKey: cfgOpenaiKey
+                ? cfgOpenaiKey.value.trim()
+                : currentSettings.openaiApiKey,
+            openaiTranslationModel: cfgOpenaiTransModel
+                ? cfgOpenaiTransModel.value.trim() || 'gpt-4o-mini'
+                : currentSettings.openaiTranslationModel,
+            openaiSupervisorModel: cfgOpenaiSupModel
+                ? cfgOpenaiSupModel.value.trim() || 'gpt-4o-mini'
+                : currentSettings.openaiSupervisorModel,
             enableSupervisor: cfgEnableSupervisor
                 ? cfgEnableSupervisor.checked
                 : currentSettings.enableSupervisor,

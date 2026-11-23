@@ -49,6 +49,7 @@
     "https://translate.googleapis.com/*",
     "https://translate.google.com/*",
     "https://openrouter.ai/*",
+    "https://api.openai.com/*",
     "http://localhost/*",
     "http://127.0.0.1/*",
     "https://dict.youdao.com/*",

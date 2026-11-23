@@ -56,6 +56,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const openrouterSettingsGroup = document.getElementById(
         'openrouter-settings-group',
     ) as HTMLElement;
+    const openaiSettingsGroup = document.getElementById(
+        'openai-settings-group',
+    ) as HTMLElement | null;
+    const openaiBaseUrlInput = document.getElementById(
+        'openai-base-url',
+    ) as HTMLInputElement | null;
+    const openaiApiKeyInput = document.getElementById(
+        'openai-api-key',
+    ) as HTMLInputElement | null;
+    const openaiTranslationModelInput = document.getElementById(
+        'openai-translation-model',
+    ) as HTMLInputElement | null;
+    const openaiSupervisorModelInput = document.getElementById(
+        'openai-supervisor-model',
+    ) as HTMLInputElement | null;
+    const openaiSupervisorModelGroup = document.getElementById(
+        'openai-supervisor-model-group',
+    ) as HTMLElement | null;
     const openrouterApiKeyInput = document.getElementById(
         'openrouter-api-key',
     ) as HTMLInputElement;
@@ -574,6 +592,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateProviderVisibility(activeProvider);
 
+        if (openaiBaseUrlInput) {
+            openaiBaseUrlInput.value =
+                currentSettings.openaiBaseUrl || 'https://api.openai.com/v1';
+        }
+        if (openaiApiKeyInput) {
+            openaiApiKeyInput.value = currentSettings.openaiApiKey || '';
+        }
+        if (openaiTranslationModelInput) {
+            openaiTranslationModelInput.value =
+                currentSettings.openaiTranslationModel || 'gpt-4o-mini';
+        }
+        if (openaiSupervisorModelInput) {
+            openaiSupervisorModelInput.value =
+                currentSettings.openaiSupervisorModel || 'gpt-4o-mini';
+        }
+
         if (ollamaHostInput) {
             ollamaHostInput.value =
                 currentSettings.ollamaHost || 'http://localhost:11434';
@@ -793,12 +827,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProviderVisibility(provider: string): void {
         const isOllama = provider === 'ollama';
         const isOpenRouter = provider === 'openrouter';
+        const isOpenAi = provider === 'openai';
         if (ollamaSettingsGroup)
             ollamaSettingsGroup.style.display = isOllama ? 'block' : 'none';
         if (openrouterSettingsGroup)
             openrouterSettingsGroup.style.display = isOpenRouter
                 ? 'block'
                 : 'none';
+        if (openaiSettingsGroup)
+            openaiSettingsGroup.style.display = isOpenAi ? 'block' : 'none';
 
         // When Google Translate is active, supervisor is not needed
         if (provider === 'google') {
@@ -806,6 +843,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 supervisorModelGroup.classList.add('disabled');
             if (openrouterSupervisorModelGroup)
                 openrouterSupervisorModelGroup.classList.add('disabled');
+            if (openaiSupervisorModelGroup)
+                openaiSupervisorModelGroup.classList.add('disabled');
         }
     }
 
@@ -839,6 +878,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnRefreshModels.style.display = 'inline-flex';
             }
             checkOpenRouterStatus();
+        } else if (provider === 'openai') {
+            if (btnRefreshModels) {
+                btnRefreshModels.style.display = 'none';
+            }
+            const hasKey = Boolean(currentSettings.openaiApiKey?.trim());
+            if (statusDot) {
+                statusDot.className = hasKey
+                    ? 'status-indicator status-connected'
+                    : 'status-indicator status-disconnected';
+            }
+            if (statusTitle) {
+                statusTitle.textContent = NCW_I18N.getText('statusOpenAi', l);
+            }
+            if (statusDesc) {
+                statusDesc.textContent =
+                    currentSettings.openaiBaseUrl ||
+                    'https://api.openai.com/v1';
+            }
         } else {
             if (btnRefreshModels) {
                 btnRefreshModels.style.display = 'inline-flex';
@@ -2226,10 +2283,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     'disabled',
                     !enabled,
                 );
+            if (openaiSupervisorModelGroup)
+                openaiSupervisorModelGroup.classList.toggle(
+                    'disabled',
+                    !enabled,
+                );
             if (reviewBatchGroup)
                 reviewBatchGroup.classList.toggle('disabled', !enabled);
         });
     }
+
+    openaiBaseUrlInput?.addEventListener('change', (e) => {
+        const val =
+            (e.target as HTMLInputElement).value.trim() ||
+            'https://api.openai.com/v1';
+        saveSettings({ openaiBaseUrl: val });
+        refreshConnectionStatus();
+    });
+    openaiApiKeyInput?.addEventListener('change', (e) => {
+        const val = (e.target as HTMLInputElement).value.trim();
+        saveSettings({ openaiApiKey: val });
+        refreshConnectionStatus();
+    });
+    openaiTranslationModelInput?.addEventListener('change', (e) => {
+        const val =
+            (e.target as HTMLInputElement).value.trim() || 'gpt-4o-mini';
+        saveSettings({ openaiTranslationModel: val });
+    });
+    openaiSupervisorModelInput?.addEventListener('change', (e) => {
+        const val =
+            (e.target as HTMLInputElement).value.trim() || 'gpt-4o-mini';
+        saveSettings({ openaiSupervisorModel: val });
+    });
 
     if (autoMarkReviewedCheckbox) {
         autoMarkReviewedCheckbox.addEventListener('change', (e) => {

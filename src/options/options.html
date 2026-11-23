@@ -603,6 +603,9 @@
                 <option value="openrouter" data-i18n="providerOpenRouter">
                   OpenRouter (Cloud / High Speed)
                 </option>
+                <option value="openai" data-i18n="providerOpenAi">
+                  OpenAI / Compatible API (Custom Base URL)
+                </option>
               </select>
             </div>
 
@@ -746,6 +749,54 @@
                   >OpenRouter Supervisor Model</label
                 >
                 <select id="cfg-openrouter-sup-model"></select>
+              </div>
+            </div>
+
+            <!-- OpenAI / Compatible API settings -->
+            <div id="cfg-openai-section" style="display: none">
+              <div class="form-group">
+                <label for="cfg-openai-base-url" data-i18n="openaiBaseUrl"
+                  >🌐 OpenAI Base URL</label
+                >
+                <input
+                  type="text"
+                  id="cfg-openai-base-url"
+                  placeholder="https://api.openai.com/v1"
+                />
+              </div>
+              <div class="form-group">
+                <label for="cfg-openai-key" data-i18n="openaiApiKey"
+                  >🔑 OpenAI API Key</label
+                >
+                <input
+                  type="password"
+                  id="cfg-openai-key"
+                  placeholder="sk-..."
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  for="cfg-openai-trans-model"
+                  data-i18n="openaiTranslationModel"
+                  >🚀 OpenAI Translation Model</label
+                >
+                <input
+                  type="text"
+                  id="cfg-openai-trans-model"
+                  placeholder="gpt-4o-mini"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  for="cfg-openai-sup-model"
+                  data-i18n="openaiSupervisorModel"
+                  >🧐 OpenAI Supervisor Model</label
+                >
+                <input
+                  type="text"
+                  id="cfg-openai-sup-model"
+                  placeholder="gpt-4o-mini"
+                />
               </div>
             </div>
 

@@ -76,6 +76,9 @@
             <option value="openrouter" data-i18n="providerOpenRouter">
               OpenRouter (Cloud / Multi-model)
             </option>
+            <option value="openai" data-i18n="providerOpenAi">
+              OpenAI / Compatible API (Custom Base URL)
+            </option>
           </select>
         </div>
 
@@ -143,6 +146,54 @@
               placeholder="Enter custom model ID (e.g. google/gemini-2.5-flash)"
               data-i18n-placeholder="customModelPlaceholder"
               style="margin-top: 6px; display: none"
+            />
+          </div>
+        </div>
+
+        <!-- 3. OpenAI / Compatible API Provider Settings -->
+        <div id="openai-settings-group" style="display: none">
+          <div class="form-group">
+            <label for="openai-base-url" data-i18n="openaiBaseUrl"
+              >🌐 OpenAI Base URL</label
+            >
+            <input
+              type="text"
+              id="openai-base-url"
+              placeholder="https://api.openai.com/v1"
+            />
+          </div>
+          <div class="form-group">
+            <label for="openai-api-key" data-i18n="openaiApiKey"
+              >🔑 OpenAI API Key</label
+            >
+            <input
+              type="password"
+              id="openai-api-key"
+              placeholder="sk-..."
+            />
+          </div>
+          <div class="form-group">
+            <label
+              for="openai-translation-model"
+              data-i18n="openaiTranslationModel"
+              >🚀 OpenAI Translation Model</label
+            >
+            <input
+              type="text"
+              id="openai-translation-model"
+              placeholder="gpt-4o-mini"
+            />
+          </div>
+          <div class="form-group" id="openai-supervisor-model-group">
+            <label
+              for="openai-supervisor-model"
+              data-i18n="openaiSupervisorModel"
+              >🧐 OpenAI Supervisor Model</label
+            >
+            <input
+              type="text"
+              id="openai-supervisor-model"
+              placeholder="gpt-4o-mini"
             />
           </div>
         </div>

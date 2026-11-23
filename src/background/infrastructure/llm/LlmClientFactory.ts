@@ -1,7 +1,8 @@
 import { ILlmClient } from '../../domain/llm/ILlmClient';
 import { LlmRole } from '../../domain/llm/LlmRole';
 import { OllamaClient } from './OllamaClient';
-import { OpenRouterClient } from './OpenRouterClient';
+import { OpenAiClient } from './OpenAiClient';
+import { DEFAULT_SETTINGS } from '@shared/domain/constants/SettingsDefaults';
 import { LLMProvider } from '@shared/domain/entities/PipelineTypes';
 
 export class LlmClientFactory {
@@ -18,7 +19,20 @@ export class LlmClientFactory {
         if (!client) {
             switch (provider) {
                 case 'openrouter':
-                    client = new OpenRouterClient(role, model ?? '');
+                    client = new OpenAiClient(
+                        role,
+                        model ?? '',
+                        'openrouter',
+                        DEFAULT_SETTINGS.openrouterBaseUrl,
+                    );
+                    break;
+                case 'openai':
+                    client = new OpenAiClient(
+                        role,
+                        model ?? '',
+                        'openai',
+                        DEFAULT_SETTINGS.openaiBaseUrl,
+                    );
                     break;
                 case 'ollama':
                     client = new OllamaClient(role, model ?? '');

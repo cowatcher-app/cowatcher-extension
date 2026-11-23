@@ -1,7 +1,7 @@
 import { OpenRouterModelItem } from '../../types/Messages';
 import { SubtitleCue } from './Subtitle';
 
-export type LLMProvider = 'ollama' | 'openrouter';
+export type LLMProvider = 'ollama' | 'openrouter' | 'openai';
 /**
  * Supported translation providers.
  */
