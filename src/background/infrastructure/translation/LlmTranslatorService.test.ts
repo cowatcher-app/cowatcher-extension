@@ -193,3 +193,118 @@ describe('LlmTranslatorService glossary scoping & programmatic self-repair', () 
         expect(res.results?.[1]).toBe('请把灯打开。');
     });
 });
+
+describe('LlmTranslatorService merged subtitle splitting & supervisor grouping', () => {
+    let translator: LlmTranslatorService;
+
+    beforeEach(() => {
+        mockCallChat.mockReset();
+        translator = new LlmTranslatorService('ollama');
+    });
+
+    it('detects [start-end] merge, records merged group IDs, and asks translator to split', async () => {
+        mockCallChat
+            .mockResolvedValueOnce(
+                '[1-2]: (仲井户)我认为下下个月的党首选举是绝佳的机会。',
+            )
+            .mockResolvedValueOnce(
+                '[1]: (仲井户)我认为下下个月的党首选举\n[2]: 是绝佳的机会。',
+            );
+
+        const res = await translator.translateBatch({
+            items: [
+                { id: 1, rawText: '(仲井戸)再来月の党首選が' },
+                { id: 2, rawText: '絶好の機会と思うんですよ。' },
+            ],
+            targetLang: Language.resolve('简体中文'),
+            context: null,
+        });
+
+        expect(res.success).toBe(true);
+        expect(mockCallChat).toHaveBeenCalledTimes(2);
+        expect(mockCallChat.mock.calls[1][0]).toBe('translator');
+        expect(res.merged).toEqual({ 1: [1, 2], 2: [1, 2] });
+        expect(res.results?.[1]).toBe('(仲井户)我认为下下个月的党首选举');
+        expect(res.results?.[2]).toBe('是绝佳的机会。');
+    });
+
+    it('falls back to keeping full translation only on first cue (never duplicating N copies) if split fails', async () => {
+        mockCallChat
+            .mockResolvedValueOnce(
+                '[1-2]: (仲井户)我认为下下个月的党首选举是绝佳的机会。',
+            )
+            .mockRejectedValueOnce(new Error('Split request timeout'));
+
+        const res = await translator.translateBatch({
+            items: [
+                { id: 1, rawText: '(仲井戸)再来月の党首選が' },
+                { id: 2, rawText: '絶好の機会と思うんですよ。' },
+            ],
+            targetLang: Language.resolve('简体中文'),
+            context: null,
+        });
+
+        expect(res.success).toBe(true);
+        expect(res.merged).toEqual({ 1: [1, 2], 2: [1, 2] });
+        expect(res.results?.[1]).toBe(
+            '(仲井户)我认为下下个月的党首选举是绝佳的机会。',
+        );
+        expect(res.results?.[2]).toBe('');
+    });
+
+    it('combines merged cues into a single semantic unit for supervisor review without generating duplicate lines', async () => {
+        mockCallChat
+            .mockResolvedValueOnce(
+                JSON.stringify({
+                    corrections: {
+                        '1-2': '(仲井户)下下个月的党首选举正是绝佳良机。',
+                    },
+                    new_characters: {},
+                    new_terms: {},
+                }),
+            )
+            .mockResolvedValueOnce(
+                '[1]: (仲井户)下下个月的党首选举\n[2]: 正是绝佳良机。',
+            );
+
+        const res = await translator.reviewBatch({
+            items: [
+                {
+                    id: 1,
+                    rawText: '(仲井戸)再来月の党首選が',
+                    transText: '(仲井户)我认为下下个月的党首选举',
+                    merged: [1, 2],
+                },
+                {
+                    id: 2,
+                    rawText: '絶好の機会と思うんですよ。',
+                    transText: '是绝佳的机会。',
+                    merged: [1, 2],
+                },
+                {
+                    id: 3,
+                    rawText: '一時的に大嵐になると思います。',
+                    transText: '我想暂时会掀起一场大风暴。',
+                },
+            ],
+            targetLang: Language.resolve('简体中文'),
+            context: null,
+        });
+
+        expect(res.success).toBe(true);
+        expect(mockCallChat).toHaveBeenCalledTimes(2);
+
+        const [supRole, supPayload] = mockCallChat.mock.calls[0];
+        expect(supRole).toBe('supervisor');
+        const supUserPrompt = supPayload.messages[1].content as string;
+        expect(supUserPrompt).toContain(
+            '[1-2] Original: "(仲井戸)再来月の党首選が 絶好の機会と思うんですよ。" | Translated: "(仲井户)我认为下下个月的党首选举 是绝佳的机会。"',
+        );
+        expect(supUserPrompt).not.toContain('[1] Original:');
+        expect(supUserPrompt).not.toContain('[2] Original:');
+        expect(supUserPrompt).toContain('[3] Original:');
+
+        expect(res.corrections?.[1]).toBe('(仲井户)下下个月的党首选举');
+        expect(res.corrections?.[2]).toBe('正是绝佳良机。');
+    });
+});

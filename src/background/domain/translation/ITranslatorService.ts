@@ -22,11 +22,17 @@ export interface TranslateBatchRequest {
 export interface TranslateBatchResponse {
     success: boolean;
     results?: Record<number, string>;
+    merged?: Record<number, number[]>;
     error?: string;
 }
 
 export interface ReviewBatchRequest {
-    items: Array<{ id: number; rawText: string; transText: string }>;
+    items: Array<{
+        id: number;
+        rawText: string;
+        transText: string;
+        merged?: number[];
+    }>;
     sourceLang?: LanguageInfo;
     targetLang: LanguageInfo;
     contextItems?: PrecedingContextItem[];

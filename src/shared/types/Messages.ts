@@ -202,6 +202,7 @@ export type MessagePayloadMap = {
         response: {
             success: boolean;
             results?: BatchTranslationResult;
+            merged?: Record<number, number[]>;
             error?: string;
         };
     };

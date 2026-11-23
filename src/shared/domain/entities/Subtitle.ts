@@ -21,6 +21,7 @@ export interface SubtitleCue {
     transText: string | null;
     status: TranslationStatus;
     usedTerms?: Record<string, number>; // term/character key -> version
+    merged?: number[]; // ordered cue IDs in the same merged translation group
     vocabScanned?: boolean;
     position?: SubtitlePosition;
     updatedAt?: number;
@@ -47,6 +48,7 @@ export function createSubtitleCue(params: {
     transText?: string;
     status?: TranslationStatus;
     usedTerms?: Record<string, number>;
+    merged?: number[];
     vocabScanned?: boolean;
     position?: SubtitlePosition;
     updatedAt?: number;
@@ -64,6 +66,7 @@ export function createSubtitleCue(params: {
         transText: transText ?? null,
         status: params.status ?? (transText ? 'raw' : 'untranslated'),
         usedTerms: params.usedTerms,
+        merged: params.merged,
         vocabScanned: params.vocabScanned ?? false,
         position: params.position ?? 'bottom',
         updatedAt: params.updatedAt ?? Date.now(),

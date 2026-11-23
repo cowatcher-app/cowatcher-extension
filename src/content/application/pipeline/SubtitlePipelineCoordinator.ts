@@ -50,6 +50,7 @@ interface ReviewQueueItem {
     readonly cueIndex: number;
     readonly start: number;
     readonly end: number;
+    readonly merged?: number[];
 }
 
 export class SubtitlePipelineCoordinator {
@@ -264,6 +265,7 @@ export class SubtitlePipelineCoordinator {
             const reviewItems = cuesToPreReview.map((c) =>
                 createSubtitleCue({
                     ...c,
+                    merged: c.merged ?? this.store.translationMap.get(c.id)?.merged,
                     transText:
                         this.store.translationMap.get(c.id)?.text ||
                         c.transText ||
@@ -491,7 +493,11 @@ export class SubtitlePipelineCoordinator {
                         this.resetBatchToUntranslated(batch);
                         return resolve();
                     }
-                    this.applyTranslationResults(batch, response.results);
+                    this.applyTranslationResults(
+                        batch,
+                        response.results,
+                        response.merged,
+                    );
                     resolve();
                 })
                 .catch((e) => {
@@ -513,6 +519,7 @@ export class SubtitlePipelineCoordinator {
     private applyTranslationResults(
         batch: SubtitleCue[],
         results: Record<number, string>,
+        merged?: Record<number, number[]>,
     ): void {
         const resEntries = Object.entries(results);
         this.logger.info(
@@ -520,10 +527,22 @@ export class SubtitlePipelineCoordinator {
             `Received translation for ${resEntries.length} cues.`,
         );
 
+        const batchCueMap = new Map(batch.map((c) => [c.id, c]));
         for (const [idStr, translatedText] of resEntries) {
             const id = parseInt(idStr, 10);
+            const cueMerged = merged?.[id];
+            const cueObj = batchCueMap.get(id);
+            if (cueObj && cueMerged) {
+                cueObj.merged = cueMerged;
+            }
             if (!this.store.translationMap.has(id)) {
-                this.store.setTranslation(id, String(translatedText), 'raw');
+                this.store.setTranslation(
+                    id,
+                    String(translatedText),
+                    'raw',
+                    undefined,
+                    cueMerged,
+                );
             } else {
                 this.store.setCueStatus(id, 'raw');
             }
@@ -545,21 +564,34 @@ export class SubtitlePipelineCoordinator {
 
     private collectCuesToReview(batchSize: number): ReviewQueueItem[] {
         const toReview: ReviewQueueItem[] = [];
+        const requiredMergedIds = new Set<number>();
+
         for (
             let i = this.store.canonicalReviewIndex;
-            i < this.store.cues.length && toReview.length < batchSize;
+            i < this.store.cues.length;
             i++
         ) {
             const cue = this.store.cues[i];
+            if (
+                toReview.length >= batchSize &&
+                !requiredMergedIds.has(cue.id)
+            ) {
+                break;
+            }
+
             const state = this.store.getCueStatus(cue.id);
             const entry = this.store.translationMap.get(cue.id);
+            const cueMerged = cue.merged ?? entry?.merged;
 
             if (state === 'reviewed') {
                 this.store.canonicalReviewIndex = i + 1;
                 continue;
             }
             if (state === 'raw' || state === 'pre_reviewed') {
-                if (entry && entry.text) {
+                if (
+                    entry &&
+                    (entry.text || (cueMerged && cueMerged.length > 1))
+                ) {
                     toReview.push({
                         id: cue.id,
                         orig: cue.rawText,
@@ -567,7 +599,15 @@ export class SubtitlePipelineCoordinator {
                         cueIndex: i,
                         start: cue.startTime,
                         end: cue.endTime,
+                        merged: cueMerged,
                     });
+                    if (cueMerged) {
+                        for (const mid of cueMerged) {
+                            if (mid > cue.id) {
+                                requiredMergedIds.add(mid);
+                            }
+                        }
+                    }
                 } else {
                     break;
                 }
@@ -628,6 +668,7 @@ export class SubtitlePipelineCoordinator {
                         startTime: r.start,
                         endTime: r.end,
                         status: 'reviewing',
+                        merged: r.merged,
                     }),
                 ),
                 contextItems,

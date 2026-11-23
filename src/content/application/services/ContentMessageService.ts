@@ -172,6 +172,7 @@ export class ContentMessageService {
     }): Promise<{
         success: boolean;
         results?: Record<number, string>;
+        merged?: Record<number, number[]>;
         error?: string;
     }> {
         return await ContentBackgroundBus.send(

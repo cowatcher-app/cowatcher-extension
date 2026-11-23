@@ -7,6 +7,7 @@ export interface TranslationItem {
     readonly text: string;
     readonly status: TranslationStatus;
     readonly usedTerms?: Record<string, number>;
+    readonly merged?: number[];
 }
 
 export class SubtitleStore {
@@ -47,8 +48,15 @@ export class SubtitleStore {
         text: string,
         status: TranslationStatus,
         usedTerms?: Record<string, number>,
+        merged?: number[],
     ): void {
-        this.translationMap.set(cueId, { text, status, usedTerms });
+        const existingMerged = merged ?? this.translationMap.get(cueId)?.merged;
+        this.translationMap.set(cueId, {
+            text,
+            status,
+            usedTerms,
+            merged: existingMerged,
+        });
         this.cueStateMap.set(cueId, status);
     }
 

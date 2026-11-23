@@ -253,9 +253,10 @@ export class LlmTranslatorService implements ITranslatorService {
         text: string,
         targetIds: Set<number>,
         orderedItems: Array<{ id: number }>,
-    ): Record<number, string> {
+    ): { results: Record<number, string>; mergedGroups: number[][] } {
         const resultMap: Record<number, string> = {};
-        if (!text) return resultMap;
+        const mergedGroups: number[][] = [];
+        if (!text) return { results: resultMap, mergedGroups };
 
         // Pattern 1: Bracketed markers [123] or [123-124] or 【123-124】, preceded by start, newline, or whitespace
         // Pattern 2: Line starters: 123. or 123-124: or 123： or #123: at the beginning of a line
@@ -299,14 +300,26 @@ export class LlmTranslatorService implements ITranslatorService {
                 const rawChunk = text.slice(current.end, nextStart).trim();
                 if (rawChunk) {
                     const cleanText = this.cleanTranslationText(rawChunk);
+                    const groupIds: number[] = [];
                     for (let id = current.startId; id <= current.endId; id++) {
                         if (targetIds.has(id)) {
-                            resultMap[id] = cleanText;
+                            groupIds.push(id);
                         }
+                    }
+                    if (groupIds.length > 1) {
+                        // Never duplicate the full merged translation across all cues:
+                        // place it on the first cue and leave secondary cues empty until split.
+                        resultMap[groupIds[0]] = cleanText;
+                        for (const secId of groupIds.slice(1)) {
+                            resultMap[secId] = '';
+                        }
+                        mergedGroups.push(groupIds);
+                    } else if (groupIds.length === 1) {
+                        resultMap[groupIds[0]] = cleanText;
                     }
                 }
             }
-            return resultMap;
+            return { results: resultMap, mergedGroups };
         }
 
         // Fallback ONLY when absolutely no markers were matched:
@@ -332,7 +345,7 @@ export class LlmTranslatorService implements ITranslatorService {
             );
         }
 
-        return resultMap;
+        return { results: resultMap, mergedGroups };
     }
 
     async translateBatch(
@@ -426,15 +439,19 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                     .trim();
 
                 const targetIds = new Set(items.map((it) => it.id));
-                const resultMap = this.parseNumberedSubtitles(
-                    cleanResponse,
-                    targetIds,
-                    items,
+                const { results: resultMap, mergedGroups } =
+                    this.parseNumberedSubtitles(cleanResponse, targetIds, items);
+
+                const secondaryMergedIds = new Set<number>(
+                    mergedGroups.flatMap((g) => g.slice(1)),
                 );
 
                 // Safety Guard: Validate that EVERY requested cue was translated with non-empty text
+                // (secondary cues inside a detected [start-end] merge are intentionally empty until split)
                 const missingIds = items.filter(
-                    (it) => !resultMap[it.id] || !resultMap[it.id].trim(),
+                    (it) =>
+                        !secondaryMergedIds.has(it.id) &&
+                        (!resultMap[it.id] || !resultMap[it.id].trim()),
                 );
                 if (missingIds.length > 0) {
                     const warnMsg = `Safety Guard: Batch translation count mismatch (expected ${items.length} cues, but received ${Object.keys(resultMap).length} valid cues). Missing cue IDs: [${missingIds.map((m) => m.id).join(', ')}].`;
@@ -454,17 +471,20 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                             for (const m of missingIds) {
                                 resultMap[m.id] = m.rawText;
                             }
-                            if (ctx && ctx.isWarmedUp && !signal?.aborted) {
-                    await this.repairGlossaryViolations(
-                        items,
-                        resultMap,
-                        targetLangPrompt,
-                        ctx,
-                        signal,
-                    );
-                }
-
-                return { success: true, results: resultMap };
+                            const mergedMap =
+                                await this.finalizeMergedAndGlossary(
+                                    items,
+                                    resultMap,
+                                    mergedGroups,
+                                    targetLangPrompt,
+                                    ctx,
+                                    signal,
+                                );
+                            return {
+                                success: true,
+                                results: resultMap,
+                                merged: mergedMap,
+                            };
                         }
                         this.logger.error(
                             'Translator',
@@ -474,17 +494,20 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
                     }
                 }
 
-                if (ctx && ctx.isWarmedUp && !signal?.aborted) {
-                    await this.repairGlossaryViolations(
-                        items,
-                        resultMap,
-                        targetLangPrompt,
-                        ctx,
-                        signal,
-                    );
-                }
+                const mergedMap = await this.finalizeMergedAndGlossary(
+                    items,
+                    resultMap,
+                    mergedGroups,
+                    targetLangPrompt,
+                    ctx,
+                    signal,
+                );
 
-                return { success: true, results: resultMap };
+                return {
+                    success: true,
+                    results: resultMap,
+                    merged: mergedMap,
+                };
             } catch (err: unknown) {
                 const isAbort =
                     err instanceof Error &&
@@ -504,6 +527,164 @@ The next line MUST immediately resume with the next unmerged ID (e.g. [105]: ...
             success: false,
             error: 'Batch translation failed after retries',
         };
+    }
+
+    private async finalizeMergedAndGlossary(
+        items: Array<{ id: number; rawText: string }>,
+        resultMap: Record<number, string>,
+        mergedGroups: number[][],
+        targetLangPrompt: string,
+        ctx: Context | null | undefined,
+        signal?: AbortSignal,
+    ): Promise<Record<number, number[]> | undefined> {
+        let mergedMap: Record<number, number[]> | undefined;
+        if (mergedGroups.length > 0) {
+            mergedMap = {};
+            for (const group of mergedGroups) {
+                for (const id of group) {
+                    mergedMap[id] = group;
+                }
+            }
+            if (!signal?.aborted) {
+                await this.splitMergedTranslations(
+                    items,
+                    resultMap,
+                    mergedGroups,
+                    targetLangPrompt,
+                    signal,
+                );
+            }
+        }
+
+        if (ctx && ctx.isWarmedUp && !signal?.aborted) {
+            await this.repairGlossaryViolations(
+                items,
+                resultMap,
+                targetLangPrompt,
+                ctx,
+                signal,
+            );
+        }
+
+        return mergedMap;
+    }
+
+    /**
+     * Asks the translation model to split a merged full-sentence translation across its
+     * individual source cues. On timeout or parse failure, keeps the full translation only
+     * on the first cue and leaves secondary cues empty (never duplicating N copies).
+     */
+    private async splitSingleMergedTranslation(
+        groupItems: Array<{ id: number; rawText: string }>,
+        fullTranslation: string,
+        targetLangPrompt: string,
+        signal?: AbortSignal,
+    ): Promise<Record<number, string>> {
+        const fallback: Record<number, string> = {};
+        if (groupItems.length === 0) return fallback;
+
+        fallback[groupItems[0].id] = fullTranslation;
+        for (const item of groupItems.slice(1)) {
+            fallback[item.id] = '';
+        }
+
+        if (groupItems.length === 1 || !fullTranslation.trim()) {
+            return fallback;
+        }
+
+        const systemPrompt = `You are a professional subtitle translator.
+A single complete ${targetLangPrompt} translation was produced by merging ${groupItems.length} consecutive subtitle cues.
+Split that complete translation naturally across each individual cue ID so each line aligns with its source cue, without changing the overall meaning or duplicating the full sentence.
+
+CRITICAL FORMAT RULES:
+1. Output strictly one line per cue ID in this exact format:
+[index]: split_translation_part
+2. Do NOT merge IDs (do NOT use [a-b]). Every cue ID listed below must appear individually with a non-empty part.`;
+
+        const sourceLines = groupItems
+            .map((it) => `[${it.id}]: ${it.rawText.replace(/\n+/g, ' ')}`)
+            .join('\n');
+        const userPrompt = `Source Cues:\n${sourceLines}\n\nComplete Translation to Split:\n"${fullTranslation}"`;
+
+        try {
+            const rawSplit = await this.llmService.callChat('translator', {
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt },
+                ],
+                temperature: 0.1,
+                signal,
+            });
+
+            const cleanSplit = rawSplit
+                .replace(/<think[\s\S]*?<\/think>/gi, '')
+                .replace(/<thought[\s\S]*?<\/thought>/gi, '')
+                .trim();
+
+            const groupIdSet = new Set(groupItems.map((it) => it.id));
+            const { results: parsedSplit, mergedGroups: nestedMerges } =
+                this.parseNumberedSubtitles(cleanSplit, groupIdSet, groupItems);
+
+            const allPopulated =
+                nestedMerges.length === 0 &&
+                groupItems.every(
+                    (it) =>
+                        typeof parsedSplit[it.id] === 'string' &&
+                        parsedSplit[it.id].trim().length > 0,
+                );
+
+            if (allPopulated) {
+                return parsedSplit;
+            }
+
+            this.logger.warn(
+                'Translator',
+                `Split merged translation incomplete for cues [${groupItems.map((g) => g.id).join(', ')}]; keeping full translation on first cue only.`,
+            );
+            return fallback;
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            this.logger.warn(
+                'Translator',
+                `Split merged translation failed for cues [${groupItems.map((g) => g.id).join(', ')}] (keeping full translation on first cue only): ${errMsg}`,
+            );
+            return fallback;
+        }
+    }
+
+    private async splitMergedTranslations(
+        items: Array<{ id: number; rawText: string }>,
+        resultMap: Record<number, string>,
+        mergedGroups: number[][],
+        targetLangPrompt: string,
+        signal?: AbortSignal,
+    ): Promise<void> {
+        const itemById = new Map(items.map((it) => [it.id, it]));
+        for (const groupIds of mergedGroups) {
+            if (signal?.aborted) break;
+            const groupItems = groupIds
+                .map((id) => itemById.get(id))
+                .filter((it): it is { id: number; rawText: string } =>
+                    Boolean(it),
+                );
+            const fullTrans = (resultMap[groupIds[0]] || '').trim();
+            if (groupItems.length <= 1 || !fullTrans) continue;
+
+            this.logger.info(
+                'Translator',
+                `Detected merged translation for cues [${groupIds.join(', ')}]. Requesting translator split...`,
+            );
+            const splitMap = await this.splitSingleMergedTranslation(
+                groupItems,
+                fullTrans,
+                targetLangPrompt,
+                signal,
+            );
+            for (const [idStr, text] of Object.entries(splitMap)) {
+                const id = parseInt(idStr, 10);
+                resultMap[id] = text;
+            }
+        }
     }
 
     /**
@@ -686,11 +867,12 @@ CRITICAL FORMAT RULES:
                 .trim();
 
             const violatingIds = new Set(violations.map((v) => v.id));
-            const repairedMap = this.parseNumberedSubtitles(
+            const parsed = this.parseNumberedSubtitles(
                 cleanRepair,
                 violatingIds,
                 violations.map((v) => ({ id: v.id })),
             );
+            const repairedMap = parsed.results;
 
             let revisedCount = 0;
             for (const v of violations) {
@@ -861,13 +1043,58 @@ CRITICAL FORMAT RULES:
             contextBlock = `Preceding Dialogue Context:\n${validCtx.join('\n')}\n\n`;
         }
 
-        const dialoguesText = items
-            .map((item) => {
-                const origText = item.rawText.replace(/\n+/g, ' ');
-                const transText = item.transText.replace(/\n+/g, ' ');
-                return `[${item.id}] Original: "${origText}" | Translated: "${transText}"`;
-            })
-            .join('\n');
+        const itemById = new Map(items.map((it) => [it.id, it]));
+        const visitedIds = new Set<number>();
+        const mergedGroupByKey = new Map<
+            string,
+            Array<{ id: number; rawText: string; transText: string }>
+        >();
+        const dialogueLines: string[] = [];
+
+        for (const item of items) {
+            if (visitedIds.has(item.id)) continue;
+
+            if (item.merged && item.merged.length > 1) {
+                const groupItems = item.merged
+                    .map((id) => itemById.get(id))
+                    .filter(
+                        (
+                            g,
+                        ): g is {
+                            id: number;
+                            rawText: string;
+                            transText: string;
+                            merged?: number[];
+                        } => Boolean(g),
+                    );
+
+                if (groupItems.length > 1) {
+                    groupItems.forEach((g) => visitedIds.add(g.id));
+                    const combinedOrig = groupItems
+                        .map((g) => g.rawText.replace(/\n+/g, ' ').trim())
+                        .join(' ');
+                    const combinedTrans = groupItems
+                        .map((g) => g.transText.replace(/\n+/g, ' ').trim())
+                        .filter(Boolean)
+                        .join(' ');
+                    const rangeKey = `${groupItems[0].id}-${groupItems[groupItems.length - 1].id}`;
+                    mergedGroupByKey.set(rangeKey, groupItems);
+                    dialogueLines.push(
+                        `[${rangeKey}] Original: "${combinedOrig}" | Translated: "${combinedTrans}"`,
+                    );
+                    continue;
+                }
+            }
+
+            visitedIds.add(item.id);
+            const origText = item.rawText.replace(/\n+/g, ' ');
+            const transText = item.transText.replace(/\n+/g, ' ');
+            dialogueLines.push(
+                `[${item.id}] Original: "${origText}" | Translated: "${transText}"`,
+            );
+        }
+
+        const dialoguesText = dialogueLines.join('\n');
 
         const targetLangPrompt = targetLang.promptName;
         let showLine = '';
@@ -939,9 +1166,26 @@ Guidelines for new_characters and new_terms:
             const corrections: Record<number, string> = {};
             if (parsed.corrections && typeof parsed.corrections === 'object') {
                 for (const [k, v] of Object.entries(parsed.corrections)) {
-                    const numId = parseInt(k, 10);
-                    if (!isNaN(numId) && typeof v === 'string') {
-                        corrections[numId] = this.cleanTranslationText(v);
+                    if (typeof v !== 'string') continue;
+                    const cleaned = this.cleanTranslationText(v);
+                    const trimmedKey = k.trim();
+                    const groupForKey = mergedGroupByKey.get(trimmedKey);
+                    if (groupForKey && groupForKey.length > 1) {
+                        const splitMap =
+                            await this.splitSingleMergedTranslation(
+                                groupForKey,
+                                cleaned,
+                                targetLangPrompt,
+                                signal,
+                            );
+                        for (const [idStr, part] of Object.entries(splitMap)) {
+                            corrections[parseInt(idStr, 10)] = part;
+                        }
+                        continue;
+                    }
+                    const numId = parseInt(trimmedKey, 10);
+                    if (!isNaN(numId)) {
+                        corrections[numId] = cleaned;
                     }
                 }
             }

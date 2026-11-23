@@ -381,6 +381,7 @@ export class TranslationPipelineService {
     }): Promise<{
         success: boolean;
         results?: Record<number, string>;
+        merged?: Record<number, number[]>;
         error?: string;
     }> {
         const isUrgent = Boolean(params.urgent);
@@ -480,7 +481,11 @@ export class TranslationPipelineService {
                     }
                 }
 
-                return { success: true, results: resultMap };
+                return {
+                    success: true,
+                    results: resultMap,
+                    merged: response.merged,
+                };
             } catch (err: unknown) {
                 return {
                     success: false,
@@ -563,6 +568,7 @@ export class TranslationPipelineService {
                             id: i.id,
                             rawText: i.rawText,
                             transText: i.transText ?? '',
+                            merged: i.merged,
                         };
                     }),
                     contextItems,
