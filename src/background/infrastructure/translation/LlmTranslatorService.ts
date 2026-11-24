@@ -110,11 +110,7 @@ export class LlmTranslatorService implements ITranslatorService {
                 lines.push(`${name} -> ${val}`);
             } else if (val && typeof val === 'object') {
                 const canonical = val.canonical || name;
-                const aliases =
-                    Array.isArray(val.aliases) && val.aliases.length > 0
-                        ? ` (Aliases/Called: ${val.aliases.join(', ')})`
-                        : '';
-                lines.push(`${name}${aliases} -> ${canonical}`);
+                lines.push(`${name} -> ${canonical}`);
             }
         }
         for (const [term, val] of Object.entries(terms)) {
@@ -126,9 +122,8 @@ export class LlmTranslatorService implements ITranslatorService {
     }
 
     /**
-     * Builds dual-tier glossary prompt blocks:
+     * Builds dual-tier glossary prompt blocks (strictly 1-to-1 source -> canonical, without aliases):
      * 1. Master/Manual (User-defined, Immutable, highest priority):
-     *    - Merges aliases from model discoveries into manual setup, but uses manual canonical translation.
      *    - Translator must strictly use this; Supervisor CANNOT modify or contradict.
      * 2. Established/Dynamic (Model-discovered):
      *    - Excludes any keys present in manual setup (guaranteed zero overlapping keys).
@@ -150,17 +145,10 @@ export class LlmTranslatorService implements ITranslatorService {
         for (const [name, manualChar] of Object.entries(
             context.manualSetupCharacters || {},
         )) {
-            const modelChar = context.characters[name];
-            const mergedAliases = Array.from(
-                new Set([
-                    ...(manualChar.aliases || []),
-                    ...(modelChar?.aliases || []),
-                ]),
-            );
-            if (!shouldInclude([name, ...mergedAliases])) continue;
+            if (!shouldInclude([name])) continue;
             manualChars[name] = {
                 canonical: manualChar.canonical,
-                aliases: mergedAliases,
+                aliases: [],
                 setByUser: true,
             };
         }
@@ -168,9 +156,12 @@ export class LlmTranslatorService implements ITranslatorService {
         const autoChars: Record<string, CharacterItem> = {};
         for (const [name, char] of Object.entries(context.characters || {})) {
             if (!context.manualSetupCharacters[name]) {
-                const aliases = Array.isArray(char?.aliases) ? char.aliases : [];
-                if (!shouldInclude([name, ...aliases])) continue;
-                autoChars[name] = char;
+                if (!shouldInclude([name])) continue;
+                autoChars[name] = {
+                    canonical: char?.canonical || name,
+                    aliases: [],
+                    setByUser: char?.setByUser,
+                };
             }
         }
 
@@ -759,16 +750,13 @@ CRITICAL FORMAT RULES:
         for (const [name, charItem] of Object.entries(effectiveChars)) {
             const canonical = (charItem?.canonical || '').trim();
             if (!canonical) continue;
-            const candidates = [name, ...(charItem.aliases || [])]
-                .map((c) => c.trim())
-                .filter(Boolean)
-                .sort((a, b) => b.length - a.length);
-            if (candidates.length === 0) continue;
+            const trimmedName = name.trim();
+            if (!trimmedName) continue;
             rules.push({
                 kind: 'character',
-                candidates,
+                candidates: [trimmedName],
                 canonical,
-                maxLen: candidates[0].length,
+                maxLen: trimmedName.length,
             });
         }
 

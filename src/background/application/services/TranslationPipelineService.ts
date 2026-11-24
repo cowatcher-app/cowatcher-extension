@@ -489,6 +489,7 @@ export class TranslationPipelineService {
                         targetLanguage: this.targetLanguage,
                         characters: response.newCharacters || {},
                         terms: response.newTerms || {},
+                        role: 'translator',
                     });
                 }
 
@@ -687,6 +688,7 @@ export class TranslationPipelineService {
                             string,
                             string
                         >,
+                        role: 'supervisor',
                     });
                 }
 

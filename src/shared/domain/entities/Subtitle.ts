@@ -165,6 +165,7 @@ export interface TrackCacheRecord {
     trackHash: string;
     movieId: string;
     showTitle: string;
+    platform?: string;
     targetLanguage: string;
     provider: string;
     translationModel: string;

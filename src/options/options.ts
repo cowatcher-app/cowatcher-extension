@@ -662,12 +662,93 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function inferPlatformFromMovieId(movieId?: string): string {
+        const id = (movieId || '').trim();
+        if (!id) return '';
+        if (/^ep[a-z0-9]+$/i.test(id)) return 'tver';
+        if (/^BV[a-zA-Z0-9]+/.test(id)) return 'bilibili';
+        if (/^\d{6,10}$/.test(id)) return 'netflix';
+        if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return 'youtube';
+        return '';
+    }
+
+    function formatPlatformBadge(platform: string): string {
+        const p = platform.toLowerCase();
+        const labels: Record<string, { label: string; style: string }> = {
+            netflix: {
+                label: 'Netflix',
+                style: 'background: rgba(229,9,20,0.16); color: #f87171; border: 1px solid rgba(229,9,20,0.35);',
+            },
+            tver: {
+                label: 'TVer',
+                style: 'background: rgba(0,160,233,0.16); color: #38bdf8; border: 1px solid rgba(0,160,233,0.35);',
+            },
+            youtube: {
+                label: 'YouTube',
+                style: 'background: rgba(255,0,0,0.14); color: #fca5a5; border: 1px solid rgba(255,0,0,0.3);',
+            },
+            bilibili: {
+                label: 'Bilibili',
+                style: 'background: rgba(251,114,153,0.16); color: #f472b6; border: 1px solid rgba(251,114,153,0.35);',
+            },
+            itvx: {
+                label: 'ITVX',
+                style: 'background: rgba(250,204,21,0.14); color: #facc15; border: 1px solid rgba(250,204,21,0.3);',
+            },
+            channel4: {
+                label: 'Channel 4',
+                style: 'background: rgba(168,85,247,0.16); color: #c084fc; border: 1px solid rgba(168,85,247,0.35);',
+            },
+        };
+        const info = labels[p];
+        if (!info) return '';
+        return `<span class="badge" style="${info.style} font-size: 10.5px; padding: 2px 7px;">${info.label}</span>`;
+    }
+
     function renderSubtitleCaches(): void {
+        // Cross-reference Watch History so tracks cached before metadata loaded still get showTitle/platform
+        const movieMetaMap = new Map<
+            string,
+            { showTitle?: string; episodeTitle?: string; platform?: string }
+        >();
+        for (const show of cachedHistoryShows) {
+            const showAny = show as unknown as {
+                title?: string;
+                platform?: string;
+                episodes?: Array<{
+                    videoId?: string;
+                    episodeTitle?: string;
+                }>;
+            };
+            for (const ep of showAny.episodes || []) {
+                if (ep?.videoId) {
+                    movieMetaMap.set(ep.videoId, {
+                        showTitle: showAny.title,
+                        episodeTitle: ep.episodeTitle,
+                        platform: showAny.platform,
+                    });
+                }
+            }
+        }
+
+        const resolveTrackMeta = (t: TrackCacheRecord) => {
+            const hist = movieMetaMap.get(t.movieId);
+            const showTitle = (t.showTitle || '').trim() || (hist?.showTitle || '').trim();
+            const platform =
+                (t.platform || '').trim() ||
+                (hist?.platform || '').trim() ||
+                inferPlatformFromMovieId(t.movieId);
+            const episodeTitle = (hist?.episodeTitle || '').trim();
+            return { showTitle, platform, episodeTitle };
+        };
+
         const query = (cacheSearchInput?.value || '').trim().toLowerCase();
         const filtered = cachedTracks.filter((t) => {
             if (!query) return true;
+            const meta = resolveTrackMeta(t);
             return (
-                (t.showTitle && t.showTitle.toLowerCase().includes(query)) ||
+                meta.showTitle.toLowerCase().includes(query) ||
+                meta.platform.toLowerCase().includes(query) ||
                 (t.movieId && t.movieId.toLowerCase().includes(query)) ||
                 (t.trackHash && t.trackHash.toLowerCase().includes(query)) ||
                 (t.translationModel &&
@@ -711,12 +792,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Group filtered tracks by show title (or movie ID if no title)
+        // Group filtered tracks by resolved show title (or movie ID if no title)
         const groupsMap = new Map<
             string,
             {
                 groupId: string;
                 showTitle: string;
+                platforms: Set<string>;
+                languages: Set<string>;
                 tracks: TrackCacheRecord[];
                 totalCues: number;
                 reviewedCues: number;
@@ -726,7 +809,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         >();
 
         filtered.forEach((t) => {
-            const rawTitle = (t.showTitle || '').trim();
+            const meta = resolveTrackMeta(t);
+            const rawTitle = meta.showTitle;
             const groupId = rawTitle
                 ? rawTitle.toLowerCase()
                 : `movie_${t.movieId || 'unknown'}`;
@@ -741,6 +825,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 group = {
                     groupId,
                     showTitle,
+                    platforms: new Set<string>(),
+                    languages: new Set<string>(),
                     tracks: [],
                     totalCues: 0,
                     reviewedCues: 0,
@@ -749,6 +835,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 };
                 groupsMap.set(groupId, group);
             }
+            if (meta.platform) group.platforms.add(meta.platform);
+            if (t.targetLanguage) group.languages.add(t.targetLanguage);
             group.tracks.push(t);
             group.totalCues += cuesCount;
             group.reviewedCues += rev;
@@ -765,6 +853,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         let html = '';
         groups.forEach((g) => {
             const isExpanded = expandedCacheGroups.has(g.groupId);
+            const platformBadges = Array.from(g.platforms)
+                .map((p) => formatPlatformBadge(p))
+                .filter(Boolean)
+                .join(' ');
+            const langBadges = Array.from(g.languages)
+                .map(
+                    (l) =>
+                        `<span class="badge badge-neutral" style="font-size: 10.5px;">🌐 ${escapeHtml(l)}</span>`,
+                )
+                .join(' ');
+
             html += `
         <tr class="cache-group-header-row" data-group-id="${escapeHtml(g.groupId)}">
           <td colspan="7">
@@ -775,6 +874,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <span class="cache-group-title">${escapeHtml(g.showTitle)}</span>
                 </span>
                 <span class="badge badge-neutral">${g.tracks.length} ${g.tracks.length > 1 ? 'episodes' : 'episode'}</span>
+                ${platformBadges}
+                ${langBadges}
               </div>
               <div class="cache-group-stats">
                 <span style="color: #46d369; font-weight: 600;">${g.reviewedCues}</span>
@@ -791,6 +892,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             g.tracks
                 .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
                 .forEach((t) => {
+                    const meta = resolveTrackMeta(t);
                     const cuesCount = Object.keys(t.cues || {}).length;
                     const reviewed = t.reviewedCount || 0;
                     const raw = Math.max(0, cuesCount - reviewed);
@@ -803,12 +905,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const langDisplay = escapeHtml(
                         t.targetLanguage || 'English',
                     );
+                    const epHeadline = meta.episodeTitle
+                        ? `${escapeHtml(meta.episodeTitle)}`
+                        : `Episode ID: ${escapeHtml(t.movieId || 'N/A')}`;
+                    const epSub = meta.episodeTitle
+                        ? `ID: ${escapeHtml(t.movieId || 'N/A')}${meta.showTitle ? ` · ${escapeHtml(meta.showTitle)}` : ''}`
+                        : escapeHtml(meta.showTitle || '');
+                    const rowPlatformBadge = meta.platform
+                        ? formatPlatformBadge(meta.platform)
+                        : '';
 
                     html += `
             <tr class="cache-child-row" data-parent-group="${escapeHtml(g.groupId)}" style="${isExpanded ? '' : 'display: none;'}">
               <td>
-                <div style="font-weight: 600; color: #fff;">Episode ID: ${escapeHtml(t.movieId || 'N/A')}</div>
-                <div style="font-size: 11px; color: #888;">${escapeHtml(t.showTitle || '')}</div>
+                <div style="font-weight: 600; color: #fff; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span>${epHeadline}</span>
+                  ${rowPlatformBadge}
+                </div>
+                <div style="font-size: 11px; color: #888;">${epSub}</div>
               </td>
               <td><code>${hashDisplay}...</code></td>
               <td><span class="badge badge-neutral">${langDisplay}</span></td>
@@ -2586,6 +2700,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cachedHistoryStats = null;
             }
             renderWatchHistory();
+            if (cachedTracks.length > 0) {
+                renderSubtitleCaches();
+            }
         } catch (e) {
             logger.warn('options', 'Failed loading watch history:', e);
         }
