@@ -175,14 +175,63 @@ export class TVerTrackRegistry {
         return { mergedVtt: out, hasNewCues: true };
     }
 
+    static isSameTrackContent(a: string, b: string): boolean {
+        if (!a || !b) return false;
+        if (a === b) return true;
+
+        const cuesA = TVerTrackRegistry.parseVttToCues(a);
+        const cuesB = TVerTrackRegistry.parseVttToCues(b);
+        if (cuesA.length > 0 && cuesB.length > 0) {
+            if (Math.abs(cuesA.length - cuesB.length) > 2) return false;
+            const checkCount = Math.min(3, cuesA.length, cuesB.length);
+            for (let i = 0; i < checkCount; i++) {
+                if (
+                    cuesA[i].text !== cuesB[i].text ||
+                    Math.abs(cuesA[i].start - cuesB[i].start) > 0.25
+                ) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Cross-format check (e.g., TTML rawText cached from network vs WebVTT extracted from TextTrack)
+        const vttCues = cuesA.length > 0 ? cuesA : cuesB;
+        const otherText = cuesA.length > 0 ? b : a;
+        if (vttCues.length > 0 && /<tt|<timedtext|<p\b/i.test(otherText)) {
+            const sample = vttCues
+                .map((c) => c.text.trim())
+                .filter((t) => t.length >= 2)
+                .slice(0, 4);
+            if (sample.length === 0) return false;
+            const matched = sample.filter((t) => otherText.includes(t)).length;
+            return matched >= Math.min(3, sample.length);
+        }
+
+        return false;
+    }
+
     mergeOrRegisterTrack(
         episodeId: string,
         lang: string,
         data: Omit<TVerTrackDetail, 'episodeId' | 'lang'>,
+        allowMerge = false,
     ): { detail: TVerTrackDetail; hasNewCues: boolean } {
         const normalizedLang = (lang || 'ja').toLowerCase();
         const existing = this.getCachedTrack(episodeId, normalizedLang);
         if (existing && existing.rawText) {
+            if (!allowMerge) {
+                if (existing.rawText === data.rawText) {
+                    return { detail: existing, hasNewCues: false };
+                }
+                const replaced = this.registerKnownTrack(
+                    episodeId,
+                    normalizedLang,
+                    data,
+                );
+                return { detail: replaced, hasNewCues: true };
+            }
+
             const { mergedVtt, hasNewCues } = TVerTrackRegistry.mergeWebVTT(
                 existing.rawText,
                 data.rawText,
@@ -219,8 +268,17 @@ export class TVerTrackRegistry {
         rawText: string,
         activeEpisodeId?: string | null,
         lang = 'ja',
+        allowMerge = false,
+        isStaleTrack?: (rawText: string, url: string) => boolean,
     ): TVerTrackDetail | null {
         if (!rawText || rawText.length < 20) return null;
+        if (isStaleTrack?.(rawText, url)) {
+            this.logger.info(
+                'TVer-AI-Sub',
+                `Ignored stale intercepted track from previous episode: ${url.slice(0, 80)}`,
+            );
+            return null;
+        }
 
         const episodeId = this.extractEpisodeIdFromUrl(url) || activeEpisodeId;
         if (!episodeId) {
@@ -236,12 +294,17 @@ export class TVerTrackRegistry {
             return null;
         }
 
-        const { detail } = this.mergeOrRegisterTrack(episodeId, lang, {
-            trackId: url,
-            url,
-            rawText,
-            interceptedAt: Date.now(),
-        });
+        const { detail } = this.mergeOrRegisterTrack(
+            episodeId,
+            lang,
+            {
+                trackId: url,
+                url,
+                rawText,
+                interceptedAt: Date.now(),
+            },
+            allowMerge,
+        );
         return detail;
     }
 
@@ -366,7 +429,12 @@ export class TVerTrackRegistry {
         episodeId: string,
         player: TVerStreaksPlayer | null,
         video: HTMLVideoElement | null,
+        options?: {
+            allowMerge?: boolean;
+            isStaleTrack?: (rawText: string, url?: string) => boolean;
+        },
     ): Promise<{ detail: TVerTrackDetail | null; hasNewCues: boolean }> {
+        const allowMerge = options?.allowMerge ?? false;
         try {
             const rawTrackList = (
                 player && typeof player.textTracks === 'function'
@@ -396,16 +464,28 @@ export class TVerTrackRegistry {
                 if (cues && cues.length > 0) {
                     const vtt = TVerTrackRegistry.textTrackToWebVTT(track);
                     if (vtt && vtt.length > 20) {
+                        if (options?.isStaleTrack?.(vtt, track.src)) {
+                            this.logger.info(
+                                'TVer-AI-Sub',
+                                `Skipped stale TextTrack from previous episode while loading ${episodeId}`,
+                            );
+                            continue;
+                        }
                         const trackLang = track.language || 'ja';
                         const trackId = `track_${track.label || trackLang}`;
-                        return this.mergeOrRegisterTrack(episodeId, trackLang, {
-                            trackId,
-                            label: track.label,
-                            kind: track.kind,
-                            url: track.src,
-                            rawText: vtt,
-                            interceptedAt: Date.now(),
-                        });
+                        return this.mergeOrRegisterTrack(
+                            episodeId,
+                            trackLang,
+                            {
+                                trackId,
+                                label: track.label,
+                                kind: track.kind,
+                                url: track.src,
+                                rawText: vtt,
+                                interceptedAt: Date.now(),
+                            },
+                            allowMerge,
+                        );
                     }
                 } else if (track.src) {
                     try {
@@ -413,15 +493,27 @@ export class TVerTrackRegistry {
                         if (resp.ok) {
                             const text = await resp.text();
                             if (TVerTrackRegistry.isSubtitleContent(text)) {
+                                if (options?.isStaleTrack?.(text, track.src)) {
+                                    this.logger.info(
+                                        'TVer-AI-Sub',
+                                        `Skipped stale TextTrack src from previous episode while loading ${episodeId}`,
+                                    );
+                                    continue;
+                                }
                                 const trackLang = track.language || 'ja';
-                                return this.mergeOrRegisterTrack(episodeId, trackLang, {
-                                    trackId: track.src,
-                                    label: track.label,
-                                    kind: track.kind,
-                                    url: track.src,
-                                    rawText: text,
-                                    interceptedAt: Date.now(),
-                                });
+                                return this.mergeOrRegisterTrack(
+                                    episodeId,
+                                    trackLang,
+                                    {
+                                        trackId: track.src,
+                                        label: track.label,
+                                        kind: track.kind,
+                                        url: track.src,
+                                        rawText: text,
+                                        interceptedAt: Date.now(),
+                                    },
+                                    allowMerge,
+                                );
                             }
                         }
                     } catch {
@@ -484,6 +576,10 @@ export class TVerTrackRegistry {
     private extractEpisodeIdFromUrl(url: string): string | null {
         const match = url.match(/\/episodes\/([a-zA-Z0-9_-]+)/);
         return match ? match[1] : null;
+    }
+
+    clearUnknownTracks(): void {
+        this.unknownTracks.clear();
     }
 
     clear(): void {
